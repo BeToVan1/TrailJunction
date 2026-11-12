@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { Camera, Check, ImagePlus, ScanLine } from "lucide-react";
+import { useState } from "react";
+import { Check, ScanLine } from "lucide-react";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
+import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { matchJunction, type JunctionMatch, type RoutePack } from "./route.ts";
 
 const samples = [
@@ -20,22 +21,11 @@ export function SignCheck({
   showCheckpoints: () => void;
 }) {
   const [photo, setPhoto] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
   const [sample, setSample] = useState(0);
   const [result, setResult] = useState<Result>();
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const selectedSample = samples[sample];
-
-  useEffect(() => {
-    if (!photo) {
-      setPreviewUrl("");
-      return;
-    }
-    const url = URL.createObjectURL(photo);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [photo]);
 
   function selectPhoto(file: File | null) {
     setPhoto(file);
@@ -79,18 +69,9 @@ export function SignCheck({
   return (
     <div className="sign-layout">
       <section className="photo-area" aria-label="Sign photo">
-        <div className="photo-frame">
-          {photo && !previewUrl ? <div className="photo-placeholder"><Camera /> Preparing photo</div> :
-            <img src={photo ? previewUrl : selectedSample.src} alt={photo ? "Selected trail sign" : selectedSample.name} />}
-        </div>
+        <PhotoPreview photo={photo} fallback={selectedSample.src} alt={photo ? "Selected trail sign" : selectedSample.name} />
+        <PhotoPicker onPhoto={selectPhoto} disabled={reading} />
         <div className="photo-controls">
-          <label className="file-button secondary-action">
-            <ImagePlus aria-hidden="true" /> Choose photo
-            <input type="file" accept="image/*,.heic,.heif" disabled={reading} aria-label="Choose a trail sign photo" onChange={(event) => {
-              selectPhoto(event.currentTarget.files?.[0] ?? null);
-              event.currentTarget.value = "";
-            }} />
-          </label>
           <label className="sample-select">
             <span>Demo photos</span>
             <select value={sample} disabled={reading} onChange={(event) => {

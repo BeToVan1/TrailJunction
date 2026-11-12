@@ -271,7 +271,32 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .photo-placeholder { display: grid; justify-items: center; gap: 6px; padding: 20px; font-size: .86rem; }
 .photo-controls { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
 .file-button { position: relative; overflow: hidden; cursor: pointer; }
-.file-button input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: inherit; }
+.file-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: inherit; }
+.file-button:has(input:disabled) { cursor: default; opacity: .62; }
+.trail-sign-tools { display: grid; gap: 4px; }
+.photo-error { margin: 0; }
+.trail-sign-reader h1:focus { outline: none; }
+.sign-lines { display: grid; margin: 5px 0 9px; padding: 0; list-style: none; }
+.sign-lines li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.sign-direction {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 5px;
+  color: var(--path);
+  font-size: .83rem;
+  font-weight: 750;
+}
+.sign-direction svg { width: 17px; height: 17px; }
+.sign-lines ~ .muted + .muted { margin-top: 5px; }
 .sample-select {
   display: grid;
   flex: 1;

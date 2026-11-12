@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseSignReading } from "../src/sign-reading.ts";
+import { describeSign, parseSignReading } from "../src/sign-reading.ts";
 import { findFernForkPath, matchesFernForkSample } from "../src/fern-fork.ts";
 
 test("trims visible labels and ignores blank model output", () => {
@@ -22,6 +22,28 @@ test("rejects an unexpected response instead of letting it reach navigation", ()
   for (const value of ["no", "null", '{"readable":true,"lines":[7]}', '{"lines":["Cedar Spur"]}']) {
     assert.throws(() => parseSignReading(value));
   }
+});
+
+test("only shows unambiguous arrows attached to visible sign text", () => {
+  const reading = parseSignReading(JSON.stringify({
+    readable: true,
+    lines: ["PA’RUS TRAIL", "Canyon Junction", "Visitor Center"],
+    arrows: [
+      { label: "PA’RUS TRAIL", direction: "straight" },
+      { label: "Canyon Junction", direction: "left" },
+      { label: "Canyon Junction", direction: "right" },
+      { label: "Unseen destination", direction: "right" },
+    ],
+  }));
+  assert.deepEqual(describeSign(reading, "Pa'rus"), {
+    namesTrail: true,
+    entries: [
+      { label: "PA’RUS TRAIL", direction: "straight" },
+      { label: "Canyon Junction", direction: undefined },
+      { label: "Visitor Center", direction: undefined },
+    ],
+  });
+  assert.equal(describeSign(reading, "Pa’rus Connector").namesTrail, false);
 });
 
 test("Fern Fork accepts the staged arrows and routes to places beyond the sign", () => {

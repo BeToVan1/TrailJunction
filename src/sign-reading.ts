@@ -4,15 +4,17 @@ export interface SignReading {
   arrows?: SignArrow[];
 }
 
+export const signDirections = ["left", "right", "straight"] as const;
+
 export interface SignArrow {
   label: string;
-  direction: "left" | "right";
+  direction: (typeof signDirections)[number];
 }
 
 function isSignArrow(value: unknown): value is SignArrow {
   return !!value && typeof value === "object" && "label" in value && "direction" in value &&
     typeof value.label === "string" && value.label.length <= 100 && value.label.trim() !== "" &&
-    (value.direction === "left" || value.direction === "right");
+    signDirections.some((direction) => direction === value.direction);
 }
 
 export function parseSignReading(text: string): SignReading {
@@ -36,4 +38,22 @@ export function parseSignReading(text: string): SignReading {
     }
   }
   return reading;
+}
+import { normalizeSignLine } from "./route.ts";
+
+
+export function describeSign(reading: SignReading, trailName: string) {
+  const normalizeName = (name: string) => normalizeSignLine(name).replace(/['’]/g, "").replace(/\s+trail$/, "");
+  const labels = new Map<string, string>();
+  if (reading.readable) {
+    for (const line of reading.lines) {
+      const key = normalizeSignLine(line);
+      if (key && !labels.has(key)) labels.set(key, line);
+    }
+  }
+  const entries = [...labels].map(([key, label]) => {
+    const arrows = new Set(reading.arrows?.filter((arrow) => normalizeSignLine(arrow.label) === key).map((arrow) => arrow.direction));
+    return { label, direction: arrows.size === 1 ? [...arrows][0] : undefined };
+  });
+  return { entries, namesTrail: entries.some(({ label }) => normalizeName(label) === normalizeName(trailName)) };
 }

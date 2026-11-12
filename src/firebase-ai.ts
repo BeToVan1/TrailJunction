@@ -4,7 +4,8 @@ import {
   getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, InferenceSource, Schema,
   type GenerativeModel, type InlineDataPart, type SingleRequestOptions,
 } from "firebase/ai";
-import { parseSignReading } from "./sign-reading.ts";
+import { photoToJpeg } from "./photo.ts";
+import { parseSignReading, signDirections } from "./sign-reading.ts";
 
 const options: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,7 +22,7 @@ const prompt = [
   "Transcribe only visible words, one complete sign label per entry. Skip any partially illegible labels.",
   "Do not infer a location, route, or missing letters. Keep arrow symbols out of lines.",
   "Return JSON with readable (boolean), lines (up to eight strings), and arrows (up to eight objects with label and direction).",
-  "Include an arrow only when a complete label clearly belongs to a visible left or right arrow. Set direction to left or right. Use an empty arrows array otherwise.",
+  "Include an arrow only when a complete label clearly belongs to a visible left, right, or straight-ahead arrow. Set direction to left, right, or straight. Use an empty arrows array otherwise.",
   "If no complete sign label is clear, return {\"readable\":false,\"lines\":[]}.",
 ].join(" ");
 
@@ -43,7 +44,7 @@ const onDeviceParams = {
             type: "object",
             properties: {
               label: { type: "string", maxLength: 100 },
-              direction: { type: "string", enum: ["left", "right"] },
+              direction: { type: "string", enum: signDirections },
             },
             required: ["label", "direction"],
             additionalProperties: false,
@@ -103,7 +104,7 @@ function getHybridModel() {
             arrows: Schema.array({
               maxItems: 8,
               items: Schema.object({
-                properties: { label: Schema.string(), direction: Schema.enumString({ enum: ["left", "right"] }) },
+                properties: { label: Schema.string(), direction: Schema.enumString({ enum: [...signDirections] }) },
               }),
             }),
           },
@@ -115,6 +116,7 @@ function getHybridModel() {
 }
 
 export async function readSign(photo: Blob, requestOptions?: SingleRequestOptions) {
+  requestOptions?.signal?.throwIfAborted();
   let model: GenerativeModel;
   if (navigator.onLine) {
     model = getHybridModel();
@@ -126,7 +128,11 @@ export async function readSign(photo: Blob, requestOptions?: SingleRequestOption
     model = getLocalModel();
     await model.initializeDeviceModel();
   }
-  const image = await prepareImage(photo);
+  const image: InlineDataPart = {
+    type: "inlineData",
+    inlineData: { data: await photoToJpeg(photo), mimeType: "image/jpeg" },
+  };
+  requestOptions?.signal?.throwIfAborted();
   const { response } = await model.generateContent([prompt, image], { timeout: 30000, ...requestOptions });
   const source = response.inferenceSource;
   return {
@@ -134,32 +140,4 @@ export async function readSign(photo: Blob, requestOptions?: SingleRequestOption
     source: source === InferenceSource.ON_DEVICE ? "On-device" :
       source === InferenceSource.IN_CLOUD ? "Cloud" : undefined,
   };
-}
-
-async function prepareImage(photo: Blob): Promise<InlineDataPart> {
-  if (photo.size > 20 * 1024 * 1024) throw new Error("Choose a photo smaller than 20 MB.");
-  const url = URL.createObjectURL(photo);
-  try {
-    const image = new Image();
-    image.src = url;
-    try {
-      await image.decode();
-    } catch {
-      throw new Error("This photo could not be opened. Try a JPEG or PNG.");
-    }
-    const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("This browser could not prepare the photo.");
-    context.fillStyle = "#fff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const data = canvas.toDataURL("image/jpeg", 0.88).split(",")[1];
-    if (!data) throw new Error("This browser could not prepare the photo.");
-    return { type: "inlineData", inlineData: { data, mimeType: "image/jpeg" } };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
 }

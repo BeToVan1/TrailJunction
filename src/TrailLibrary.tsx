@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CloudDownload, Map, Search } from "lucide-react";
+import { CloudDownload, Map, Search } from "lucide-react";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
-import { OfflineTrailMap } from "./OfflineTrailMap.tsx";
+import { SavedTrail } from "./SavedTrail.tsx";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
@@ -95,26 +95,8 @@ export function TrailLibrary({ view, online, opened, setOpened }: {
 
   if (opened && saved[opened.id]) {
     return (
-      <div className="trail-library">
-        <div className="intro">
-          <button type="button" className="text-action back" onClick={() => setOpened(undefined)}>
-            <ArrowLeft aria-hidden="true" /> {view === "saved" ? "Saved trails" : "Search trails"}
-          </button>
-          <p className="eyebrow">{opened.park} · Saved offline</p>
-          <h1>{opened.name}</h1>
-          <p className="muted">{opened.details}</p>
-        </div>
-        <OfflineTrailMap trail={opened} map={saved[opened.id]} />
-        {"elevationGain" in opened && (
-          <dl className="park-elevation">
-            <dt>Elevation gain</dt>
-            <dd>{opened.elevationGain}</dd>
-          </dl>
-        )}
-        <a className="park-details" href={opened.info} target="_blank" rel="noreferrer">
-          {opened.format === "usgs-topo" ? "USGS Trails Explorer" : "Official trail details"}
-        </a>
-      </div>
+      <SavedTrail key={opened.id} trail={opened} map={saved[opened.id]} online={online}
+        backLabel={view === "saved" ? "Saved trails" : "Search trails"} back={() => setOpened(undefined)} />
     );
   }
 
