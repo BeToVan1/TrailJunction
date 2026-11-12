@@ -157,11 +157,15 @@
 
 @media (min-width: 700px) {
   .journal-hikes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .journal-photos:has(.journal-photo-card:nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .journal-photo-card { box-shadow: none; }
-  .journal-photo-card:nth-child(2) { border-top: 0; }
-  .journal-photo-card:nth-child(even) {
-    border-inline-start: 1px solid var(--album-rule);
-    box-shadow: inset 10px 0 16px -17px var(--ink);
+  .journal-photos:has(.journal-photo-card:nth-child(2)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background-image: linear-gradient(90deg,
+      transparent 50%,
+      var(--album-rule) 50%,
+      var(--album-rule) calc(50% + 1px),
+      var(--album-shadow) calc(50% + 1px),
+      transparent calc(50% + 12px));
   }
+  .journal-photo-card { box-shadow: none; }
+  .journal-photo-card + .journal-photo-card { border-top: 0; }
 }
