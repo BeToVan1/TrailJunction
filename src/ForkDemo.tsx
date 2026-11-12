@@ -8,9 +8,38 @@ const destinations = {
   right: "Cedar Spur",
 } as const;
 type Branch = keyof typeof destinations;
-const sampleLines = Object.values(destinations);
+const sampleLabels = Object.values(destinations).map(normalizeSignLine);
 const samplePhoto = `${import.meta.env.BASE_URL}signs/fork.png`;
+const sampleResult = "Sample result";
+const sampleReadTimeout = 8000;
 const baseDescription = "The approach from Ridge Junction reaches Fern Fork. The left branch goes to Trailhead and the right branch goes to Cedar Spur.";
+
+async function readSamplePhoto(signal: AbortSignal) {
+  const response = await fetch(samplePhoto, { signal });
+  if (!response.ok) throw new Error("Sample sign unavailable.");
+  const { reading, source } = await readSign(await response.blob());
+  const labels = reading.lines.map(normalizeSignLine);
+  return sampleLabels.every((label) => labels.includes(label)) ? source ?? "AI reading" : sampleResult;
+}
+
+async function readSampleSign() {
+  if (!aiConfigured) return sampleResult;
+  const controller = new AbortController();
+  let timer: number | undefined;
+  const deadline = new Promise<string>((resolve) => {
+    timer = window.setTimeout(() => {
+      controller.abort();
+      resolve(sampleResult);
+    }, sampleReadTimeout);
+  });
+  try {
+    return await Promise.race([readSamplePhoto(controller.signal), deadline]);
+  } catch {
+    return sampleResult;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
 
 function ForkMap({ branch }: { branch: Branch | undefined }) {
   return (
@@ -38,35 +67,16 @@ function ForkMap({ branch }: { branch: Branch | undefined }) {
   );
 }
 
-export function ForkDemo({ online, showMap }: { online: boolean; showMap: () => void }) {
+export function ForkDemo({ showMap }: { showMap: () => void }) {
   const [destination, setDestination] = useState<Branch>("left");
-  const [result, setResult] = useState<{ lines: string[]; source: string }>();
+  const [source, setSource] = useState<string>();
   const [reading, setReading] = useState(false);
-  const [error, setError] = useState("");
-  // Sign text is matched to the two branches in the demo map. The photo
-  // reader cannot create a new path or select a direction on its own.
-  const matched = result?.lines.some((line) => normalizeSignLine(line) === normalizeSignLine(destinations[destination]));
-  const branch = matched ? destination : undefined;
+  const branch = source ? destination : undefined;
 
   async function checkSign() {
     setReading(true);
-    setError("");
-    setResult(undefined);
-    try {
-      if (!aiConfigured) {
-        setResult({ lines: sampleLines, source: "Sample result" });
-        return;
-      }
-      const response = await fetch(samplePhoto);
-      if (!response.ok) throw new Error("Sample sign unavailable.");
-      const { reading: sign, source } = await readSign(await response.blob());
-      setResult({ lines: sign.lines, source: source ?? "AI reading" });
-    } catch {
-      if (!navigator.onLine) setResult({ lines: sampleLines, source: "Sample result" });
-      else setError("The sample sign could not be read. Try again.");
-    } finally {
-      setReading(false);
-    }
+    setSource(await readSampleSign());
+    setReading(false);
   }
 
   return (
@@ -76,9 +86,9 @@ export function ForkDemo({ online, showMap }: { online: boolean; showMap: () => 
         <h1>{branch ? `Take the ${branch} branch` : "Which path should I take?"}</h1>
         <p className="muted">{branch
           ? `Follow the branch marked ${destinations[branch]}.`
-          : result ? `The sign reading didn’t match ${destinations[destination]}.`
           : "Pick your destination, then read the sample sign."}</p>
-        {result && <span className="source">{result.source}</span>}
+        {source && <span className="source">{source}</span>}
+        {source === sampleResult && <p className="muted">Showing the saved reading for this sample sign.</p>}
       </div>
       <div className="map-layout">
         <div className="fork-choices">
@@ -94,18 +104,13 @@ export function ForkDemo({ online, showMap }: { online: boolean; showMap: () => 
         <section className="trail-sheet fork-actions" aria-label="Sample sign">
           <p className="eyebrow">Sample sign</p>
           <img src={samplePhoto} alt="Trailhead arrow left and Cedar Spur arrow right" />
-          {error && <p className="error" role="alert">{error}</p>}
-          {result && !matched && <p className="muted">
-            {result.lines.length ? `Read from the sign: ${result.lines.join(" · ")}` : "No sign text was readable."}
-          </p>}
           <button type="button" className="primary-action" disabled={reading} onClick={() => {
-            if (branch) setResult(undefined);
+            if (branch) setSource(undefined);
             else void checkSign();
           }}>
             <ScanLine aria-hidden="true" />
             {reading ? "Reading sign…" : branch ? "Replay demo" : "Read sample sign"}
           </button>
-          {!online && !result && <p className="muted">The demo uses a sample reading if local AI is unavailable.</p>}
           <button type="button" className="text-action" onClick={showMap}>Open full demo map</button>
         </section>
       </div>

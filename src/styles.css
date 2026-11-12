@@ -133,7 +133,33 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-trail button svg { width: 15px; height: 15px; }
 .screen-reader-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .park-map { max-width: 560px; }
+.park-map-art-cropped { position: relative; overflow: hidden; aspect-ratio: 328 / 266; }
+.park-map-art-cropped .park-map-image { position: absolute; bottom: 0; }
 .park-map-image { display: block; width: 100%; height: auto; }
+.park-legend {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 9px 11px;
+  list-style: none;
+  background: var(--sheet);
+  color: var(--ink);
+  font-size: .85rem;
+}
+.park-legend li { display: flex; gap: 8px; align-items: baseline; }
+.park-legend i { display: inline-block; flex: none; width: 16px; height: 7px; border: 1px solid #694827; border-radius: 3px; }
+.park-yellow { background: #ffda46; }
+.park-orange { background: #ec943e; }
+.park-elevation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: baseline;
+  margin: 0;
+  font-size: .88rem;
+}
+.park-elevation dt { color: var(--soft); }
+.park-elevation dd { margin: 0; font-weight: 750; }
 .park-route-outline { display: block; width: 100%; height: auto; fill: var(--ink); }
 .park-route-line, .park-north-arrow { fill: none; stroke: var(--path); stroke-linecap: round; stroke-linejoin: round; }
 .park-route-line { stroke-width: 4; }

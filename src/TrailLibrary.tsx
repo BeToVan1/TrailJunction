@@ -67,6 +67,12 @@ export function TrailLibrary({ view, online, opened, setOpened }: {
           <p className="muted">{opened.details}</p>
         </div>
         <OfflineTrailMap trail={opened} map={saved[opened.id]} />
+        {"elevationGain" in opened && (
+          <dl className="park-elevation">
+            <dt>Elevation gain</dt>
+            <dd>{opened.elevationGain}</dd>
+          </dl>
+        )}
         <a className="park-details" href={opened.info} target="_blank" rel="noreferrer">Official trail details</a>
       </div>
     );

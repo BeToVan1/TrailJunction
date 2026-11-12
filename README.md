@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Without Firebase configuration, the demo uses a supplied transcription labeled **Sample result** and runs the real matching logic. The Fern Fork demo also uses that transcription when no local model can read the sample offline.
+Without Firebase configuration, the demo uses a supplied transcription labeled **Sample result** and runs the real matching logic. The Fern Fork demo also uses that transcription if the AI request fails, takes too long, or misses either destination.
 
 To verify offline reopening, run `npm run build` and `npm run preview`. Search for a park, download a trail, and wait for **Saved offline**. Disconnect, reload the app, and open the map under **Saved**. The full demo map has its own **Save for offline use** action, which also keeps the last confirmed demo checkpoint.
 

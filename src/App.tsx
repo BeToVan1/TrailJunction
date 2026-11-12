@@ -119,7 +119,7 @@ export function App() {
         <div hidden={!showingLibrary}>
           <TrailLibrary view={screen === "saved" ? "saved" : "search"} online={online} opened={openedTrail} setOpened={setOpenedTrail} />
         </div>
-        {screen === "fork" && <ForkDemo online={online} showMap={() => show("map")} />}
+        {screen === "fork" && <ForkDemo showMap={() => show("map")} />}
         {!showingLibrary && screen !== "fork" && <div className="intro">
           {screen !== "map" && <button type="button" className="text-action back" onClick={() => show("map")}>
             <ArrowLeft aria-hidden="true" /> Trail map
