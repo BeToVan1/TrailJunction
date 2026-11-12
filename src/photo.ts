@@ -5,7 +5,7 @@ export function validatePhoto(photo: Blob) {
   if (photo.size > 20 * 1024 * 1024) throw new PhotoError("Choose a photo smaller than 20 MB.");
 }
 
-export async function photoToJpeg(photo: Blob) {
+async function preparePhotoCanvas(photo: Blob) {
   validatePhoto(photo);
   const url = URL.createObjectURL(photo);
   try {
@@ -25,11 +25,26 @@ export async function photoToJpeg(photo: Blob) {
     context.fillStyle = "#fff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    // Re-encoding sends the picture without the camera file's location metadata.
-    const data = canvas.toDataURL("image/jpeg", .88).split(",")[1];
-    if (!data) throw new PhotoError("This browser could not prepare the photo.");
-    return data;
+    return canvas;
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function photoToJpeg(photo: Blob) {
+  const canvas = await preparePhotoCanvas(photo);
+  // Re-encoding omits the camera file's location metadata.
+  const data = canvas.toDataURL("image/jpeg", .88).split(",")[1];
+  if (!data) throw new PhotoError("This browser could not prepare the photo.");
+  return data;
+}
+
+export async function photoToJpegBlob(photo: Blob) {
+  const canvas = await preparePhotoCanvas(photo);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new PhotoError("This browser could not prepare the photo."));
+    }, "image/jpeg", .88);
+  });
 }

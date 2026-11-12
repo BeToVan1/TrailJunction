@@ -1,17 +1,18 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { OfflineTrailMap } from "./OfflineTrailMap.tsx";
 import { PhotoPicker } from "./PhotoPicker.tsx";
 import { TrailSignReader } from "./TrailSignReader.tsx";
 import type { Trail, TrailMapData } from "./trail-catalog.ts";
 
-export function SavedTrail({ trail, map, online, backLabel, back }: {
+export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
   trail: Trail;
   map: TrailMapData;
   online: boolean;
   backLabel: string;
   back: () => void;
+  logHike: () => void;
 }) {
   const [capture, setCapture] = useState<{ file: File; revision: number }>();
 
@@ -42,6 +43,9 @@ export function SavedTrail({ trail, map, online, backLabel, back }: {
         <OfflineAISetup online={online} />
       </section>
       <OfflineTrailMap trail={trail} map={map} />
+      <button type="button" className="secondary-action trail-log-action" onClick={logHike}>
+        <BookOpen aria-hidden="true" /> Log this hike
+      </button>
       {"elevationGain" in trail && (
         <dl className="park-elevation">
           <dt>Elevation gain</dt>

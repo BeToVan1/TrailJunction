@@ -36,7 +36,7 @@ export async function saveTrailMap(map: TrailMapData) {
   }));
 }
 
-async function prepareOfflineApp() {
+export async function prepareOfflineApp() {
   if (!import.meta.env.PROD) {
     throw new Error("Use the production preview to test offline downloads.");
   }

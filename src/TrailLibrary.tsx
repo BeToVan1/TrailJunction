@@ -22,11 +22,12 @@ function duplicatesFeatured(trail: UsgsTrail) {
     name(featured.name) === name(trail.name) && trail.park === featuredStates[featured.id]);
 }
 
-export function TrailLibrary({ view, online, opened, setOpened }: {
+export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   view: LibraryView;
   online: boolean;
   opened: Trail | undefined;
   setOpened: (trail: Trail | undefined) => void;
+  logTrail: (trail: Trail) => void;
 }) {
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState<Record<string, TrailMapData>>({});
@@ -96,7 +97,8 @@ export function TrailLibrary({ view, online, opened, setOpened }: {
   if (opened && saved[opened.id]) {
     return (
       <SavedTrail key={opened.id} trail={opened} map={saved[opened.id]} online={online}
-        backLabel={view === "saved" ? "Saved trails" : "Search trails"} back={() => setOpened(undefined)} />
+        backLabel={view === "saved" ? "Saved trails" : "Search trails"} back={() => setOpened(undefined)}
+        logHike={() => logTrail(opened)} />
     );
   }
 

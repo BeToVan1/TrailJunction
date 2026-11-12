@@ -9,7 +9,7 @@ export default defineConfig({
       manifest: {
         name: "Trail Junction",
         short_name: "Trail Junction",
-        description: "Find trail maps, save them offline, and read signs at mapped junctions.",
+        description: "Find trail maps, read signs, and keep a journal of your hikes.",
         theme_color: "#faf8ee",
         background_color: "#faf8ee",
         display: "standalone",
