@@ -1,119 +1,198 @@
-import { useState } from "react";
-import { ScanLine } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowRight, Camera, Check, WifiOff } from "lucide-react";
+import { FernForkMap } from "./FernForkMap.tsx";
+import { fernForkPaths, fernForkSample, findFernForkPath, matchesFernForkSample } from "./fern-fork.ts";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
+import { PublicHeader } from "./Landing.tsx";
+import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { normalizeSignLine } from "./route.ts";
+import type { SignArrow } from "./sign-reading.ts";
+import { useOnline } from "./use-online.ts";
 
-const destinations = {
-  left: "Trailhead",
-  right: "Cedar Spur",
-} as const;
-type Branch = keyof typeof destinations;
-const sampleLabels = Object.values(destinations).map(normalizeSignLine);
 const samplePhoto = `${import.meta.env.BASE_URL}signs/fork.png`;
-const sampleResult = "Sample result";
-const sampleReadTimeout = 8000;
-const baseDescription = "The approach from Ridge Junction reaches Fern Fork. The left branch goes to Trailhead and the right branch goes to Cedar Spur.";
+const stepLabels = ["Junction", "Photo", "Destination", "Route"] as const;
+const mapDescription = "Fern Fork trail map. The left branch passes through Trailhead to Rocky Point. The right branch passes through Cedar Spur to Sloan Lake.";
 
-async function readSamplePhoto(signal: AbortSignal) {
-  const response = await fetch(samplePhoto, { signal });
-  if (!response.ok) throw new Error("Sample sign unavailable.");
-  const { reading, source } = await readSign(await response.blob());
-  const labels = reading.lines.map(normalizeSignLine);
-  return sampleLabels.every((label) => labels.includes(label)) ? source ?? "AI reading" : sampleResult;
+interface ForkReading {
+  arrows: SignArrow[];
+  source: string;
 }
 
-async function readSampleSign() {
-  if (!aiConfigured) return sampleResult;
+const sampleReading: ForkReading = { arrows: fernForkSample, source: "Sample result" };
+
+async function readSamplePhoto(signal: AbortSignal): Promise<ForkReading> {
+  try {
+    const response = await fetch(samplePhoto, { signal });
+    if (!response.ok) return sampleReading;
+    const { reading, source } = await readSign(await response.blob(), { signal, timeout: 8000 });
+    if (!reading.arrows || !matchesFernForkSample(reading)) return sampleReading;
+    return { arrows: reading.arrows, source: source ?? "AI reading" };
+  } catch {
+    return sampleReading;
+  }
+}
+
+async function readDemoSign() {
+  if (!aiConfigured) return sampleReading;
   const controller = new AbortController();
   let timer: number | undefined;
-  const deadline = new Promise<string>((resolve) => {
+  const deadline = new Promise<ForkReading>((resolve) => {
     timer = window.setTimeout(() => {
+      resolve(sampleReading);
       controller.abort();
-      resolve(sampleResult);
-    }, sampleReadTimeout);
+    }, 8000);
   });
   try {
     return await Promise.race([readSamplePhoto(controller.signal), deadline]);
-  } catch {
-    return sampleResult;
   } finally {
     window.clearTimeout(timer);
   }
 }
 
-function ForkMap({ branch }: { branch: Branch | undefined }) {
-  return (
-    <figure className="map-frame fork-map" data-branch={branch}>
-      <svg viewBox="0 0 360 205" role="img" aria-labelledby="fork-map-title fork-map-description">
-        <title id="fork-map-title">Two branches at Fern Fork</title>
-        <desc id="fork-map-description">
-          {baseDescription}
-          {branch && ` The highlighted ${branch} branch leads to ${destinations[branch]}.`}
-        </desc>
-        <path className="fork-contour" d="M-8 77C24 67 57 66 98 80S163 93 204 76 294 64 370 78M-8 89C24 79 57 78 98 92S163 105 204 88 294 76 370 90M-8 101C24 91 57 90 98 104S163 117 204 100 294 88 370 102M-8 156C45 134 81 142 129 158S211 174 251 157 314 145 370 151M-8 169C45 147 81 155 129 171S211 187 251 170 314 158 370 164" />
-        <path className="fork-path fork-approach" d="M180 172V115" />
-        <path className={branch === "left" ? "fork-path fork-highlight" : "fork-path"} d="M180 115Q162 96 126 82T78 49" />
-        <path className={branch === "right" ? "fork-path fork-highlight" : "fork-path"} d="M180 115Q198 96 234 82T282 49" />
-        {branch && <path className="fork-chevron" d={branch === "left" ? "M116 70L105 72L110 83" : "M250 83L255 72L244 70"} />}
-        <circle className={branch === "left" ? "fork-node fork-destination" : "fork-node"} cx="78" cy="49" r="6" />
-        <circle className={branch === "right" ? "fork-node fork-destination" : "fork-node"} cx="282" cy="49" r="6" />
-        <circle className="fork-node fork-location" cx="180" cy="115" r="7" />
-      </svg>
-      <span className="fork-label fork-label-left" aria-hidden="true">Trailhead</span>
-      <span className="fork-label fork-label-right" aria-hidden="true">Cedar Spur</span>
-      <span className="fork-label fork-label-center" aria-hidden="true">Fern Fork</span>
-      <span className="fork-label fork-label-approach" aria-hidden="true">From Ridge Junction</span>
-    </figure>
-  );
-}
-
-export function ForkDemo({ showMap }: { showMap: () => void }) {
-  const [destination, setDestination] = useState<Branch>("left");
-  const [source, setSource] = useState<string>();
+export function ForkDemo() {
+  const online = useOnline();
+  const [step, setStep] = useState(0);
+  const [destination, setDestination] = useState("");
+  const [error, setError] = useState("");
   const [reading, setReading] = useState(false);
-  const branch = source ? destination : undefined;
+  const [result, setResult] = useState<{ path: readonly string[]; arrow: SignArrow; source: string }>();
+  const photoReading = useRef<Promise<ForkReading> | undefined>(undefined);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const focusNextStep = useRef(false);
 
-  async function checkSign() {
-    setReading(true);
-    setSource(await readSampleSign());
-    setReading(false);
+  useEffect(() => {
+    if (!focusNextStep.current) return;
+    focusNextStep.current = false;
+    heading.current?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }, [step]);
+
+  function show(next: number) {
+    focusNextStep.current = true;
+    setError("");
+    setStep(next);
   }
 
+  function takePhoto() {
+    photoReading.current = readDemoSign();
+    show(2);
+  }
+
+  async function showRoute(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const path = findFernForkPath(destination);
+    if (!path) {
+      setError(destination.trim() ? "No route to that destination in this demo. Try Rocky Point or Sloan Lake." : "Enter Rocky Point or Sloan Lake.");
+      input.current?.focus();
+      return;
+    }
+    setReading(true);
+    setError("");
+    try {
+      const { arrows, source } = await (photoReading.current ?? Promise.resolve(sampleReading));
+      const arrow = arrows.find(({ label }) => normalizeSignLine(label) === normalizeSignLine(path[1]));
+      if (!arrow) {
+        setError("The sign reading couldn’t be matched to this route. Try retaking the photo.");
+        return;
+      }
+      setResult({ path, arrow, source });
+      show(3);
+    } finally {
+      setReading(false);
+    }
+  }
+
+  function replay() {
+    photoReading.current = undefined;
+    setDestination("");
+    setResult(undefined);
+    show(0);
+  }
+
+  const route = step === 3 ? result : undefined;
+  const activeBranch = route?.arrow.direction;
+  const mapLabel = route
+    ? `Fern Fork map highlighting the ${activeBranch} branch via ${route.path[1]} to ${route.path[2]}.`
+    : mapDescription;
+
   return (
-    <div className="fork-demo">
-      <div className="intro" aria-live="polite">
-        <p className="eyebrow">Fern Creek Loop · Fern Fork</p>
-        <h1>{branch ? `Take the ${branch} branch` : "Which path should I take?"}</h1>
-        <p className="muted">{branch
-          ? `Follow the branch marked ${destinations[branch]}.`
-          : "Pick your destination, then read the sample sign."}</p>
-        {source && <span className="source">{source}</span>}
-        {source === sampleResult && <p className="muted">Showing the saved reading for this sample sign.</p>}
-      </div>
-      <div className="map-layout">
-        <div className="fork-choices">
-          <label className="fork-destination-picker">
-            Destination
-            <select value={destination} onChange={(event) => setDestination(event.target.value === "right" ? "right" : "left")}>
-              <option value="left">Trailhead</option>
-              <option value="right">Cedar Spur</option>
-            </select>
-          </label>
-          <ForkMap branch={branch} />
+    <div className="public-page fern-demo">
+      <PublicHeader label="Sign demo" />
+      <main className="fern-body">
+        <ol className="fern-steps" aria-label="Walkthrough steps">
+          {stepLabels.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined}>{index + 1}. {label}</li>)}
+        </ol>
+        <div className="fern-scene">
+          {step === 0 || step === 3 ? <FernForkMap branch={activeBranch} description={mapLabel} /> :
+            <figure className="fern-visual fern-photo">
+              <img src={samplePhoto} alt="Wooden trail sign at Fern Fork. Trailhead points left and Cedar Spur points right." />
+              <figcaption>{step === 1 ? "Simulated viewfinder" : "Captured sample photo"}</figcaption>
+              {step === 1 && <div className="fern-viewfinder" aria-hidden="true"><span /><span /><span /><span /></div>}
+            </figure>}
+          <div className="fern-content">
+            {step === 0 && <section>
+              <p className="public-kicker">Fern Creek Loop · Sample hike</p>
+              <h1 ref={heading} tabIndex={-1}>You’ve reached a fork.</h1>
+              <p className="fern-copy">Cell service has dropped. You reach Fern Fork with a downloaded map and a sign pointing to the two branches.</p>
+              <div className="fern-chips">
+                <span><Check aria-hidden="true" /> Map downloaded</span>
+                <span><WifiOff aria-hidden="true" /> No service in this scenario</span>
+              </div>
+              <button type="button" className="public-button" onClick={() => show(1)}>Open camera <Camera aria-hidden="true" /></button>
+            </section>}
+            {step === 1 && <section>
+              <p className="public-kicker">Fern Fork · Camera</p>
+              <h1 ref={heading} tabIndex={-1}>Frame the whole sign.</h1>
+              <p className="fern-copy">Fit both arrows in the photo so the app can tell which branch leads to each place on the sign.</p>
+              <div className="fern-actions">
+                <button type="button" className="public-button" onClick={takePhoto}>Take photo <Camera aria-hidden="true" /></button>
+                <button type="button" className="public-button public-secondary" onClick={() => show(0)}>Back</button>
+              </div>
+            </section>}
+            {step === 2 && <section>
+              <p className="public-kicker">Fern Fork · Photo captured</p>
+              <h1 ref={heading} tabIndex={-1}>Where are you headed?</h1>
+              <form onSubmit={(event) => void showRoute(event)}>
+                <label htmlFor="fern-destination">Destination</label>
+                <input ref={input} id="fern-destination" type="text" value={destination} placeholder="Enter a destination"
+                  autoComplete="off" aria-describedby={error ? "fern-places fern-error" : "fern-places"}
+                  aria-invalid={Boolean(error)} disabled={reading}
+                  onChange={(event) => { setDestination(event.target.value); setError(""); }} />
+                {error && <p className="fern-error" id="fern-error" role="alert">{error}</p>}
+                <p className="fern-places" id="fern-places">Places on your downloaded map</p>
+                <div className="fern-picks">
+                  {fernForkPaths.map(([, , name]) => <button type="button" key={name} disabled={reading} onClick={() => {
+                    setDestination(name);
+                    setError("");
+                  }}>{name}</button>)}
+                </div>
+                <div className="fern-actions">
+                  <button type="submit" className="public-button" disabled={reading}>
+                    {reading ? "Reading sign…" : "Show route"} <ArrowRight aria-hidden="true" />
+                  </button>
+                  <button type="button" className="public-button public-secondary" disabled={reading} onClick={() => show(1)}>Retake photo</button>
+                </div>
+                <span className="screen-reader-only" role="status">{reading ? "Reading the sign to find your route." : ""}</span>
+              </form>
+            </section>}
+            {route && <section>
+              <p className="public-kicker">Fern Fork · {route.source === "Sample result" ? route.source : `${route.source} sign reading`}</p>
+              <h1 ref={heading} tabIndex={-1}>Take the {activeBranch} branch.</h1>
+              <p className="fern-copy">Follow the sign toward {route.path[1]}, then continue to {route.path[2]}.</p>
+              <p className="fern-trace">{route.path.join(" → ")}</p>
+              <div className="fern-actions">
+                <button type="button" className="public-button" onClick={() => show(2)}>Change destination</button>
+                <button type="button" className="public-button public-secondary" onClick={replay}>Replay</button>
+              </div>
+            </section>}
+          </div>
         </div>
-        <section className="trail-sheet fork-actions" aria-label="Sample sign">
-          <p className="eyebrow">Sample sign</p>
-          <img src={samplePhoto} alt="Trailhead arrow left and Cedar Spur arrow right" />
-          <button type="button" className="primary-action" disabled={reading} onClick={() => {
-            if (branch) setSource(undefined);
-            else void checkSign();
-          }}>
-            <ScanLine aria-hidden="true" />
-            {reading ? "Reading sign…" : branch ? "Replay demo" : "Read sample sign"}
-          </button>
-          <button type="button" className="text-action" onClick={showMap}>Open full demo map</button>
-        </section>
-      </div>
+        <footer className="fern-footer">
+          <a className="text-action" href="/demo/loop">Open full demo map</a>
+          <OfflineAISetup online={online} />
+        </footer>
+      </main>
     </div>
   );
 }

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 570" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="tj-landing-grid" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M38 0H0V38" fill="none" stroke="#698772" stroke-opacity=".21"/></pattern>
+          <radialGradient id="tj-landing-land"><stop stop-color="#556950"/><stop offset="1" stop-color="#1b3428"/></radialGradient>
+          <path id="tj-landing-contour" d="M477 42C560 20 610 75 627 128C642 174 616 218 641 262C673 318 661 357 611 384C578 402 515 386 484 414C442 453 379 437 353 400C323 356 339 307 299 274C249 230 264 177 295 151C321 127 364 139 394 112C424 86 427 55 477 42Z"/>
+        </defs>
+        <rect width="700" height="570" fill="url(#tj-landing-land)"/><rect width="700" height="570" fill="url(#tj-landing-grid)"/>
+        <g stroke="#9cb195" stroke-opacity=".58" fill="none">
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.55) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.45) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.35) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.25) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.15) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(1.075) translate(-465 -230)"/>
+          <use href="#tj-landing-contour"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.93) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.86) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.79) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.72) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.65) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.58) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.51) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.44) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.37) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.30) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.23) translate(-465 -230)"/>
+          <use href="#tj-landing-contour" transform="translate(465 230) scale(.16) translate(-465 -230)"/>
+        </g>
+        <path d="M435 550C431 510 471 498 467 465S428 417 451 390C470 365 508 361 516 333S486 292 501 268S554 248 567 224S553 176 572 152" fill="none" stroke="#1a3025" stroke-width="8" stroke-linecap="round"/>
+        <path d="M435 550C431 510 471 498 467 465S428 417 451 390C470 365 508 361 516 333S486 292 501 268S554 248 567 224S553 176 572 152" fill="none" stroke="#e4f1a8" stroke-width="3.3" stroke-linecap="round" stroke-dasharray="1 8"/>
+        <circle cx="572" cy="152" r="12" fill="#243e2e" stroke="#e4f1a8" stroke-width="1.4"/><circle cx="572" cy="152" r="4" fill="#e4f1a8"/>
+      </svg>

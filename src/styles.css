@@ -29,7 +29,7 @@ button, input, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled, :has(> input:disabled) { cursor: default; }
 button:disabled { opacity: .62; }
-button:focus-visible, select:focus-visible, .file-button:focus-within {
+button:focus-visible, a:focus-visible, select:focus-visible, .file-button:focus-within {
   outline: 2px solid var(--return);
   outline-offset: 3px;
 }
@@ -54,7 +54,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   margin: auto;
 }
 .section-nav { border-bottom: 1px solid var(--border); background: var(--sheet); }
-.section-nav > div { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 1100px; margin: auto; padding-inline: 14px; }
+.section-nav > div { display: grid; grid-template-columns: repeat(2, 1fr); max-width: 1100px; margin: auto; padding-inline: 14px; }
 .section-nav button {
   min-height: 44px;
   padding: 4px 6px;
@@ -78,6 +78,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   font-size: 1rem;
   font-weight: 750;
   letter-spacing: -.02em;
+  text-decoration: none;
 }
 .brand-icon {
   display: grid;
@@ -108,9 +109,9 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .map-layout, .sign-layout, .map-actions { display: grid; gap: 13px; align-items: start; }
 .trail-library { max-width: 680px; display: grid; gap: 12px; }
 .trail-library .intro { margin-bottom: 0; }
-.catalog-search, .fork-destination-picker { display: grid; gap: 5px; font-size: .86rem; font-weight: 700; color: var(--soft); }
+.catalog-search { display: grid; gap: 5px; font-size: .86rem; font-weight: 700; color: var(--soft); }
 .catalog-field { display: flex; align-items: center; gap: 9px; padding: 0 11px; }
-.catalog-field, .fork-destination-picker select { border: 1px solid var(--border); border-radius: 10px; background: var(--sheet); }
+.catalog-field { border: 1px solid var(--border); border-radius: 10px; background: var(--sheet); }
 .catalog-field:focus-within { outline: 2px solid var(--path); outline-offset: 2px; }
 .catalog-field svg { width: 17px; height: 17px; flex: none; }
 .catalog-field input { width: 100%; min-width: 0; min-height: 46px; border: 0; color: var(--ink); background: transparent; font-size: 1rem; }
@@ -170,36 +171,6 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-north-arrow { stroke: #172b35; stroke-width: 5; }
 .park-map a, .park-details { color: var(--ink); text-underline-offset: 3px; }
 .park-details { justify-self: start; font-size: .88rem; font-weight: 700; }
-.fork-demo { --fork-highlight: light-dark(#155e87, #a3d6fb); }
-.fork-choices { display: grid; gap: 10px; }
-.fork-destination-picker { grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
-.fork-destination-picker select { min-height: 44px; padding: 7px 10px; color: var(--ink); font-size: 1rem; }
-.fork-map { position: relative; }
-.fork-map svg { width: 100%; height: auto; display: block; }
-.fork-map path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.fork-contour { stroke: var(--contour); stroke-width: 1.2; opacity: .55; }
-.fork-path { stroke: var(--spur); stroke-width: 4; }
-.fork-approach { stroke-width: 3; stroke-dasharray: 4 7; }
-.fork-map .fork-highlight { stroke: var(--fork-highlight); stroke-width: 7; }
-.fork-chevron { stroke: var(--map-paper); stroke-width: 2.6; }
-.fork-node { fill: var(--map-paper); stroke: var(--spur); stroke-width: 2.5; }
-.fork-location, .fork-destination { stroke: var(--map-paper); }
-.fork-location { fill: var(--path); }
-.fork-destination { fill: var(--fork-highlight); }
-.fork-label {
-  position: absolute;
-  transform: translateX(-50%);
-  width: max-content;
-  color: var(--ink);
-  font-size: clamp(.76rem, 3.5vw, 1rem);
-  font-weight: 750;
-}
-.fork-label-left { left: 21.67%; bottom: 81%; }
-.fork-label-right { left: 78.33%; bottom: 81%; }
-.fork-label-center { top: 59%; left: 53.5%; transform: none; }
-.fork-label-approach { left: 50%; top: 88%; color: var(--soft); }
-.fork-map[data-branch="left"] .fork-label-left, .fork-map[data-branch="right"] .fork-label-right { color: var(--fork-highlight); }
-.fork-actions img { display: block; width: 100%; height: auto; border-radius: 8px; }
 .map-frame, .photo-frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--map-paper); }
 .trail-map { display: block; width: 100%; height: auto; }
 .map-background { fill: var(--map-paper); }
