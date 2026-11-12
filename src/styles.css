@@ -150,6 +150,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-legend i { display: inline-block; flex: none; width: 16px; height: 7px; border: 1px solid #694827; border-radius: 3px; }
 .park-yellow { background: #ffda46; }
 .park-orange { background: #ec943e; }
+.park-blue { background: #12649a; }
 .park-elevation {
   display: flex;
   flex-wrap: wrap;
@@ -160,10 +161,13 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 }
 .park-elevation dt { color: var(--soft); }
 .park-elevation dd { margin: 0; font-weight: 750; }
-.park-route-outline { display: block; width: 100%; height: auto; fill: var(--ink); }
-.park-route-line, .park-north-arrow { fill: none; stroke: var(--path); stroke-linecap: round; stroke-linejoin: round; }
-.park-route-line { stroke-width: 4; }
-.park-north-arrow { stroke-width: 2; }
+.park-zion-map { display: block; width: 100%; height: auto; }
+.park-zion-map text { fill: #172b35; stroke: #fff; stroke-width: 8; paint-order: stroke; font-size: 34px; font-weight: 750; }
+.park-route-halo, .park-route-line, .park-north-arrow { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.park-route-halo { stroke: #fff; stroke-width: 19; }
+.park-route-line { stroke: #12649a; stroke-width: 11; }
+.park-route-end { fill: #12649a; stroke: #fff; stroke-width: 5; }
+.park-north-arrow { stroke: #172b35; stroke-width: 5; }
 .park-map a, .park-details { color: var(--ink); text-underline-offset: 3px; }
 .park-details { justify-self: start; font-size: .88rem; font-weight: 700; }
 .fork-demo { --fork-highlight: light-dark(#155e87, #a3d6fb); }
