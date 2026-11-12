@@ -8,11 +8,15 @@ import { getSavedRoute, saveCheckpoint, saveRoute } from "./offline.ts";
 import { findRecovery } from "./route.ts";
 import { SignCheck } from "./SignCheck.tsx";
 import { TrailMap } from "./TrailMap.tsx";
+import { ForkDemo } from "./ForkDemo.tsx";
+import { TrailLibrary } from "./TrailLibrary.tsx";
+import type { Trail } from "./trail-catalog.ts";
 
-type Screen = "map" | "sign" | "checkpoints";
+type Screen = "search" | "saved" | "fork" | "map" | "sign" | "checkpoints";
 
 export function App() {
-  const [screen, setScreen] = useState<Screen>("map");
+  const [screen, setScreen] = useState<Screen>("search");
+  const [openedTrail, setOpenedTrail] = useState<Trail>();
   const [online, setOnline] = useState(navigator.onLine);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -43,6 +47,7 @@ export function App() {
   }, []);
 
   function show(next: Screen) {
+    setOpenedTrail(undefined);
     setScreen(next);
     window.scrollTo(0, 0);
   }
@@ -85,6 +90,7 @@ export function App() {
   const plannedNextId = loopIndex >= 0 ? demoRoute.loop[(loopIndex + 1) % demoRoute.loop.length] : undefined;
   const plannedBranch = demoRoute.segments.find(({ from, to }) => from === confirmedId && to === plannedNextId)?.branch;
   const ConnectionIcon = online ? Wifi : WifiOff;
+  const showingLibrary = screen === "search" || screen === "saved";
   const title = screen === "sign" ? "Check a trail sign" :
     screen === "checkpoints" ? "Choose a junction" : nextBranch ? "Rejoin the loop" : demoRoute.name;
   const intro = screen === "sign" ? "Match the visible words to a saved junction." :
@@ -96,14 +102,25 @@ export function App() {
     <div className="app">
       <header className="app-bar">
         <div className="bar-inner">
-          <button type="button" className="wordmark" onClick={() => show("map")}>
+          <button type="button" className="wordmark" onClick={() => show("search")}>
             <span className="brand-icon"><Signpost aria-hidden="true" /></span> Trail Junction
           </button>
           <span className="connection"><ConnectionIcon aria-hidden="true" /> {online ? "Online" : "Offline"}</span>
         </div>
       </header>
+      <nav className="section-nav" aria-label="Trail library">
+        <div>
+          <button type="button" aria-current={screen === "search" ? "page" : undefined} onClick={() => show("search")}>Search trails</button>
+          <button type="button" aria-current={screen === "saved" ? "page" : undefined} onClick={() => show("saved")}>Saved</button>
+          <button type="button" aria-current={!showingLibrary ? "page" : undefined} onClick={() => show("fork")}>Sign demo</button>
+        </div>
+      </nav>
       <main className="workspace">
-        <div className="intro">
+        <div hidden={!showingLibrary}>
+          <TrailLibrary view={screen === "saved" ? "saved" : "search"} online={online} opened={openedTrail} setOpened={setOpenedTrail} />
+        </div>
+        {screen === "fork" && <ForkDemo online={online} showMap={() => show("map")} />}
+        {!showingLibrary && screen !== "fork" && <div className="intro">
           {screen !== "map" && <button type="button" className="text-action back" onClick={() => show("map")}>
             <ArrowLeft aria-hidden="true" /> Trail map
           </button>}
@@ -113,8 +130,8 @@ export function App() {
           </p>
           <h1>{title}</h1>
           <p className="muted">{intro}</p>
-        </div>
-        {notice && <p role="status" className="notice">{notice}</p>}
+        </div>}
+        {!showingLibrary && screen !== "fork" && notice && <p role="status" className="notice">{notice}</p>}
         {screen === "map" && (
           <div className="map-layout">
             <TrailMap pack={demoRoute} confirmedId={confirmedId} recovery={segments} />

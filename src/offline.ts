@@ -1,5 +1,6 @@
 import { get, set, update } from "idb-keyval";
 import type { RoutePack } from "./route.ts";
+import type { TrailMapData } from "./trail-catalog.ts";
 
 interface SavedRoute {
   pack: RoutePack;
@@ -7,6 +8,7 @@ interface SavedRoute {
 }
 
 const savedRouteKey = "trail-junction/saved-route";
+const savedMapsKey = "trail-junction/saved-maps";
 
 export async function getSavedRoute(pack: RoutePack): Promise<SavedRoute | undefined> {
   const saved = await get<SavedRoute>(savedRouteKey);
@@ -17,6 +19,24 @@ export async function getSavedRoute(pack: RoutePack): Promise<SavedRoute | undef
 }
 
 export async function saveRoute(pack: RoutePack, confirmedJunctionId: string | null) {
+  await prepareOfflineApp();
+  const saved: SavedRoute = { pack, confirmedJunctionId };
+  await set(savedRouteKey, saved);
+}
+
+export async function getSavedMaps() {
+  return (await get<Record<string, TrailMapData>>(savedMapsKey)) ?? {};
+}
+
+export async function saveTrailMap(map: TrailMapData) {
+  await prepareOfflineApp();
+  await update<Record<string, TrailMapData>>(savedMapsKey, (saved) => ({
+    ...saved,
+    [map.id]: map,
+  }));
+}
+
+async function prepareOfflineApp() {
   if (!import.meta.env.PROD) {
     throw new Error("Use the production preview to test offline downloads.");
   }
@@ -28,8 +48,6 @@ export async function saveRoute(pack: RoutePack, confirmedJunctionId: string | n
     `${import.meta.env.BASE_URL}sw.js`,
   );
   await waitForActiveWorker(registration);
-  const saved: SavedRoute = { pack, confirmedJunctionId };
-  await set(savedRouteKey, saved);
 }
 
 export async function saveCheckpoint(pack: RoutePack, confirmedJunctionId: string) {

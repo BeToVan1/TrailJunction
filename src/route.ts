@@ -31,7 +31,7 @@ export type Recovery =
   | { status: "return"; segments: TrailSegment[] }
   | { status: "unavailable" };
 
-function normalizeSignLine(line: string): string {
+export function normalizeSignLine(line: string): string {
   return line
     .normalize("NFKC")
     .toLocaleLowerCase("en-US")

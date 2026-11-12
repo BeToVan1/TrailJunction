@@ -42,6 +42,10 @@ const onDeviceParams = {
   },
 };
 
+type WindowWithPromptApi = Window & {
+  LanguageModel?: { availability(options: typeof onDeviceParams.createOptions): Promise<string> };
+};
+
 let ai: ReturnType<typeof getAI> | undefined;
 let hybridModel: GenerativeModel | undefined;
 let localModel: GenerativeModel | undefined;
@@ -59,16 +63,19 @@ function getTrailAI() {
   return ai;
 }
 
-export async function prepareLocalModel(onProgress: (progress: number) => void) {
-  localModel ??= getGenerativeModel(getTrailAI(), {
+function getLocalModel() {
+  return localModel ??= getGenerativeModel(getTrailAI(), {
     mode: InferenceMode.ONLY_ON_DEVICE,
     onDeviceParams,
   });
-  await localModel.initializeDeviceModel(onProgress);
 }
 
-export async function readSign(photo: Blob) {
-  hybridModel ??= getGenerativeModel(getTrailAI(), {
+export async function prepareLocalModel(onProgress: (progress: number) => void) {
+  await getLocalModel().initializeDeviceModel(onProgress);
+}
+
+function getHybridModel() {
+  return hybridModel ??= getGenerativeModel(getTrailAI(), {
     mode: InferenceMode.PREFER_ON_DEVICE,
     onDeviceParams,
     inCloudParams: {
@@ -84,12 +91,22 @@ export async function readSign(photo: Blob) {
       },
     },
   });
+}
 
-  // Begin while the photo button's user activation is still available. The SDK
-  // can use cloud inference during a model download or when Nano is unavailable.
-  void hybridModel.initializeDeviceModel().catch(() => {});
+export async function readSign(photo: Blob) {
+  let model: GenerativeModel;
+  if (navigator.onLine) {
+    model = getHybridModel();
+    // Begin during the button interaction, which can trigger a model download.
+    void model.initializeDeviceModel().catch(() => {});
+  } else {
+    const availability = await (window as WindowWithPromptApi).LanguageModel?.availability(onDeviceParams.createOptions);
+    if (availability !== "available") throw new Error("The on-device model is unavailable.");
+    model = getLocalModel();
+    await model.initializeDeviceModel();
+  }
   const image = await prepareImage(photo);
-  const { response } = await hybridModel.generateContent([prompt, image], { timeout: 30000 });
+  const { response } = await model.generateContent([prompt, image], { timeout: 30000 });
   const source = response.inferenceSource;
   return {
     reading: parseSignReading(response.text()),

@@ -1,8 +1,10 @@
 # Trail Junction
 
-Trail Junction is a mobile-first web app for #BuildHybridAI 2026. A hiker can use a photo of a marked junction to find their place on a downloaded route. Once they confirm the junction, the app can highlight a marked path back to the planned loop.
+Trail Junction is a mobile-first web app for #BuildHybridAI 2026. Search for a trail or park, download a map from the results, and reopen it from **Saved** when you lose service.
 
-The included Fern Creek Loop is a fictional route with five checkpoints and three staged signs. It lets you try an on-route match, a wrong-turn recovery, and an ambiguous sign.
+**Sign demo** opens Fern Fork on the fictional Fern Creek Loop. Choose Trailhead or Cedar Spur and select **Read sample sign**. The app reads the staged photo, matches the selected destination to the known junction, and highlights its branch. The full demo map includes five checkpoints and sample photos for junction matching and route recovery.
+
+The initial catalog includes [Lower Yosemite Fall Trail](https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm), [Cook’s Meadow Loop](https://www.nps.gov/yose/planyourvisit/cooksmeadowtrail.htm), and [Pa’rus Trail](https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm). The Yosemite downloads use the complete NPS maps from the park’s trail pages. The Pa’rus route outline uses the nine features named Pa’rus Trail from the [Zion trail layer](https://services7.arcgis.com/2hYXmwteFLemN5bW/ArcGIS/rest/services/Zion_NPS_MAP_MC_WFL1/FeatureServer/23). The real trail maps are for offline reference. Sign guidance is available on the fictional demo where the sign and branch connections are mapped.
 
 ## Run the app
 
@@ -13,9 +15,9 @@ npm ci
 npm run dev
 ```
 
-Without Firebase configuration, choose a demo photo and select **Show sample result**. The app labels the supplied transcription as **Sample result** and runs the real matcher and recovery logic.
+Without Firebase configuration, the demo uses a supplied transcription labeled **Sample result** and runs the real matching logic. The Fern Fork demo also uses that transcription when no local model can read the sample offline.
 
-To verify offline reopening, run `npm run build` and `npm run preview`. Open the preview URL in desktop Chrome, select **Save for offline use**, and wait for **Saved for offline use**. Confirm a junction, disconnect, then reopen the same URL. The saved route, last confirmed checkpoint, and demo photos are available offline.
+To verify offline reopening, run `npm run build` and `npm run preview`. Search for a park, download a trail, and wait for **Saved offline**. Disconnect, reload the app, and open the map under **Saved**. The full demo map has its own **Save for offline use** action, which also keeps the last confirmed demo checkpoint.
 
 ## Connect Firebase AI Logic
 
@@ -37,4 +39,4 @@ Use a compatible desktop Chrome setup to test offline AI. An iPhone can supply t
 
 ## License
 
-[Apache License 2.0](LICENSE). The bundled [DM Sans font](public/licenses/dm-sans.txt) is under the SIL Open Font License.
+[Apache License 2.0](LICENSE) covers the app code. The bundled [DM Sans font](public/licenses/dm-sans.txt) is under the SIL Open Font License. The trail maps and route lines are attributed to the National Park Service. See [NPS map sources and reuse](https://www.nps.gov/subjects/gisandmapping/data-sources-and-accuracy.htm).
