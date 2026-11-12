@@ -1,6 +1,8 @@
 # Trail Junction
 
-Trail Junction is a mobile-first web app for #BuildHybridAI 2026. From the homepage, select **Open trail app** to search for a trail or park, download a map, and reopen it from **Saved** when you lose service.
+Trail Junction is a mobile-first web app for #BuildHybridAI 2026. From the homepage, select **Open trail app**, search for a U.S. trail such as **Angels Landing**, download a map, and reopen it from **Saved** when you lose service.
+
+Trail search uses the [USGS National Digital Trails layer](https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/37). It groups nearby connected segments with the same name and saves the selected geometry and a USGS Topo image on the device. Results show state or territory labels derived from the [2024 Census cartographic boundaries](https://www.census.gov/geographies/mapping-files/2024/geo/carto-boundary-file.html). Distances refer to mapped segments and may omit approaches that have a different name.
 
 **Try sign demo** opens a separate walkthrough at Fern Fork on the fictional Fern Creek Loop. Take a simulated photo of the sign, then enter **Rocky Point** or **Sloan Lake**. The app combines the sign's arrows with the downloaded demo map to show a route via **Trailhead** or **Cedar Spur**. **Open full demo map** opens the original five-checkpoint loop with photo uploads, junction matching, and route recovery.
 

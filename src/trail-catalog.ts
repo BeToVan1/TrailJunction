@@ -27,39 +27,65 @@ export const trails = [
   },
 ] as const;
 
-export type Trail = (typeof trails)[number];
+export type FeaturedTrail = (typeof trails)[number];
+export interface UsgsTrail {
+  id: string;
+  format: "usgs-topo";
+  name: string;
+  park: string;
+  details: string;
+  lines: Coordinate[][];
+  info: string;
+}
+export type Trail = FeaturedTrail | UsgsTrail;
 export type Coordinate = [longitude: number, latitude: number];
+export interface MapExtent {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
 export type TrailMapData =
-  | { id: Trail["id"]; format: "image"; image: Blob }
-  | { id: Trail["id"]; format: "linework"; lines: Coordinate[][] };
+  | { id: FeaturedTrail["id"]; format: "image"; image: Blob }
+  | { id: FeaturedTrail["id"]; format: "linework"; lines: Coordinate[][] }
+  | UsgsMapData;
+
+export interface UsgsMapData {
+  id: string;
+  format: "usgs-topo";
+  trail: UsgsTrail;
+  image: Blob;
+  extent: MapExtent;
+  size: number;
+}
 
 export const zionDataSource = "https://services7.arcgis.com/2hYXmwteFLemN5bW/ArcGIS/rest/services/Zion_NPS_MAP_MC_WFL1/FeatureServer/23";
 
-function normalize(text: string) {
+export function normalizeTrailName(text: string) {
   return text.normalize("NFKD").replace(/\p{Mark}/gu, "").replace(/['’]/g, "").toLowerCase().trim();
 }
 
 export function searchTrails(query: string) {
-  const terms = normalize(query).split(/\s+/);
+  const terms = normalizeTrailName(query).split(/\s+/);
   return trails.filter(({ name, park }) => {
-    const keywords = normalize(`${name} ${park}`);
+    const keywords = normalizeTrailName(`${name} ${park}`);
     return terms.every((term) => keywords.includes(term));
   });
 }
 
-function isCoordinate(value: unknown): value is Coordinate {
+export function isCoordinate(value: unknown): value is Coordinate {
   return Array.isArray(value) && value.length === 2 &&
     value.every((part) => typeof part === "number" && Number.isFinite(part)) &&
     Math.abs(value[0]) <= 180 && Math.abs(value[1]) <= 90;
 }
 
-function isLinework(value: unknown, id: Trail["id"]): value is { id: Trail["id"]; lines: Coordinate[][] } {
+function isLinework(value: unknown, id: FeaturedTrail["id"]): value is { id: FeaturedTrail["id"]; lines: Coordinate[][] } {
   return !!value && typeof value === "object" && "id" in value && value.id === id &&
     "lines" in value && Array.isArray(value.lines) && value.lines.length > 0 &&
     value.lines.every((line) => Array.isArray(line) && line.length >= 2 && line.every(isCoordinate));
 }
 
-export async function downloadTrailMap(trail: Trail): Promise<TrailMapData> {
+export async function downloadTrailMap(trail: FeaturedTrail): Promise<TrailMapData> {
   const extension = trail.format === "image" ? "jpg" : "json";
   const response = await fetch(`${import.meta.env.BASE_URL}trails/${trail.id}.${extension}`, {
     signal: AbortSignal.timeout(15000),

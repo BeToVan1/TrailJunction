@@ -33,7 +33,7 @@ export function Landing() {
             <span className="landing-icon"><Map aria-hidden="true" /></span>
             <div>
               <h2>Find and save real trails</h2>
-              <p>Search Yosemite and Zion trails and download a map to open offline.</p>
+              <p>Search U.S. trails and download a topographic map to open offline.</p>
             </div>
           </article>
           <article>
