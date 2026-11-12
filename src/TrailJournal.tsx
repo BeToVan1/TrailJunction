@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, BookOpen, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Images, Plus } from "lucide-react";
+import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
 import { prepareOfflineApp } from "./offline.ts";
@@ -122,14 +123,14 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const title = view.page === "form" ? (hike ? "Edit hike" : "Log a hike") : (hike?.trail ?? "Trail journal");
 
   return (
-    <div className="trail-library trail-journal">
-      <div className="intro">
+    <div className="trail-library trail-journal" data-page={view.page}>
+      <div className="intro journal-heading">
         {!loading && !loadError && view.page !== "list" && (view.page === "form" && hike
           ? back("Back to hike", { page: "hike", id: hike.id }) : back("All hikes", { page: "list" }))}
+        {view.page === "hike" && hike && <p className="eyebrow"><time dateTime={hike.date}>{hikeDate(hike.date)}</time>
+          {hike.location && ` · ${hike.location}`}</p>}
         <h1 ref={heading} tabIndex={-1}>{title}</h1>
         {view.page === "list" && <p className="muted">Hikes, notes, and photos saved on this device.</p>}
-        {view.page === "hike" && hike && <p className="muted"><time dateTime={hike.date}>{hikeDate(hike.date)}</time>
-          {hike.location && ` · ${hike.location}`}</p>}
       </div>
       <p className="screen-reader-only" role="status">{status}</p>
       {loading ? <p className="muted" role="status">Opening your journal…</p>
@@ -147,11 +148,25 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
             </div>
             <section className="journal-photo-book" aria-labelledby="photo-book-title">
-              <h2 id="photo-book-title">Photo book</h2>
-              <PhotoPicker onPhoto={(file) => void addPhoto(file, hike.id)} disabled={busy} />
+              <div className="journal-book-tools">
+                <h2 id="photo-book-title">Photo book</h2>
+                <div className="journal-upload">
+                  <PhotoPicker onPhoto={(file) => void addPhoto(file, hike.id)} disabled={busy} />
+                </div>
+              </div>
               {feedback}
-              {!hike.photos.length && !busy && <p className="muted">Add your first photo from this hike.</p>}
+              {hike.photos.some(({ nature }) => !nature) && (
+                <p className="muted journal-ai-hint">{!online ? "Connect to ask Gemini about a photo."
+                  : !aiConfigured ? "AI nature notes are unavailable on this build."
+                  : "Asking Gemini sends the selected photo for a possible plant or wildlife identification."}</p>
+              )}
               <div className="journal-photos">
+                {!hike.photos.length && (
+                  <div className="journal-blank-page">
+                    <Images aria-hidden="true" />
+                    <p className="muted">{busy ? "Saving photo…" : "Add your first photo from this hike."}</p>
+                  </div>
+                )}
                 {hike.photos.map((photo, index) => (
                   <JournalPhotoCard key={photo.id} photo={photo} number={index + 1} online={online}
                     save={async (patch) => remember(await changeHike(hike.id, (current) => ({
@@ -181,18 +196,16 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
               <ul className="journal-hikes">
                 {[...hikes].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
                   <li key={entry.id} className="journal-hike-card">
-                    {entry.photos[0] && <PhotoPreview photo={entry.photos[0].image} alt="" />}
                     <button type="button" onClick={() => open({ page: "hike", id: entry.id })}>
+                      {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].image} alt="" />
+                        : <span className="journal-cover-mark"><BookOpen aria-hidden="true" /></span>}
                       <span className="journal-hike-summary">
-                        <span>
-                          <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time>
-                            {entry.location && ` · ${entry.location}`}</span>
-                          <strong>{entry.trail}</strong>
-                          {entry.notes && <span className="muted journal-excerpt">{entry.notes}</span>}
-                          <span className="muted">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
-                        </span>
-                        <ChevronRight aria-hidden="true" />
+                        <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time></span>
+                        <strong>{entry.trail}</strong>
+                        {entry.location && <span className="muted">{entry.location}</span>}
+                        <span className="journal-cover-count">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
                       </span>
+                      <ChevronRight aria-hidden="true" />
                     </button>
                   </li>
                 ))}

@@ -1,0 +1,167 @@
+.trail-journal {
+  --album-paper: light-dark(#f7f1df, #2c342a);
+  --album-print: light-dark(#fffdf4, #353e31);
+  --album-rule: light-dark(#d9cdb3, #525d4b);
+  --album-shadow: light-dark(#3c352321, #0005);
+  --album-binding: light-dark(#405843, #809b77);
+  --album-serif: Georgia, "Times New Roman", serif;
+  max-width: 900px;
+  gap: 14px;
+}
+
+.trail-journal[data-page="form"] { max-width: 560px; }
+.trail-journal h1:focus { outline: none; }
+.journal-heading { gap: 8px; }
+.journal-heading h1, .journal-book-tools h2, .journal-hike-summary strong {
+  font-family: var(--album-serif);
+  font-weight: 400;
+}
+.journal-heading h1 { font-size: clamp(2.05rem, 6vw, 3.75rem); }
+.journal-new, .journal-delete { justify-self: start; }
+.journal-empty { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+.journal-empty h2 { margin-bottom: 3px; }
+.journal-hikes { display: grid; gap: 12px; list-style: none; padding: 0; margin: 0; }
+.journal-hike-card { min-width: 0; }
+.journal-hike-card > button {
+  display: grid;
+  grid-template-columns: clamp(52px, 18vw, 84px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 108px;
+  padding: 12px;
+  border: 1px solid var(--album-rule);
+  border-inline-start: 6px solid var(--album-binding);
+  border-radius: 4px 12px 12px 4px;
+  background: var(--album-paper);
+  box-shadow: 0 3px 0 -1px var(--album-print), 0 4px 0 -1px var(--album-rule);
+  color: var(--ink);
+  text-align: start;
+}
+.journal-hike-card .photo-frame, .journal-cover-mark {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 3px solid var(--album-print);
+  border-radius: 3px;
+  background: var(--land-west);
+  color: var(--path);
+  box-shadow: 0 1px 3px var(--album-shadow);
+}
+.journal-hike-card .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.journal-hike-card .photo-placeholder { padding: 4px; font-size: .65rem; text-align: center; }
+.journal-cover-mark svg { width: 24px; height: 24px; }
+.journal-hike-summary { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.journal-hike-summary strong { font-size: clamp(1.16rem, 4.5vw, 1.5rem); line-height: 1.08; }
+.journal-hike-summary .muted { font-size: .84rem; }
+.journal-cover-count { color: var(--path); font-size: .79rem; font-weight: 700; }
+.journal-hike-card button > svg { color: var(--path); }
+.journal-notes, .journal-caption { white-space: pre-wrap; overflow-wrap: anywhere; }
+.journal-notes { max-width: 68ch; color: var(--soft); line-height: 1.6; }
+
+.journal-book-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.journal-book-tools h2 { font-size: clamp(1.65rem, 5vw, 2.25rem); }
+.journal-upload { display: grid; gap: 6px; }
+.journal-photo-book { display: grid; gap: 12px; }
+.journal-ai-hint { font-size: .83rem; }
+.journal-photos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: 7px;
+  border: 1px solid var(--album-rule);
+  border-radius: 5px 16px 16px 5px;
+  background: var(--album-paper);
+  box-shadow: 0 4px 0 -1px var(--album-print), 0 5px 0 -1px var(--album-rule),
+    0 8px 0 -2px var(--album-print), 0 9px 0 -2px var(--album-rule);
+}
+.journal-photo-card {
+  min-width: 0;
+  padding: clamp(12px, 3vw, 24px);
+  box-shadow: inset 10px 0 14px -16px var(--ink);
+}
+.journal-photo-card + .journal-photo-card { border-top: 1px solid var(--album-rule); }
+.journal-print {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--album-rule);
+  background: var(--album-print);
+  box-shadow: 0 3px 8px -4px var(--album-shadow);
+}
+.journal-print .photo-frame { min-height: 0; border: 0; border-radius: 0; background: var(--album-paper); }
+.journal-print .photo-frame img { max-height: 440px; }
+.journal-caption { padding: 0 3px 2px; font: italic 1.16rem/1.35 var(--album-serif); }
+.journal-blank-page {
+  display: grid;
+  gap: 9px;
+  justify-items: center;
+  margin: clamp(12px, 3vw, 24px);
+  padding: 26px 12px;
+  border: 1px dashed var(--album-rule);
+  border-radius: 3px;
+  text-align: center;
+  color: var(--path);
+}
+.journal-blank-page svg { width: 27px; height: 27px; }
+.journal-card-body { display: grid; gap: 7px; justify-items: start; padding-top: 11px; }
+.journal-card-body .muted { font-size: .83rem; }
+.journal-gemini { border-color: var(--album-rule); background: var(--album-print); font-size: .84rem; }
+.nature-note {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 0 5px 12px;
+  border-inline-start: 2px solid var(--album-binding);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.nature-note .eyebrow { display: flex; align-items: center; gap: 6px; }
+.nature-note svg { width: 16px; height: 16px; }
+.nature-note h3 { margin: 0; font-size: 1rem; }
+.journal-photo-options { width: 100%; color: var(--soft); font-size: .83rem; }
+.journal-photo-options summary {
+  width: fit-content;
+  padding-block: 12px;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 650;
+}
+.journal-photo-options summary:focus-visible { outline: 2px solid var(--path); outline-offset: 2px; }
+.journal-actions { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.journal-delete { color: var(--return); }
+.trail-journal .error { width: 100%; margin: 0; }
+
+.journal-form { display: grid; gap: 10px; justify-items: start; }
+.journal-card-body form, .journal-form label { width: 100%; min-width: 0; }
+.journal-form label { display: block; font-size: .88rem; font-weight: 700; }
+.journal-form input, .journal-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin-top: 5px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.journal-form textarea { resize: vertical; }
+.journal-form :is(input, textarea):focus-visible { outline: 2px solid var(--path); outline-offset: 2px; }
+.journal-form input[type="date"] { appearance: none; }
+
+@media (min-width: 700px) {
+  .journal-hikes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journal-photos:has(.journal-photo-card:nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journal-photo-card { box-shadow: none; }
+  .journal-photo-card:nth-child(2) { border-top: 0; }
+  .journal-photo-card:nth-child(even) {
+    border-inline-start: 1px solid var(--album-rule);
+    box-shadow: inset 10px 0 16px -17px var(--ink);
+  }
+}

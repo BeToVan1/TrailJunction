@@ -5,6 +5,7 @@ import { DemoLoop } from "./DemoLoop.tsx";
 import { ForkDemo } from "./ForkDemo.tsx";
 import { Landing } from "./Landing.tsx";
 import "./styles.css";
+import "./journal.css";
 import "./public-pages.css";
 
 const path = window.location.pathname.replace(/\/+$/, "");

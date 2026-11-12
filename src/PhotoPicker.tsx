@@ -2,6 +2,14 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { Camera, ImagePlus } from "lucide-react";
 import { validatePhoto } from "./photo.ts";
 
+function isMobileDevice() {
+  const { userAgent, maxTouchPoints } = navigator;
+  const { userAgentData } = navigator as Navigator & { userAgentData?: { mobile?: boolean } };
+  return userAgentData?.mobile === true || /Android|iPhone|iPad|iPod/i.test(userAgent)
+    // iPadOS can use a desktop Safari user agent.
+    || (/Macintosh/i.test(userAgent) && maxTouchPoints > 1);
+}
+
 export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera = true, disabled = false }: {
   onPhoto: (file: File) => void;
   cameraLabel?: string;
@@ -9,6 +17,7 @@ export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera
   disabled?: boolean;
 }) {
   const [error, setError] = useState("");
+  const showCamera = isMobileDevice();
 
   function select(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -26,11 +35,13 @@ export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera
   return (
     <>
       <div className="photo-controls">
-        <label className={`file-button ${primaryCamera ? "primary-action" : "secondary-action"}`}>
-          <Camera aria-hidden="true" /> {cameraLabel}
-          <input type="file" accept="image/*" capture="environment" disabled={disabled} onChange={select} />
-        </label>
-        <label className="file-button secondary-action">
+        {showCamera && (
+          <label className={`file-button ${primaryCamera ? "primary-action" : "secondary-action"}`}>
+            <Camera aria-hidden="true" /> {cameraLabel}
+            <input type="file" accept="image/*" capture="environment" disabled={disabled} onChange={select} />
+          </label>
+        )}
+        <label className={`file-button ${!showCamera && primaryCamera ? "primary-action" : "secondary-action"}`}>
           <ImagePlus aria-hidden="true" /> Choose photo
           <input type="file" accept="image/*,.heic,.heif" disabled={disabled} onChange={select} />
         </label>
@@ -61,10 +72,10 @@ export function PhotoPreview({ photo, alt, fallback }: {
 
   const src = photo ? url : fallback;
   return (
-    <div className="photo-frame">
+    <span className="photo-frame">
       {src && !broken
         ? <img src={src} alt={alt} onError={() => setBroken(true)} />
-        : <p className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</p>}
-    </div>
+        : <span className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</span>}
+    </span>
   );
 }

@@ -71,9 +71,11 @@ export function JournalPhotoCard({ photo, number, online, save, remove }: {
 
   return (
     <article className="journal-photo-card" aria-label={`Photo ${number}`}>
-      <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
+      <figure className="journal-print">
+        <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
+        {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}
+      </figure>
       <div className="journal-card-body">
-        {photo.caption && !editing && <p className="journal-caption">{photo.caption}</p>}
         {editing && (
           <form className="journal-form" onSubmit={(event) => void saveCaption(event)}>
             <label>Photo caption
@@ -94,25 +96,26 @@ export function JournalPhotoCard({ photo, number, online, save, remove }: {
           </div>
         )}
         {!photo.nature && !editing && (
-          <>
-            <button type="button" className="secondary-action" disabled={Boolean(busy) || !online || !aiConfigured}
-              onClick={() => void askGemini()}>
-              <Sparkles aria-hidden="true" /> {busy === "gemini" ? "Asking Gemini…" : "Ask Gemini about this photo"}
-            </button>
-            <p className="muted">{!online ? "Connect to the internet to add an AI nature note."
-              : !aiConfigured ? "AI nature notes are unavailable on this build."
-              : "This sends the photo to Gemini for a possible plant or wildlife identification."}</p>
-          </>
+          <button type="button" className="secondary-action journal-gemini" disabled={Boolean(busy) || !online || !aiConfigured}
+            onClick={() => void askGemini()}>
+            <Sparkles aria-hidden="true" /> {busy === "gemini" ? "Asking Gemini…" : "Ask Gemini about this photo"}
+          </button>
         )}
         <span className="screen-reader-only" role="status">{busy === "gemini" ? "Gemini is reading this photo." : ""}</span>
         {error && <p className="error" role="alert">{error}</p>}
-        {!editing && <div className="journal-actions">
-          <button type="button" className="text-action" disabled={Boolean(busy)}
-            onClick={() => { setCaption(photo.caption); setEditing(true); setError(""); }}>
-            {photo.caption ? "Edit caption" : "Add caption"}
-          </button>
-          <button type="button" className="text-action" disabled={Boolean(busy)} onClick={() => void removePhoto()}>Remove photo</button>
-        </div>}
+        {!editing && (
+          <details className="journal-photo-options">
+            <summary>Photo options</summary>
+            <div className="journal-actions">
+              <button type="button" className="text-action" disabled={Boolean(busy)}
+                onClick={() => { setCaption(photo.caption); setEditing(true); setError(""); }}>
+                {photo.caption ? "Edit caption" : "Add caption"}
+              </button>
+              <button type="button" className="text-action" disabled={Boolean(busy)}
+                onClick={() => void removePhoto()}>Remove photo</button>
+            </div>
+          </details>
+        )}
       </div>
     </article>
   );
