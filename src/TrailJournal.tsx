@@ -154,8 +154,13 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     active.settling = true;
     active.surface.settle(complete, () => {
       if (drag.current !== active) return;
-      cancelPageDrag();
-      if (complete) setPhotoIndex(active.target);
+      if (complete) {
+        // Keep the settled sheet visible until React commits the destination page.
+        // The layout effect clears the drag layer before that commit is painted.
+        setPhotoIndex(active.target);
+      } else {
+        cancelPageDrag();
+      }
     });
   }
 
