@@ -157,9 +157,10 @@
   width: var(--leaf-width);
   height: var(--leaf-height);
   background: var(--album-paper);
+  isolation: isolate;
 }
 .journal-turn-layer .journal-photo-card { height: 100%; }
-.journal-turn-cast { position: absolute; inset: 0; }
+.journal-turn-cast { position: absolute; inset: 0; z-index: 1; }
 .journal-turn-fold { transform-origin: 0 0; }
 .journal-turn-reverse {
   height: 100%;

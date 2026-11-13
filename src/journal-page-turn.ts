@@ -121,12 +121,21 @@ function mountPageTurn(
 
   const corners = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
   const origin = { x: forward ? width : 0, y: corner === "bottom" ? height : 0 };
+  const spineX = forward ? 0 : width;
   const direction = forward ? -1 : 1;
   const foldDepth = Math.min(height * .30, width * .45);
   let frame = 0;
   let pulled = origin;
 
   function draw(point: Point) {
+    // A bound corner must stay on the flat side of the crease. Limit the pull
+    // along its current direction so it cannot pass either end of the spine.
+    const pullX = point.x - origin.x;
+    const pullY = point.y - origin.y;
+    const pullSquared = pullX ** 2 + pullY ** 2;
+    const limitAt = (y: number) => 2 * ((spineX - origin.x) * pullX + (y - origin.y) * pullY) / pullSquared;
+    const scale = Math.min(1, limitAt(0), limitAt(height));
+    point = { x: origin.x + pullX * scale, y: origin.y + pullY * scale };
     pulled = point;
     const dx = point.x - origin.x;
     const dy = point.y - origin.y;
@@ -148,7 +157,7 @@ function mountPageTurn(
 
   function move(dx: number, dy: number) {
     const distance = Math.max(1, Math.min(2 * width, direction * dx));
-    const lift = Math.min(height * .75, Math.max(-height * .35, (corner === "bottom" ? -1 : 1) * dy));
+    const lift = Math.min(height * .75, Math.max(0, (corner === "bottom" ? -1 : 1) * dy));
     draw({ x: origin.x + direction * distance, y: origin.y + (corner === "bottom" ? -lift : lift) });
   }
 
