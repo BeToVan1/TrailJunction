@@ -1,14 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Camera, ImagePlus } from "lucide-react";
+import { isMobileDevice } from "./mobile-device.ts";
 import { photoPreviewUrl, validatePhoto } from "./photo.ts";
-
-function isMobileDevice() {
-  const { userAgent, maxTouchPoints } = navigator;
-  const { userAgentData } = navigator as Navigator & { userAgentData?: { mobile?: boolean } };
-  return userAgentData?.mobile === true || /Android|iPhone|iPad|iPod/i.test(userAgent)
-    // iPadOS can use a desktop Safari user agent.
-    || (/Macintosh/i.test(userAgent) && maxTouchPoints > 1);
-}
 
 export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera = true, disabled = false }: {
   onPhoto: (file: File) => void;

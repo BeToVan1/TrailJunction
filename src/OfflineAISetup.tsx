@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { aiConfigured, prepareLocalModel } from "./firebase-ai.ts";
+import { isMobileDevice } from "./mobile-device.ts";
 
 export function OfflineAISetup({ online }: { online: boolean }) {
   const [model, setModel] = useState<"idle" | "preparing" | "ready" | "unavailable">("idle");
@@ -13,7 +14,7 @@ export function OfflineAISetup({ online }: { online: boolean }) {
       .catch(() => setModel("unavailable"));
   }
 
-  if (!aiConfigured) return null;
+  if (!aiConfigured || isMobileDevice()) return null;
   return (
     <div className="device-setup">
       {model === "ready" ? <p role="status">Offline AI ready on this device</p> :
