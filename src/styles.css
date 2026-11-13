@@ -302,7 +302,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-north-arrow { stroke: #172b35; stroke-width: 5; }
 .park-map a, .park-details { color: var(--ink); text-underline-offset: 3px; }
 .park-details { justify-self: start; font-size: .88rem; font-weight: 700; }
-.trail-details { gap: 14px; }
+.trail-details { max-width: 1020px; margin-inline: auto; gap: 14px; }
 .trail-details-back { justify-self: start; }
 .trail-details-hero {
   display: grid;
@@ -352,6 +352,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .trail-details-about .park-details { display: inline-flex; align-items: center; gap: 4px; }
 .trail-details-about .park-details svg { width: 14px; height: 14px; }
 .trail-route-preview { overflow: hidden; border-radius: 11px; background: var(--map-paper); }
+.trail-route-preview a { color: var(--ink); text-underline-offset: 3px; }
 .trail-route-preview .park-zion-map text { font-size: 20px; stroke-width: 4; }
 .trail-details-map :is(.park-zion-map, .park-map-art) { margin-inline: auto; }
 .trail-details-map .park-zion-map { max-height: 460px; width: auto; max-width: 100%; }
@@ -359,6 +360,10 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   .trail-details-hero { grid-template-columns: 1.12fr 1fr; }
   .trail-details-hero .catalog-cover { border-bottom: 0; border-right: 1px solid var(--border); }
   .trail-details-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 540px) {
+  .trail-details-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trail-details-stats > div:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 .map-frame, .photo-frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--map-paper); }
 .trail-map { display: block; width: 100%; height: auto; }
