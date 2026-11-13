@@ -161,17 +161,19 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-field svg { width: 17px; height: 17px; flex: none; }
 .catalog-field input { width: 100%; min-width: 0; min-height: 46px; border: 0; color: var(--ink); background: transparent; font-size: 1rem; }
 .catalog-field input:focus { outline: none; }
+.catalog-field .catalog-submit { flex: none; min-height: 38px; margin-inline-end: -6px; padding-inline: 10px; border-radius: 7px; }
 .catalog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; padding-block: 4px 1px; }
 .catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .catalog-trail {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--sheet);
   overflow: hidden;
 }
+.catalog-trail:has(.catalog-cover) { grid-template-rows: auto 1fr; }
 .catalog-cover {
   overflow: hidden;
   position: relative;
@@ -181,12 +183,17 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   background: var(--land-west);
 }
 .catalog-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.catalog-cover-lower-yosemite-fall img { position: absolute; inset: auto 0 0; height: 195%; object-position: 50% 100%; }
-.catalog-cover-parus img { object-position: 50% 48%; }
-.catalog-cover-topo { background: var(--land-west) url("./landing-terrain.svg") center / cover; color: var(--path); }
-.catalog-cover-topo > svg { padding: 10px; width: 45px; height: 45px; border-radius: 12px; background: var(--sheet); }
-.catalog-cover-topo > .photo-frame { position: absolute; inset: 0; min-height: 0; pointer-events: none; }
-.catalog-cover-topo img { object-position: center; }
+.catalog-cover[data-trail="lower-yosemite-fall"] img { object-position: center 31%; }
+.catalog-cover figcaption { position: absolute; inset: auto 6px 6px auto; }
+.catalog-cover a {
+  display: block;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: #f9fbf2;
+  background: #172e23e8;
+  font-size: .66rem;
+  text-underline-offset: 2px;
+}
 .catalog-card-content { display: grid; grid-template-rows: 1fr auto; gap: 9px; padding: 12px; min-width: 0; }
 .catalog-card-copy { display: grid; align-content: start; gap: 3px; }
 .catalog-trail h3 { font-size: clamp(.98rem, 2vw, 1.18rem); line-height: 1.18; letter-spacing: -.026em; margin: 0; overflow-wrap: anywhere; }

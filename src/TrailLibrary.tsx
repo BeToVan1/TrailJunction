@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircleCheck, CloudDownload, Map, Search } from "lucide-react";
-import meadowPhoto from "./journal-meadow.webp";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
-import { PhotoPreview } from "./PhotoPicker.tsx";
+import { matchParkQuery, parkForLines } from "./nps-parks.ts";
 import { SavedTrail } from "./SavedTrail.tsx";
+import { TrailCover } from "./TrailCover.tsx";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
-import { downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms } from "./usgs-trails.ts";
+import { cachedUsgsTrails, downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms } from "./usgs-trails.ts";
 
 type LibraryView = "search" | "saved";
 type NationalSearch = { query: string; trails: UsgsTrail[]; limited: boolean; failed: boolean };
@@ -18,27 +18,17 @@ const featuredStates: Record<(typeof trails)[number]["id"], string> = {
   parus: "Utah",
 };
 
-function TrailCover({ trail, map }: { trail: Trail; map?: TrailMapData }) {
-  const base = import.meta.env.BASE_URL;
-  if (trail.id === "cooks-meadow") {
-    return <div className="catalog-cover catalog-cover-meadow"><img src={meadowPhoto} alt="" /></div>;
-  }
-  if (trail.id === "lower-yosemite-fall" || trail.id === "parus") {
-    const image = trail.id === "parus" ? "parus-topo.jpg" : "lower-yosemite-fall.jpg";
-    return <div className={`catalog-cover catalog-cover-${trail.id}`}><img src={`${base}trails/${image}`} alt="" /></div>;
-  }
-  return (
-    <div className="catalog-cover catalog-cover-topo">
-      <Map aria-hidden="true" />
-      {map?.format === "usgs-topo" && <PhotoPreview photo={map.image} alt="" compact />}
-    </div>
-  );
-}
-
 function duplicatesFeatured(trail: UsgsTrail) {
   const name = (label: string) => normalizeTrailName(label).replace(/ trail$/, "");
   return trails.some((featured) =>
-    name(featured.name) === name(trail.name) && trail.park === featuredStates[featured.id]);
+    name(featured.name) === name(trail.name) && (trail.park === featuredStates[featured.id]
+      || trail.parkCode === (featured.id === "parus" ? "zion" : "yose")));
+}
+
+function savedSearchTrail(trail: UsgsTrail) {
+  if (trail.parkCode) return trail;
+  const park = parkForLines(trail.lines);
+  return park ? { ...trail, park: park.name, parkCode: park.code } : trail;
 }
 
 export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
@@ -56,8 +46,12 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   const [announcement, setAnnouncement] = useState("");
   const [national, setNational] = useState<NationalSearch>();
   const [retry, setRetry] = useState(0);
+  const [submitted, setSubmitted] = useState<string>();
   const searchQuery = query.trim();
-  const canSearch = view === "search" && online && usgsSearchTerms(searchQuery).join("").length >= 3;
+  const canSearch = view === "search" && usgsSearchTerms(searchQuery).join("").length >= 3;
+  const localDownloads = useMemo(() => Object.values(saved)
+    .flatMap((map) => map.format === "usgs-topo" ? [savedSearchTrail(map.trail)] : [])
+    .sort((a, b) => a.name.localeCompare(b.name) || a.park.localeCompare(b.park)), [saved]);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +66,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   }, []);
 
   useEffect(() => {
-    if (!canSearch) return;
+    if (!canSearch || !online || cachedUsgsTrails(searchQuery)) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void searchUsgsTrails(searchQuery, controller.signal).then((result) => {
@@ -80,12 +74,12 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
       }).catch(() => {
         if (!controller.signal.aborted) setNational({ query: searchQuery, trails: [], limited: false, failed: true });
       });
-    }, 450);
+    }, submitted === searchQuery ? 0 : 180);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [canSearch, searchQuery, retry]);
+  }, [canSearch, online, searchQuery, retry, submitted]);
 
   async function download(trail: Trail) {
     setPending((ids) => new Set(ids).add(trail.id));
@@ -121,35 +115,46 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
     );
   }
 
-  const localDownloads = Object.values(saved).flatMap((map) => map.format === "usgs-topo" ? [map.trail] : []);
-  localDownloads.sort((a, b) => a.name.localeCompare(b.name) || a.park.localeCompare(b.park));
-  const result = canSearch && national?.query === searchQuery ? national : undefined;
-  const searching = canSearch && !result;
+  const cached = canSearch ? cachedUsgsTrails(searchQuery) : undefined;
+  const result = cached ? { ...cached, failed: false } : canSearch && national?.query === searchQuery ? national : undefined;
+  const searching = canSearch && online && !result;
+  const place = matchParkQuery(searchQuery);
+  const localQuery = place ? `${place.park.name} ${place.trailName}` : query;
   const nationalMatches = result?.trails.filter((trail) => !duplicatesFeatured(trail)) ?? [];
-  const localMatches = localDownloads.filter((trail) => normalizeTrailName(searchQuery).split(/\s+/).every((term) =>
+  const localMatches = localDownloads.filter((trail) => normalizeTrailName(localQuery).split(/\s+/).every((term) =>
     normalizeTrailName(`${trail.name} ${trail.park}`).includes(term)));
   const nationalIds = new Set(nationalMatches.map(({ id }) => id));
   const shownTrails = view === "saved"
     ? [...trails.filter((trail) => saved[trail.id]), ...localDownloads]
-    : [...searchTrails(query), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
+    : [...searchTrails(localQuery), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
   return (
     <div className="trail-library trail-catalog">
       <section className="catalog-banner" data-view={view}>
         <div className="intro">
           <h1>{view === "search" ? "Find a trail" : "Saved trails"}</h1>
-          <p>{view === "search" ? "Find U.S. trails and download a map before you go." : "Maps ready to open offline."}</p>
+          <p>{view === "search" ? "Search by trail name, park, or both, like “Angels Landing, Zion.”" : "Maps ready to open offline."}</p>
         </div>
         {view === "search" && (
-          <label className="catalog-search catalog-field">
+          <form className="catalog-search catalog-field" onSubmit={(event) => {
+            event.preventDefault();
+            if (result?.failed) {
+              setNational(undefined);
+              setRetry((attempt) => attempt + 1);
+            }
+            setSubmitted(searchQuery);
+          }}>
             <Search aria-hidden="true" />
-            <span className="screen-reader-only">Trail or park name</span>
-            <input type="search" value={query} placeholder="Search for a trail or park" maxLength={80}
+            <input type="search" aria-label="Trail or park name" value={query} placeholder="Search for a trail or park" maxLength={80}
               onChange={(event) => {
                 const value = event.target.value;
-                if (value.trim() !== searchQuery) setNational(undefined);
+                if (value.trim() !== searchQuery) {
+                  setNational(undefined);
+                  setSubmitted(undefined);
+                }
                 setQuery(value);
               }} />
-          </label>
+            <button className="primary-action catalog-submit" type="submit" disabled={!canSearch || !online}>Search</button>
+          </form>
         )}
       </section>
       <div className="catalog-heading">
@@ -179,7 +184,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
       <ul className="catalog-results">
         {shownTrails.map((trail) => (
           <li key={trail.id} className="catalog-trail">
-            <TrailCover trail={trail} map={saved[trail.id]} />
+            <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} />
             <div className="catalog-card-content">
               <div className="catalog-card-copy">
                 <h3>{trail.name}</h3>

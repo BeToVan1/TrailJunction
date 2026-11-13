@@ -33,6 +33,7 @@ export interface UsgsTrail {
   format: "usgs-topo";
   name: string;
   park: string;
+  parkCode?: string;
   details: string;
   lines: Coordinate[][];
   info: string;

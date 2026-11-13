@@ -1,4 +1,5 @@
 import { squareTrailExtent } from "./map-projection.ts";
+import { matchParkQuery, parkForLines, type Park } from "./nps-parks.ts";
 import {
   isCoordinate, normalizeTrailName, type Coordinate, type UsgsMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
@@ -90,18 +91,23 @@ function coordinateLabel([longitude, latitude]: Coordinate) {
   return `${Math.abs(latitude).toFixed(2)}°${latitude < 0 ? "S" : "N"}, ${Math.abs(longitude).toFixed(2)}°${longitude < 0 ? "W" : "E"}`;
 }
 
-function describeGroup(segments: Segment[]) {
+function describeGroup(segments: Segment[], searchPark?: Park) {
   segments.sort((a, b) => a.permanentId.localeCompare(b.permanentId) || a.id - b.id);
   const first = segments[0];
   const point = first.lines[0][0];
+  const lines = segments.flatMap((segment) => segment.lines);
+  const park = parkForLines(lines, searchPark);
+  if (searchPark && !park) return;
   const states = new Set<string>();
-  for (const segment of segments) {
-    for (const end of ends(segment)) {
-      const state = stateForPoint(end);
-      if (state) states.add(state);
+  if (!park) {
+    for (const segment of segments) {
+      for (const end of ends(segment)) {
+        const state = stateForPoint(end);
+        if (state) states.add(state);
+      }
     }
   }
-  const location = [...states].sort().join(" / ") || coordinateLabel(point);
+  const location = park?.name || [...states].sort().join(" / ") || coordinateLabel(point);
   const distance = segments.every((segment) => segment.miles !== undefined)
     ? segments.reduce((sum, segment) => sum + (segment.miles ?? 0), 0)
     : undefined;
@@ -113,7 +119,8 @@ function describeGroup(segments: Segment[]) {
     name: first.name,
     park: location,
     details: source ? `${detail} · ${source}` : detail,
-    lines: segments.flatMap(({ lines }) => lines),
+    lines,
+    ...(park && { parkCode: park.code }),
     info: "https://www.usgs.gov/national-digital-trails/usgs-trails-explorer",
   };
   return { trail, point };
@@ -121,6 +128,26 @@ function describeGroup(segments: Segment[]) {
 
 export function usgsSearchTerms(query: string) {
   return (query.slice(0, 80).toUpperCase().match(/[\p{L}\p{N}]+/gu) ?? []).slice(0, 8);
+}
+
+type SearchResult = { trails: UsgsTrail[]; limited: boolean };
+const searchCache = new Map<string, { result: SearchResult; expires: number }>();
+const cacheLifetime = 10 * 60 * 1000;
+const cacheSize = 24;
+
+function searchKey(query: string) {
+  const place = matchParkQuery(query);
+  return `${place?.park.code ?? ""}:${usgsSearchTerms(place?.trailName ?? query).join(" ")}`;
+}
+
+export function cachedUsgsTrails(query: string) {
+  const key = searchKey(query);
+  const entry = searchCache.get(key);
+  if (!entry) return;
+  searchCache.delete(key);
+  if (entry.expires <= Date.now()) return;
+  searchCache.set(key, entry);
+  return entry.result;
 }
 
 async function queryFeatures(params: Record<string, string>, signal: AbortSignal): Promise<FeatureResponse> {
@@ -139,26 +166,43 @@ async function queryFeatures(params: Record<string, string>, signal: AbortSignal
   return data;
 }
 
-export async function searchUsgsTrails(query: string, signal: AbortSignal) {
-  const terms = usgsSearchTerms(query);
-  if (terms.join("").length < 3) return { trails: [], limited: false };
+export async function searchUsgsTrails(query: string, signal: AbortSignal): Promise<SearchResult> {
+  signal.throwIfAborted();
+  const cached = cachedUsgsTrails(query);
+  if (cached) return cached;
+  const place = matchParkQuery(query);
+  const terms = usgsSearchTerms(place?.trailName ?? query);
+  if (!place && terms.join("").length < 3) return { trails: [], limited: false };
   const pattern = `'%${terms.join("%")}%'`;
-  const nameMatches = ["name", "namealternate", "maplabel"].map((field) => `UPPER(${field}) LIKE ${pattern}`).join(" OR ");
+  const nameMatches = ["name", "namealternate", "maplabel"].map((field) =>
+    terms.length ? `UPPER(${field}) LIKE ${pattern}` : `${field} IS NOT NULL`).join(" OR ");
+  const spatial: Record<string, string> = place ? {
+    geometry: place.park.bounds.join(","),
+    geometryType: "esriGeometryEnvelope",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+  } : {};
   const data = await queryFeatures({
     where: `trailtype = 'Terra Trail' AND (hikerpedestrian IS NULL OR UPPER(hikerpedestrian) NOT IN ('N', 'NO')) AND (${nameMatches})`,
     outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles",
-    orderByFields: "name,objectid",
     resultRecordCount: String(searchLimit),
-    geometryPrecision: "6",
-  }, AbortSignal.any([signal, AbortSignal.timeout(14000)]));
-  const matches = groupSegments(parseSegments(data)).map(describeGroup);
+    geometryPrecision: "5",
+    maxAllowableOffset: "0.00002",
+    cacheHint: "true",
+    ...spatial,
+  }, AbortSignal.any([signal, AbortSignal.timeout(12000)]));
+  signal.throwIfAborted();
+  const matches = groupSegments(parseSegments(data)).flatMap((segments) => {
+    const match = describeGroup(segments, place?.park);
+    return match ? [match] : [];
+  });
   const nameAndPlace = (trail: UsgsTrail) => normalizeTrailName(`${trail.name} ${trail.park}`);
   const counts = new Map<string, number>();
   for (const { trail } of matches) {
     const key = nameAndPlace(trail);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  const searchName = normalizeTrailName(query);
+  const searchName = normalizeTrailName(place?.trailName ?? query);
   const rank = (trail: UsgsTrail) => {
     const name = normalizeTrailName(trail.name);
     return name === searchName ? 0 : name.startsWith(searchName) ? 1 : 2;
@@ -166,7 +210,13 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal) {
   const trails = matches.map(({ trail, point }) => counts.get(nameAndPlace(trail)) === 1
     ? trail : { ...trail, park: `${trail.park} · ${coordinateLabel(point)}` });
   trails.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name) || a.park.localeCompare(b.park));
-  return { trails, limited: Boolean(data.exceededTransferLimit || data.features!.length >= searchLimit) };
+  const result = { trails, limited: Boolean(data.exceededTransferLimit || data.features!.length >= searchLimit) };
+  if (searchCache.size >= cacheSize) {
+    const oldest = searchCache.keys().next();
+    if (!oldest.done) searchCache.delete(oldest.value);
+  }
+  searchCache.set(searchKey(query), { result, expires: Date.now() + cacheLifetime });
+  return result;
 }
 
 export async function downloadUsgsTrail(trail: UsgsTrail): Promise<UsgsMapData> {
