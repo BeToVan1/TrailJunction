@@ -108,6 +108,7 @@
 .journal-photos {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
   margin-bottom: 5px;
   border: 1px solid var(--album-rule);
@@ -117,27 +118,43 @@
   box-shadow: 0 4px 0 -1px var(--album-print), 0 5px 0 -1px var(--album-rule),
     0 8px 0 -2px var(--album-print), 0 9px 0 -2px var(--album-rule);
 }
-.journal-photo-card {
+.journal-photos:has(.journal-photo-card) {
+  block-size: clamp(420px, 52vw, 530px);
+}
+.journal-photo-card:not([hidden]) {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 112px;
   min-width: 0;
+  min-height: 0;
   padding: clamp(10px, 2.7vw, 24px);
   box-shadow: inset 10px 0 14px -16px var(--ink);
 }
 .journal-print {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 8px;
+  min-width: 0;
+  min-height: 0;
   padding: clamp(5px, 1vw, 9px);
   border: 1px solid var(--album-rule);
   background: var(--album-print);
   box-shadow: 0 3px 8px -4px var(--album-shadow);
 }
-.journal-print .photo-frame { min-height: 0; border: 0; border-radius: 0; background: var(--album-paper); }
 .journal-print .photo-frame {
-  aspect-ratio: 4 / 3;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
   background: light-dark(#eae4d2, #252f25);
 }
-.journal-print .photo-frame img { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.journal-print .photo-frame img { width: 100%; height: 100%; min-height: 0; max-height: none; object-fit: contain; }
 .journal-print .photo-frame .photo-placeholder { align-self: center; }
-.journal-caption { padding: 0 3px 2px; font: italic 1.16rem/1.35 var(--album-serif); }
+.journal-caption {
+  max-block-size: 4.2em;
+  overflow: auto;
+  padding: 0 3px 2px;
+  font: italic 1.16rem/1.35 var(--album-serif);
+}
 .journal-blank-page {
   display: grid;
   gap: 9px;
@@ -150,21 +167,28 @@
   color: var(--path);
 }
 .journal-blank-page svg { width: 27px; height: 27px; }
-.journal-card-body { display: grid; gap: 7px; justify-items: start; padding-top: 11px; }
+.journal-card-body { display: grid; gap: 5px; align-content: start; justify-items: start; padding: 8px 3px 2px; overflow: auto; }
 .journal-card-body .muted { font-size: .83rem; }
 .journal-gemini { border-color: var(--album-rule); background: var(--album-print); font-size: .84rem; }
-.nature-note {
-  display: grid;
-  gap: 5px;
-  width: 100%;
-  padding: 5px 0 5px 12px;
-  border-inline-start: 2px solid var(--album-binding);
+.journal-note-dialog {
+  box-sizing: border-box;
+  width: min(calc(100% - 32px), 450px);
+  max-height: calc(100% - 32px);
+  padding: 8px 18px 18px;
+  border: 1px solid var(--album-rule);
+  border-radius: 12px;
+  background: var(--album-print);
+  color: var(--ink);
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
-.nature-note .eyebrow { display: flex; align-items: center; gap: 6px; }
-.nature-note svg { width: 16px; height: 16px; }
-.nature-note h3 { margin: 0; font-size: 1rem; }
+.journal-note-dialog::backdrop { background: #10241cb3; }
+.journal-note-header, .journal-note-header .eyebrow { display: flex; align-items: center; gap: 6px; }
+.journal-note-header { justify-content: space-between; }
+.journal-note-header button { min-width: 44px; }
+.journal-note-header .eyebrow svg { width: 16px; height: 16px; }
+.journal-note-dialog h3 { margin: 0 0 6px; font: 1.4rem/1.2 var(--album-serif); }
+.journal-note-dialog .muted { margin-top: 12px; }
 .journal-photo-options { width: 100%; color: var(--soft); font-size: .83rem; }
 .journal-photo-options summary {
   width: fit-content;
@@ -242,6 +266,9 @@
   background: transparent;
   box-shadow: none;
 }
+.journal-photo-book[data-spread="false"] .journal-photos:has(.journal-photo-card) {
+  block-size: clamp(350px, 58svh, 425px);
+}
 .journal-photo-book[data-spread="false"] .journal-photo-card { padding: 0; box-shadow: none; }
 .journal-photo-book[data-spread="false"] .journal-print {
   gap: 8px;
@@ -251,7 +278,6 @@
   box-shadow: none;
 }
 .journal-photo-book[data-spread="false"] .journal-print .photo-frame {
-  max-height: 52svh;
   background: var(--album-paper);
   border-radius: 4px;
 }
@@ -291,11 +317,4 @@
 @media (max-width: 430px) {
   .journal-pagination button { width: 44px; padding-inline: 0; }
   .journal-pagination button span { display: none; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .journal-photo-card:not([hidden]) .journal-print { animation: journal-page-in 180ms ease-out; }
-  @keyframes journal-page-in {
-    from { opacity: .65; transform: translateY(3px); }
-    to { opacity: 1; transform: none; }
-  }
 }

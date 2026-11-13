@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type TouchEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type TouchEvent } from "react";
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
@@ -35,9 +35,10 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [turn, setTurn] = useState<{ forward: boolean; spread: boolean }>();
   const singlePage = useSyncExternalStore(watchPageLayout, () => singlePageQuery.matches);
   const heading = useRef<HTMLHeadingElement>(null);
-  const book = useRef<HTMLElement>(null);
+  const pages = useRef<HTMLDivElement>(null);
   const swipeStart = useRef<{ x: number; y: number }>(null);
   const hike = view.page === "list" ? undefined : hikes.find(({ id }) => id === view.id);
   const photoCount = hike?.photos.length ?? 0;
@@ -68,10 +69,26 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     if (!loading) heading.current?.focus({ preventScroll: true });
   }, [loading, view]);
 
+  useLayoutEffect(() => {
+    if (!turn || !pages.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const leaves = pages.current.querySelectorAll<HTMLElement>(".journal-photo-card:not([hidden])");
+    const rightLeaf = turn.spread && leaves.length > 1 && turn.forward;
+    const leaf = leaves[rightLeaf ? 1 : 0];
+    if (!leaf) return;
+    const hinge = turn.spread ? (rightLeaf ? "left" : "right") : (turn.forward ? "left" : "right");
+    const angle = hinge === "left" ? -68 : 68;
+    const animation = leaf.animate([
+      { transformOrigin: hinge, transform: `perspective(900px) rotateY(${angle}deg)`, opacity: .35 },
+      { transformOrigin: hinge, transform: "perspective(900px) rotateY(0deg)", opacity: 1 },
+    ], { duration: 360, easing: "cubic-bezier(.19,.7,.24,1)" });
+    return () => animation.cancel();
+  }, [turn]);
+
   function open(next: JournalView) {
     const currentId = view.page === "list" ? undefined : view.id;
     const nextId = next.page === "list" ? undefined : next.id;
     if (currentId !== nextId) setPhotoIndex(0);
+    setTurn(undefined);
     setView(next);
     setError("");
     setStatus("");
@@ -90,11 +107,9 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }
 
   function goToPhoto(next: number) {
-    if (next < 0 || next >= photoCount) return;
+    if (next < 0 || next >= photoCount || next === currentPhoto) return;
+    setTurn({ forward: next > currentPhoto, spread: !singlePage });
     setPhotoIndex(next);
-    if (book.current && book.current.getBoundingClientRect().top < 0) {
-      book.current.scrollIntoView({ block: "start" });
-    }
   }
 
   function turnPage(delta: number) {
@@ -103,7 +118,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
 
   function handleBookKey(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
-      || !(event.target instanceof Element) || event.target.closest("input, textarea, [contenteditable]")) return;
+      || !(event.target instanceof Element) || event.target.closest("input, textarea, dialog, [contenteditable]")) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       turnPage(event.key === "ArrowLeft" ? -1 : 1);
@@ -113,7 +128,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   function beginSwipe(event: TouchEvent) {
     const touch = event.touches[0];
     swipeStart.current = event.touches.length === 1 && event.target instanceof Element
-      && !event.target.closest("button, input, summary, label")
+      && !event.target.closest("button, input, dialog, label")
       ? { x: touch.clientX, y: touch.clientY } : null;
   }
 
@@ -215,7 +230,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
               <button type="button" className="text-action" disabled={busy}
                 onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
             </div>
-            <section ref={book} className="journal-photo-book" data-spread={!singlePage && photoCount > 0}
+            <section className="journal-photo-book" data-spread={!singlePage && photoCount > 0}
               aria-labelledby="photo-book-title" onKeyDown={handleBookKey}>
               <div className="journal-book-tools">
                 <h2 id="photo-book-title">Photo book</h2>
@@ -224,12 +239,12 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 </div>
               </div>
               {feedback}
-              {hike.photos.some(({ nature }) => !nature) && (
+              {photoCount > 0 && (
                 <p className="muted journal-ai-hint">{!online ? "Connect to ask Gemini about a photo."
                   : !aiConfigured ? "AI nature notes are unavailable on this build."
                   : "Asking Gemini sends the selected photo for a possible plant or wildlife identification."}</p>
               )}
-              <div className="journal-photos" id="journal-pages" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
+              <div ref={pages} className="journal-photos" id="journal-pages" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
                 onTouchCancel={() => { swipeStart.current = null; }}>
                 {!hike.photos.length && (
                   <div className="journal-blank-page">

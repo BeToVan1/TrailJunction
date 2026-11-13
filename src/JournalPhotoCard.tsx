@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Sparkles } from "lucide-react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { PhotoPreview } from "./PhotoPicker.tsx";
@@ -17,6 +17,8 @@ export function JournalPhotoCard({ photo, number, online, visible, save, remove 
   const [busy, setBusy] = useState<"gemini" | "save" | "remove">();
   const [error, setError] = useState("");
   const request = useRef<AbortController>(null);
+  const noteDialog = useRef<HTMLDialogElement>(null);
+  const noteTitle = useId();
 
   useEffect(() => () => request.current?.abort(), []);
 
@@ -91,12 +93,21 @@ export function JournalPhotoCard({ photo, number, online, visible, save, remove 
           </form>
         )}
         {photo.nature && (
-          <div className="nature-note">
-            <p className="eyebrow"><Sparkles aria-hidden="true" /> Gemini nature note</p>
-            <h3>{photo.nature.label}</h3>
-            <p>{photo.nature.note}</p>
-            <p className="muted">AI identification can be mistaken.</p>
-          </div>
+          <>
+            <button type="button" className="secondary-action journal-gemini" onClick={() => noteDialog.current?.showModal()}>
+              <Sparkles aria-hidden="true" /> Read Gemini note
+            </button>
+            <dialog ref={noteDialog} className="journal-note-dialog" aria-labelledby={noteTitle}>
+              <div className="journal-note-header">
+                <p className="eyebrow"><Sparkles aria-hidden="true" /> Gemini nature note</p>
+                <button type="button" className="text-action" aria-label="Close Gemini note"
+                  onClick={() => noteDialog.current?.close()}><X aria-hidden="true" /></button>
+              </div>
+              <h3 id={noteTitle}>{photo.nature.label}</h3>
+              <p>{photo.nature.note}</p>
+              <p className="muted">AI identification can be mistaken.</p>
+            </dialog>
+          </>
         )}
         {!photo.nature && !editing && (
           <button type="button" className="secondary-action journal-gemini" disabled={Boolean(busy) || !online || !aiConfigured}
