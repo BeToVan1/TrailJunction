@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { preconnect } from "react-dom";
-import { CircleCheck, CloudDownload, Map, Search } from "lucide-react";
+import { ChevronRight, CircleCheck, CloudDownload, Map, Search } from "lucide-react";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
 import { matchParkQuery, parkForLines } from "./nps-parks.ts";
 import { SavedTrail } from "./SavedTrail.tsx";
 import { TrailCover } from "./TrailCover.tsx";
+import { TrailDetails } from "./TrailDetails.tsx";
 import { warmTrailSearchIndex } from "./trail-search-index.ts";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
@@ -33,11 +34,13 @@ function savedSearchTrail(trail: UsgsTrail) {
   return park ? { ...trail, park: park.name, parkCode: park.code } : trail;
 }
 
-export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
+export function TrailLibrary({ view, online, opened, setOpened, detail, setDetail, logTrail }: {
   view: LibraryView;
   online: boolean;
   opened: Trail | undefined;
   setOpened: (trail: Trail | undefined) => void;
+  detail: Trail | undefined;
+  setDetail: (trail: Trail | undefined) => void;
   logTrail: (trail: Trail) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -49,6 +52,8 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   const [national, setNational] = useState<NationalSearch>();
   const [retry, setRetry] = useState(0);
   const startPendingSearch = useRef<() => void>(undefined);
+  const listReturn = useRef<{ id: string; scroll: number; restore: boolean }>(undefined);
+  const list = useRef<HTMLUListElement>(null);
   const searchQuery = query.trim();
   const canSearch = view === "search" && usgsSearchTerms(searchQuery).join("").length >= 3;
   const localDownloads = useMemo(() => Object.values(saved)
@@ -97,6 +102,17 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
     };
   }, [canSearch, online, searchQuery, retry]);
 
+  useEffect(() => {
+    const previous = listReturn.current;
+    if (!previous || detail || opened) return;
+    listReturn.current = undefined;
+    if (!previous.restore) return;
+    const buttons = list.current?.querySelectorAll<HTMLButtonElement>("[data-trail-details]");
+    const button = [...(buttons ?? [])].find((target) => target.dataset.trailDetails === previous.id);
+    button?.focus({ preventScroll: true });
+    window.scrollTo(0, previous.scroll);
+  }, [detail, opened]);
+
   async function download(trail: Trail) {
     setPending((ids) => new Set(ids).add(trail.id));
     setError("");
@@ -126,9 +142,24 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   if (opened && saved[opened.id]) {
     return (
       <SavedTrail key={opened.id} trail={opened} map={saved[opened.id]} online={online}
-        backLabel={view === "saved" ? "Saved trails" : "Explore trails"} back={() => setOpened(undefined)}
+        backLabel={detail ? "Trail details" : view === "saved" ? "Saved trails" : "Explore trails"}
+        back={() => {
+          setOpened(undefined);
+          if (detail) window.scrollTo(0, 0);
+        }}
         logHike={() => logTrail(opened)} />
     );
+  }
+
+  if (detail) {
+    return <TrailDetails key={detail.id} trail={detail} saved={saved[detail.id]} online={online}
+      saving={pending.has(detail.id)} ready={!loading} backLabel={view === "saved" ? "Saved trails" : "Back to trails"}
+      error={error} back={() => {
+        if (listReturn.current) listReturn.current.restore = true;
+        setError("");
+        setDetail(undefined);
+      }}
+      openMap={() => open(detail)} download={() => void download(detail)} />;
   }
 
   const cached = canSearch ? cachedUsgsTrails(searchQuery) : undefined;
@@ -196,13 +227,24 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <p className="screen-reader-only" role="status">{announcement}</p>
-      <ul className="catalog-results">
+      <ul className="catalog-results" ref={list}>
         {shownTrails.map((trail) => (
           <li key={trail.id} className="catalog-trail">
             <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} online={online} />
             <div className="catalog-card-content">
               <div className="catalog-card-copy">
-                <h3>{trail.name}</h3>
+                <h3>
+                  <button type="button" className="catalog-details-target" data-trail-details={trail.id}
+                    aria-label={`View details for ${trail.name}, ${trail.park}`}
+                    onClick={() => {
+                      listReturn.current = { id: trail.id, scroll: window.scrollY, restore: false };
+                      setError("");
+                      setDetail(trail);
+                      window.scrollTo(0, 0);
+                    }}>
+                    {trail.name}<ChevronRight aria-hidden="true" />
+                  </button>
+                </h3>
                 <p className="muted">{trail.park}</p>
                 <p className="muted catalog-detail">{trail.details}</p>
               </div>

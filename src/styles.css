@@ -165,6 +165,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; padding-block: 4px 1px; }
 .catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .catalog-trail {
+  position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
   min-width: 0;
@@ -244,6 +245,24 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-ready svg { width: 14px; height: 14px; flex: none; }
 .catalog-trail button { font-size: .82rem; padding-inline: 9px; }
 .catalog-trail button svg { width: 15px; height: 15px; }
+.catalog-trail .catalog-details-target {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+.catalog-details-target svg { margin-top: .12em; color: var(--path); }
+.catalog-details-target::after { content: ""; position: absolute; inset: 0; }
+.catalog-trail :is(figcaption a, .catalog-card-action button) { position: relative; z-index: 1; }
+.catalog-trail:has(.catalog-details-target:is(:hover, :focus-visible)) { border-color: var(--path); }
+.catalog-trail:has(.catalog-details-target:focus-visible) { outline: 2px solid var(--path); outline-offset: 2px; }
 .screen-reader-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .park-map { max-width: 560px; }
 .park-map-art-cropped { position: relative; overflow: hidden; aspect-ratio: 328 / 266; }
@@ -283,6 +302,64 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-north-arrow { stroke: #172b35; stroke-width: 5; }
 .park-map a, .park-details { color: var(--ink); text-underline-offset: 3px; }
 .park-details { justify-self: start; font-size: .88rem; font-weight: 700; }
+.trail-details { gap: 14px; }
+.trail-details-back { justify-self: start; }
+.trail-details-hero {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--sheet);
+}
+.trail-details-hero :is(.catalog-cover-image, .catalog-cover-placeholder) { height: clamp(170px, 27vw, 320px); }
+.trail-details-hero .catalog-cover { border-bottom: 1px solid var(--border); }
+.trail-details-hero .catalog-cover-nearby figcaption { border: 0; }
+.trail-details-heading {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 9px;
+  padding: clamp(16px, 3vw, 34px);
+}
+.trail-details-heading h1 { max-width: 24ch; overflow-wrap: anywhere; }
+.trail-details-heading h1:focus { outline: none; }
+.trail-details-location { display: inline-flex; align-items: center; gap: 6px; color: var(--path); font-weight: 700; font-size: .85rem; }
+.trail-details-location svg { width: 16px; height: 16px; flex: none; }
+.trail-details-action { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 6px; }
+.trail-details-action button { min-height: 44px; }
+.trail-details-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--border);
+}
+.trail-details-stats > div { padding: 13px; background: var(--sheet); }
+.trail-details-stats dt { display: flex; align-items: center; gap: 6px; color: var(--soft); font-size: .76rem; }
+.trail-details-stats svg { width: 17px; height: 17px; flex: none; color: var(--path); }
+.trail-details-stats dd { margin: 5px 0 0; font-weight: 760; font-size: 1rem; }
+.trail-details-layout { display: grid; align-items: start; gap: 12px; }
+.trail-details-layout > section { min-width: 0; }
+.trail-details-about p { max-width: 57ch; }
+.trail-details-about h3 { margin: 6px 0 0; }
+.trail-details-source { display: grid; gap: 8px; margin: 0; }
+.trail-details-source > div { display: grid; grid-template-columns: minmax(86px, 1fr) 2fr; gap: 8px; }
+.trail-details-source dt { color: var(--soft); font-size: .85rem; }
+.trail-details-source dd { margin: 0; font-size: .85rem; font-weight: 700; overflow-wrap: anywhere; }
+.trail-details-about .park-details { display: inline-flex; align-items: center; gap: 4px; }
+.trail-details-about .park-details svg { width: 14px; height: 14px; }
+.trail-route-preview { overflow: hidden; border-radius: 11px; background: var(--map-paper); }
+.trail-route-preview .park-zion-map text { font-size: 20px; stroke-width: 4; }
+.trail-details-map :is(.park-zion-map, .park-map-art) { margin-inline: auto; }
+.trail-details-map .park-zion-map { max-height: 460px; width: auto; max-width: 100%; }
+@media (min-width: 760px) {
+  .trail-details-hero { grid-template-columns: 1.12fr 1fr; }
+  .trail-details-hero .catalog-cover { border-bottom: 0; border-right: 1px solid var(--border); }
+  .trail-details-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
 .map-frame, .photo-frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--map-paper); }
 .trail-map { display: block; width: 100%; height: auto; }
 .map-background { fill: var(--map-paper); }

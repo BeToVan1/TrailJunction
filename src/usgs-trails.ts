@@ -16,6 +16,10 @@ interface Segment {
   permanentId: string;
   name: string;
   agency: string;
+  surface: string;
+  trailNumber: string;
+  hiking: boolean;
+  biking: boolean;
   miles: number | undefined;
   lines: Coordinate[][];
 }
@@ -49,6 +53,10 @@ function parseSegments(response: FeatureResponse): Segment[] {
       permanentId: trailName(attributes.permanentidentifier).replace(/[{}]/g, "").toLowerCase() || String(id),
       name,
       agency: trailName(attributes.sourceoriginator),
+      surface: trailName(attributes.trailsurface),
+      trailNumber: trailName(attributes.trailnumber),
+      hiking: attributes.hikerpedestrian === "Y",
+      biking: attributes.bicycle === "Y",
       miles: typeof miles === "number" && Number.isFinite(miles) && miles > 0 ? miles : undefined,
       lines,
     }];
@@ -123,8 +131,22 @@ function describeGroup(segments: Segment[], searchPark?: Park) {
     lines,
     ...(park && { parkCode: park.code }),
     info: "https://www.usgs.gov/national-digital-trails/usgs-trails-explorer",
+    facts: {
+      distanceMiles: distance,
+      agencies: reportedValues(segments.map(({ agency }) => agency)),
+      surfaces: reportedValues(segments.map(({ surface }) => surface)),
+      trailNumbers: reportedValues(segments.map(({ trailNumber }) => trailNumber)),
+      uses: [
+        ...(segments.every(({ hiking }) => hiking) ? ["Walking and hiking"] : []),
+        ...(segments.every(({ biking }) => biking) ? ["Biking"] : []),
+      ],
+    },
   };
   return { trail, point };
+}
+
+function reportedValues(values: string[]) {
+  return [...new Set(values.filter((value) => value && !/^(unknown|unspecified|n\/?a|none)$/i.test(value)))].sort();
 }
 
 export function usgsSearchTerms(query: string) {
@@ -184,7 +206,7 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
     spatialRel: "esriSpatialRelIntersects",
   } : {};
   const geometryFields = {
-    outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles",
+    outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles,trailsurface,trailnumber,hikerpedestrian,bicycle",
     resultRecordCount: String(searchLimit),
     geometryPrecision: "5",
     maxAllowableOffset: "0.00002",
@@ -244,9 +266,7 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
   return result;
 }
 
-export async function downloadUsgsTrail(trail: UsgsTrail): Promise<UsgsMapData> {
-  const extent = squareTrailExtent(trail.lines);
-  const size = 1200;
+export function usgsTopoImage(extent: UsgsMapData["extent"], size: number) {
   const params = new URLSearchParams({
     bbox: [extent.west, extent.south, extent.east, extent.north].join(","),
     bboxSR: "3857",
@@ -255,7 +275,13 @@ export async function downloadUsgsTrail(trail: UsgsTrail): Promise<UsgsMapData> 
     format: "jpg",
     f: "image",
   });
-  const response = await fetch(`${usgsTopoService}/export?${params}`, { signal: AbortSignal.timeout(15000) });
+  return `${usgsTopoService}/export?${params}`;
+}
+
+export async function downloadUsgsTrail(trail: UsgsTrail): Promise<UsgsMapData> {
+  const extent = squareTrailExtent(trail.lines);
+  const size = 1200;
+  const response = await fetch(usgsTopoImage(extent, size), { signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error("The USGS topographic map could not be downloaded.");
   const image = await response.blob();
   if (image.type !== "image/jpeg" || !image.size) throw new Error("The USGS topographic map could not be opened.");

@@ -4,7 +4,13 @@ export const trails = [
     name: "Lower Yosemite Fall Trail",
     park: "Yosemite National Park",
     details: "1 mi loop · Easy",
+    distance: "1 mi",
     elevationGain: "About 50 ft",
+    routeType: "Loop",
+    difficulty: "Easy",
+    duration: "30 min",
+    description: "A paved loop in Yosemite Valley leads to the footbridge below Lower Yosemite Fall, with views of both drops. The eastern side of the loop is wheelchair accessible in snow-free conditions.",
+    access: "Start at the Lower Yosemite Fall Trailhead, near shuttle stop 6.",
     format: "image",
     info: "https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm",
   },
@@ -13,7 +19,13 @@ export const trails = [
     name: "Cook’s Meadow Loop",
     park: "Yosemite National Park",
     details: "1 mi loop · Easy",
+    distance: "1 mi",
     elevationGain: "Flat",
+    routeType: "Loop",
+    difficulty: "Easy",
+    duration: "30 min",
+    description: "Cross the meadow on a boardwalk with views of Yosemite Falls, Half Dome and Sentinel Rock. A short detour onto Sentinel Bridge opens up another view of Half Dome.",
+    access: "Start at the Yosemite Valley Visitor Center or the Lower Yosemite Fall shuttle stop.",
     format: "image",
     info: "https://www.nps.gov/yose/planyourvisit/cooksmeadowtrail.htm",
   },
@@ -22,12 +34,26 @@ export const trails = [
     name: "Pa’rus Trail",
     park: "Zion National Park",
     details: "Paved path",
+    distance: "3.5 mi round trip",
+    elevationGain: "About 50 ft",
+    routeType: "Out and back",
+    difficulty: "Easy",
+    duration: "2 hr",
+    description: "This paved path follows the Virgin River from the Zion Canyon Visitor Center to Canyon Junction. Look for views of the Watchman and interpretive exhibits along the river.",
+    access: "Start at the Zion Canyon Visitor Center. The main path is wheelchair accessible and allows bicycles and leashed dogs.",
     format: "linework",
     info: "https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm",
   },
 ] as const;
 
 export type FeaturedTrail = (typeof trails)[number];
+export interface UsgsTrailFacts {
+  distanceMiles?: number;
+  agencies?: string[];
+  surfaces?: string[];
+  trailNumbers?: string[];
+  uses?: string[];
+}
 export interface UsgsTrail {
   id: string;
   format: "usgs-topo";
@@ -37,6 +63,7 @@ export interface UsgsTrail {
   details: string;
   lines: Coordinate[][];
   info: string;
+  facts?: UsgsTrailFacts;
 }
 export type Trail = FeaturedTrail | UsgsTrail;
 export type Coordinate = [longitude: number, latitude: number];
@@ -86,10 +113,11 @@ function isLinework(value: unknown, id: FeaturedTrail["id"]): value is { id: Fea
     value.lines.every((line) => Array.isArray(line) && line.length >= 2 && line.every(isCoordinate));
 }
 
-export async function downloadTrailMap(trail: FeaturedTrail): Promise<TrailMapData> {
+export async function downloadTrailMap(trail: FeaturedTrail, signal?: AbortSignal): Promise<TrailMapData> {
   const extension = trail.format === "image" ? "jpg" : "json";
+  const timeout = AbortSignal.timeout(15000);
   const response = await fetch(`${import.meta.env.BASE_URL}trails/${trail.id}.${extension}`, {
-    signal: AbortSignal.timeout(15000),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
   if (!response.ok) throw new Error("The trail map could not be downloaded.");
   if (trail.format === "image") {

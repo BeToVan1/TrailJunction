@@ -13,6 +13,7 @@ export function App() {
   );
   const [libraryView, setLibraryView] = useState<"search" | "saved">("search");
   const [opened, setOpened] = useState<Trail>();
+  const [detail, setDetail] = useState<Trail>();
   const [journalTrail, setJournalTrail] = useState<JournalTrail>();
   const online = useOnline();
   const ConnectionIcon = online ? Wifi : WifiOff;
@@ -20,6 +21,7 @@ export function App() {
   function show(next: typeof view) {
     if (next === "journal" && view === "journal") return;
     setOpened(undefined);
+    setDetail(undefined);
     setJournalTrail(undefined);
     if (next !== "journal") setLibraryView(next);
     setView(next);
@@ -61,7 +63,8 @@ export function App() {
       </header>
       <main className="workspace">
         <div hidden={view === "journal"}>
-          <TrailLibrary view={libraryView} online={online} opened={opened} setOpened={setOpened} logTrail={logTrail} />
+          <TrailLibrary view={libraryView} online={online} opened={opened} setOpened={setOpened}
+            detail={detail} setDetail={setDetail} logTrail={logTrail} />
         </div>
         {view === "journal" && (journalAccountsEnabled
           ? <AccountJournalView online={online} trail={journalTrail} />

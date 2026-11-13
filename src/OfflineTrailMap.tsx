@@ -36,19 +36,19 @@ const parusBasemap = {
   north: 4470098.206076228,
 };
 
-function TopoOverlay({ lines, extent, width, height, url, label, children }: {
+export function TopoOverlay({ lines, extent, width, height, url, label, children }: {
   lines: Coordinate[][];
   extent: MapExtent;
   width: number;
   height: number;
-  url: string;
+  url?: string;
   label: string;
   children?: ReactNode;
 }) {
   const paths = lines.map((line) => line.map((point) => mapPoint(point, extent, width, height).join(",")).join(" "));
   return (
     <svg className="park-zion-map" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
-      <image href={url} width={width} height={height} />
+      {url && <image href={url} width={width} height={height} />}
       {paths.map((points, index) => <polyline className="park-route-halo" key={index} points={points} />)}
       {paths.map((points, index) => <polyline className="park-route-line" key={index} points={points} />)}
       {children}
