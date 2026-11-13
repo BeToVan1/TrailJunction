@@ -11,7 +11,16 @@ function sheetCopy(page: HTMLElement | undefined, className: string, spread: boo
     const copy = content.cloneNode(true) as HTMLElement;
     copy.hidden = false;
     copy.removeAttribute("aria-label");
+    copy.querySelectorAll("dialog").forEach((element) => element.remove());
     copy.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+    const editCaption = copy.querySelector(".journal-edit-caption");
+    if (editCaption) {
+      const spacer = document.createElement("span");
+      spacer.className = editCaption.className;
+      spacer.style.visibility = "hidden";
+      spacer.append(...editCaption.childNodes);
+      editCaption.replaceWith(spacer);
+    }
     const trigger = copy.querySelector(".journal-enlarge-photo");
     if (trigger) {
       const print = document.createElement("span");

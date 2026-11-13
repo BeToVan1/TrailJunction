@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Maximize2, Sparkles, X } from "lucide-react";
+import { Maximize2, Pencil, Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { PhotoPreview } from "./PhotoPicker.tsx";
@@ -13,11 +13,14 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature">>) => Promise<void>;
   remove: () => Promise<void>;
 }) {
-  const [editing, setEditing] = useState(false);
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState<"gemini" | "save" | "remove">();
   const [error, setError] = useState("");
+  const [captionError, setCaptionError] = useState("");
   const request = useRef<AbortController>(null);
+  const captionDialog = useRef<HTMLDialogElement>(null);
+  const captionInput = useRef<HTMLInputElement>(null);
+  const captionTitle = useId();
   const photoDialog = useRef<HTMLDialogElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const noteDialog = useRef<HTMLDialogElement>(null);
@@ -26,15 +29,22 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
 
   useEffect(() => () => request.current?.abort(), []);
 
+  function editCaption() {
+    setCaption(photo.caption);
+    setCaptionError("");
+    captionDialog.current?.showModal();
+    captionInput.current?.focus();
+  }
+
   async function saveCaption(event: FormEvent) {
     event.preventDefault();
     setBusy("save");
-    setError("");
+    setCaptionError("");
     try {
       await save({ caption: caption.trim() });
-      setEditing(false);
+      captionDialog.current?.close();
     } catch {
-      setError("The caption could not be saved. Try again.");
+      setCaptionError("The caption could not be saved. Try again.");
     } finally {
       setBusy(undefined);
     }
@@ -88,9 +98,29 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
             <PhotoPreview photo={photo.image} alt={photoLabel} />
             <span className="journal-enlarge-icon" aria-hidden="true"><Maximize2 /></span>
           </button>
-          {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}
+          <figcaption className="journal-caption-row">
+            {photo.caption && <span className="journal-caption">{photo.caption}</span>}
+            <button type="button" className="journal-edit-caption" disabled={Boolean(busy)}
+              aria-label={photo.caption ? "Edit caption" : "Add caption"} aria-haspopup="dialog" onClick={editCaption}>
+              <Pencil aria-hidden="true" /> {!photo.caption && "Add caption"}
+            </button>
+          </figcaption>
         </figure>
       )}
+      <dialog ref={captionDialog} className="journal-note-dialog journal-caption-dialog" aria-labelledby={captionTitle}>
+        <form className="journal-form" onSubmit={(event) => void saveCaption(event)}>
+          <h3 id={captionTitle}>{photo.caption ? "Edit caption" : "Add caption"}</h3>
+          <label>Photo caption
+            <input ref={captionInput} value={caption} maxLength={160} onChange={(event) => setCaption(event.target.value)} />
+          </label>
+          {captionError && <p className="error" role="alert">{captionError}</p>}
+          <div className="journal-actions">
+            <button type="submit" className="primary-action" disabled={Boolean(busy)}>Save caption</button>
+            <button type="button" className="secondary-action" disabled={Boolean(busy)}
+              onClick={() => captionDialog.current?.close()}>Cancel</button>
+          </div>
+        </form>
+      </dialog>
       <dialog ref={photoDialog} className="journal-photo-viewer" aria-label={`Enlarged photo ${number}`}
         onClose={() => setViewerOpen(false)}
         onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
@@ -102,22 +132,23 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
         </figure>
       </dialog>
       <div className="journal-card-body">
-        {editing && (
-          <form className="journal-form" onSubmit={(event) => void saveCaption(event)}>
-            <label>Photo caption
-              <input value={caption} maxLength={160} onChange={(event) => setCaption(event.target.value)} />
-            </label>
-            <div className="journal-actions">
-              <button type="submit" className="primary-action" disabled={Boolean(busy)}>Save caption</button>
-              <button type="button" className="secondary-action" disabled={Boolean(busy)} onClick={() => setEditing(false)}>Cancel</button>
-            </div>
-          </form>
-        )}
-        {photo.nature && (
-          <>
+        <div className="journal-photo-actions">
+          {photo.nature ? (
             <button type="button" className="secondary-action journal-gemini" onClick={() => noteDialog.current?.showModal()}>
               <Sparkles aria-hidden="true" /> Read Gemini note
             </button>
+          ) : (
+            <button type="button" className="secondary-action journal-gemini" disabled={Boolean(busy) || !online || !aiConfigured}
+              onClick={() => void askGemini()}>
+              <Sparkles aria-hidden="true" /> {busy === "gemini" ? "Asking Gemini…" : "Ask Gemini about this photo"}
+            </button>
+          )}
+          <button type="button" className="secondary-action journal-remove-photo" disabled={Boolean(busy)}
+            aria-label="Remove photo" title="Remove photo" onClick={() => void removePhoto()}>
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        {photo.nature && (
             <dialog ref={noteDialog} className="journal-note-dialog" aria-labelledby={noteTitle}>
               <div className="journal-note-header">
                 <p className="eyebrow"><Sparkles aria-hidden="true" /> Gemini nature note</p>
@@ -128,29 +159,9 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
               <p>{photo.nature.note}</p>
               <p className="muted">AI identification can be mistaken.</p>
             </dialog>
-          </>
-        )}
-        {!photo.nature && !editing && (
-          <button type="button" className="secondary-action journal-gemini" disabled={Boolean(busy) || !online || !aiConfigured}
-            onClick={() => void askGemini()}>
-            <Sparkles aria-hidden="true" /> {busy === "gemini" ? "Asking Gemini…" : "Ask Gemini about this photo"}
-          </button>
         )}
         <span className="screen-reader-only" role="status">{busy === "gemini" ? "Gemini is reading this photo." : ""}</span>
         {error && <p className="error" role="alert">{error}</p>}
-        {!editing && (
-          <details className="journal-photo-options">
-            <summary>Photo options</summary>
-            <div className="journal-actions">
-              <button type="button" className="text-action" disabled={Boolean(busy)}
-                onClick={() => { setCaption(photo.caption); setEditing(true); setError(""); }}>
-                {photo.caption ? "Edit caption" : "Add caption"}
-              </button>
-              <button type="button" className="text-action" disabled={Boolean(busy)}
-                onClick={() => void removePhoto()}>Remove photo</button>
-            </div>
-          </details>
-        )}
       </div>
     </article>
   );
