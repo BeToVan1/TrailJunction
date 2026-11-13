@@ -3,6 +3,7 @@ import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lu
 import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
+import { capturePageTurn, playPageTurn } from "./journal-page-turn.ts";
 import { prepareOfflineApp } from "./offline.ts";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { PhotoError, photoToJpegBlob } from "./photo.ts";
@@ -35,7 +36,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [turn, setTurn] = useState<{ forward: boolean; spread: boolean }>();
+  const pendingTurn = useRef<ReturnType<typeof capturePageTurn>>(undefined);
   const singlePage = useSyncExternalStore(watchPageLayout, () => singlePageQuery.matches);
   const heading = useRef<HTMLHeadingElement>(null);
   const pages = useRef<HTMLDivElement>(null);
@@ -70,25 +71,16 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }, [loading, view]);
 
   useLayoutEffect(() => {
-    if (!turn || !pages.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const leaves = pages.current.querySelectorAll<HTMLElement>(".journal-photo-card:not([hidden])");
-    const rightLeaf = turn.spread && leaves.length > 1 && turn.forward;
-    const leaf = leaves[rightLeaf ? 1 : 0];
-    if (!leaf) return;
-    const hinge = turn.spread ? (rightLeaf ? "left" : "right") : (turn.forward ? "left" : "right");
-    const angle = hinge === "left" ? -68 : 68;
-    const animation = leaf.animate([
-      { transformOrigin: hinge, transform: `perspective(900px) rotateY(${angle}deg)`, opacity: .35 },
-      { transformOrigin: hinge, transform: "perspective(900px) rotateY(0deg)", opacity: 1 },
-    ], { duration: 360, easing: "cubic-bezier(.19,.7,.24,1)" });
-    return () => animation.cancel();
-  }, [turn]);
+    const turn = pendingTurn.current;
+    pendingTurn.current = undefined;
+    if (turn && pages.current) return playPageTurn(pages.current, turn);
+  }, [firstPhoto, singlePage, photoCount]);
 
   function open(next: JournalView) {
     const currentId = view.page === "list" ? undefined : view.id;
     const nextId = next.page === "list" ? undefined : next.id;
     if (currentId !== nextId) setPhotoIndex(0);
-    setTurn(undefined);
+    pendingTurn.current = undefined;
     setView(next);
     setError("");
     setStatus("");
@@ -108,7 +100,9 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
 
   function goToPhoto(next: number) {
     if (next < 0 || next >= photoCount || next === currentPhoto) return;
-    setTurn({ forward: next > currentPhoto, spread: !singlePage });
+    if (pages.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      pendingTurn.current = capturePageTurn(pages.current, next > currentPhoto, !singlePage);
+    }
     setPhotoIndex(next);
   }
 
