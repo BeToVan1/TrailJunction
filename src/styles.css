@@ -194,7 +194,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   font-size: .66rem;
   text-underline-offset: 2px;
 }
-.catalog-cover.catalog-cover-nearby { display: block; height: auto; }
+.catalog-cover.catalog-cover-nearby { display: block; place-items: normal; height: auto; }
 .catalog-cover-image { position: relative; height: clamp(110px, 18vw, 195px); }
 .catalog-cover-image img { position: absolute; inset: 0; }
 .catalog-cover-image > span {
