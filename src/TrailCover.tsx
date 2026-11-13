@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import meadowPhoto from "./journal-meadow.webp";
+import { nearbyTrailPhotos, photoSearchCenter, type NearbyPhoto } from "./nearby-trail-photos.ts";
 import parkPhotos from "./nps-park-photos.json";
 import type { Trail } from "./trail-catalog.ts";
 
@@ -13,11 +14,14 @@ const featured: Record<string, Photo> = {
   parus: zionPhoto,
 };
 
-export function TrailCover({ trail }: { trail: Trail }) {
+export function TrailCover({ trail, online }: { trail: Trail; online: boolean }) {
   const [failedUrl, setFailedUrl] = useState<string>();
   const parkCode = trail.format === "usgs-topo" ? trail.parkCode : undefined;
   const photo = featured[trail.id] ?? (parkCode === "zion" ? zionPhoto : parkCode && photos[parkCode]);
-  if (!photo || photo.url === failedUrl) return null;
+  if (!photo || photo.url === failedUrl) {
+    const center = trail.format === "usgs-topo" ? photoSearchCenter(trail.lines) : undefined;
+    return center && <NearbyTrailCover key={center.join("|")} trail={trail} center={center} online={online} />;
+  }
   const { url, source, credit } = photo;
   const subject = parkCode ? trail.park.split(" · ")[0] : trail.name;
   return (
@@ -25,6 +29,53 @@ export function TrailCover({ trail }: { trail: Trail }) {
       <img src={url} alt={`Photo of ${subject}`} loading="lazy" decoding="async" onError={() => setFailedUrl(url)} />
       <figcaption>
         <a href={source} target="_blank" rel="noreferrer" aria-label={`Photo source for ${subject}: ${credit}`}>{credit}</a>
+      </figcaption>
+    </figure>
+  );
+}
+
+function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
+  trail: Trail;
+  center: [string, string];
+  online: boolean;
+}) {
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [nearby, setNearby] = useState<NearbyPhoto[]>();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const card = anchor.current?.parentElement;
+    if (!card || !online || nearby?.length) return;
+    let active = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      void nearbyTrailPhotos(trail.name, latitude, longitude).then((photos) => {
+        if (active) setNearby(photos);
+      });
+    }, { rootMargin: "180px 0px" });
+    observer.observe(card);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [online, nearby?.length, trail.name, latitude, longitude]);
+
+  const photo = nearby?.[index];
+  if (!photo) return <span ref={anchor} hidden />;
+
+  return (
+    <figure className="catalog-cover catalog-cover-nearby" data-trail={trail.id}>
+      <div className="catalog-cover-image">
+        <img key={photo.url} src={photo.url} alt="" decoding="async"
+          onError={() => setIndex((failedIndex) => failedIndex + 1)} />
+        <span>Nearby photo</span>
+      </div>
+      <figcaption>
+        <a href={photo.source} target="_blank" rel="noreferrer">{photo.author}</a>
+        {photo.licenseUrl
+          ? <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a>
+          : <span>{photo.license}</span>}
       </figcaption>
     </figure>
   );

@@ -184,7 +184,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
       <ul className="catalog-results">
         {shownTrails.map((trail) => (
           <li key={trail.id} className="catalog-trail">
-            <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} />
+            <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} online={online} />
             <div className="catalog-card-content">
               <div className="catalog-card-copy">
                 <h3>{trail.name}</h3>

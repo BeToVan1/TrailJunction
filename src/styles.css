@@ -194,6 +194,33 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   font-size: .66rem;
   text-underline-offset: 2px;
 }
+.catalog-cover.catalog-cover-nearby { display: block; height: auto; }
+.catalog-cover-image { position: relative; height: clamp(110px, 18vw, 195px); }
+.catalog-cover-image img { position: absolute; inset: 0; }
+.catalog-cover-image > span {
+  position: absolute;
+  inset: auto auto 6px 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: #f9fbf2;
+  background: #172e23e8;
+  font-size: .66rem;
+  font-weight: 700;
+}
+.catalog-cover-nearby figcaption {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 8px;
+  padding: 4px 8px;
+  color: var(--ink);
+  background: var(--sheet);
+  border-bottom: 1px solid var(--border);
+  font-size: .66rem;
+}
+.catalog-cover-nearby a { padding: 0; color: inherit; background: transparent; overflow-wrap: anywhere; }
 .catalog-card-content { display: grid; grid-template-rows: 1fr auto; gap: 9px; padding: 12px; min-width: 0; }
 .catalog-card-copy { display: grid; align-content: start; gap: 3px; }
 .catalog-trail h3 { font-size: clamp(.98rem, 2vw, 1.18rem); line-height: 1.18; letter-spacing: -.026em; margin: 0; overflow-wrap: anywhere; }
@@ -460,7 +487,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   .section-nav button { min-height: 46px; flex-direction: column; gap: 3px; font-size: .75rem; }
   .app .workspace { padding-bottom: calc(77px + env(safe-area-inset-bottom)); }
   .catalog-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-  .catalog-cover { height: clamp(91px, 28vw, 170px); }
+  .catalog-cover, .catalog-cover-image { height: clamp(91px, 28vw, 170px); }
   .catalog-card-content { padding: 9px; }
   .catalog-card-action > button { width: 100%; min-height: 44px; }
 }
