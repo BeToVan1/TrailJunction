@@ -48,7 +48,7 @@ export function Landing() {
             </div>
             <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
           </a>
-          <a href="#trail-journal">
+          <a href="/app?view=journal">
             <span className="landing-icon"><BookOpen aria-hidden="true" /></span>
             <div>
               <h2>Keep a trail journal</h2>
