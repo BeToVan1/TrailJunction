@@ -118,14 +118,14 @@ export function JournalAccountPanel({ account, online, syncStatus, sync, copy, d
   }
 
   return (
-    <section className="trail-sheet journal-account" aria-labelledby="journal-account-title">
-      <div className="journal-account-heading">
+    <section className="journal-account" aria-label="Journal sync">
+      {user !== null && <div className="journal-account-heading">
         <Cloud aria-hidden="true" />
         <div>
-          <h2 id="journal-account-title">{user ? "Journal account" : "Save your hikes across devices"}</h2>
-          <p className="muted">{user?.email || "Sign in to sync your hikes, notes, and photo books."}</p>
+          <h2>{user ? "Journal account" : "Sync your journal"}</h2>
+          {user?.email && <p className="muted">{user.email}</p>}
         </div>
-      </div>
+      </div>}
       {user === undefined ? <p className="muted" role="status">Checking your account…</p> : user ? (
         <>
           {account.verified ? (
@@ -155,27 +155,34 @@ export function JournalAccountPanel({ account, online, syncStatus, sync, copy, d
         </>
       ) : (
         <details className="journal-signin">
-          <summary>Sign in or create an account</summary>
-          <button className="secondary-action" type="button" disabled={disabled} onClick={() => void account.google()}>
-            Continue with Google
-          </button>
-          {!online && <p className="muted">Reconnect to sign in. You can still log hikes on this device.</p>}
-          <form key={mode} className="journal-account-form" onSubmit={submit} aria-label={title}>
-            <label>Email <input name="email" type="email" autoComplete="email" required /></label>
-            {mode !== "reset" && <label>Password <input name="password" type="password" required
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              minLength={mode === "signup" ? 8 : undefined} /></label>}
-            <button className="primary-action" disabled={disabled} type="submit">
-              {mode === "reset" ? "Send reset link" : title}
+          <summary>
+            <Cloud aria-hidden="true" />
+            <span>Sync your journal</span>
+            <span className="journal-signin-link">Sign in</span>
+          </summary>
+          <div className="journal-signin-content">
+            <p className="muted">Sign in to sync your hikes, notes, and photo books across devices.</p>
+            <button className="secondary-action" type="button" disabled={disabled} onClick={() => void account.google()}>
+              Continue with Google
             </button>
-          </form>
-          <div className="journal-account-actions">
-            {mode === "signin" ? (
-              <>
-                <button type="button" className="text-action" onClick={() => setMode("signup")}>Create an account</button>
-                <button type="button" className="text-action" onClick={() => setMode("reset")}>Forgot password?</button>
-              </>
-            ) : <button type="button" className="text-action" onClick={() => setMode("signin")}>Back to sign in</button>}
+            {!online && <p className="muted">Reconnect to sign in. You can still log hikes on this device.</p>}
+            <form key={mode} className="journal-account-form" onSubmit={submit} aria-label={title}>
+              <label>Email <input name="email" type="email" autoComplete="email" required /></label>
+              {mode !== "reset" && <label>Password <input name="password" type="password" required
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                minLength={mode === "signup" ? 8 : undefined} /></label>}
+              <button className="primary-action" disabled={disabled} type="submit">
+                {mode === "reset" ? "Send reset link" : title}
+              </button>
+            </form>
+            <div className="journal-account-actions">
+              {mode === "signin" ? (
+                <>
+                  <button type="button" className="text-action" onClick={() => setMode("signup")}>Create an account</button>
+                  <button type="button" className="text-action" onClick={() => setMode("reset")}>Forgot password?</button>
+                </>
+              ) : <button type="button" className="text-action" onClick={() => setMode("signin")}>Back to sign in</button>}
+            </div>
           </div>
         </details>
       )}

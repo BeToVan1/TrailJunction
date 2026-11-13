@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type TouchEvent } from "react";
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, MapPin, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
 import { deviceJournal, type Hike, type HikeDetails, type JournalStore } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
@@ -68,6 +68,7 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
   const stripSize = 5;
   const stripStart = Math.max(0, Math.min(currentPhoto - 2, photoCount - stripSize));
   const readRevision = view.page === "list" ? revision : undefined;
+  const orderedHikes = view.page === "list" ? [...hikes].sort((a, b) => b.date.localeCompare(a.date)) : [];
 
   useEffect(() => {
     let active = true;
@@ -298,7 +299,7 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
           {hike.location && ` · ${hike.location}`}</p>}
         <div className="journal-title-row">
           <h1 ref={heading} tabIndex={-1}>{title}</h1>
-          {view.page === "list" && !loading && !accountLoading && !loadError && (
+          {view.page === "list" && orderedHikes.length > 0 && !loading && !accountLoading && !loadError && (
             <button type="button" className="primary-action journal-new" onClick={() => open({ page: "form" })}>
               <Plus aria-hidden="true" /> Log a hike
             </button>
@@ -308,9 +309,6 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
               onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
           )}
         </div>
-        {view.page === "list" && <p className="muted">{store === deviceJournal
-          ? "Hikes, notes, and photos saved on this device."
-          : "Your account’s hikes, notes, and photos are available offline after syncing."}</p>}
       </div>
       <p className="screen-reader-only" role="status">{status}</p>
       {loading || accountLoading ? <p className="muted" role="status">Opening your journal…</p>
@@ -407,33 +405,35 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
               onClick={() => void removeHike(hike)}>Delete hike</button>
           </>
         ) : (
-          <div className={`journal-library${accountPanel ? " journal-library-with-account" : ""}`}>
+          <div className="journal-library">
             <section className="journal-entries" aria-label="Your hikes">
-              {!hikes.length ? (
-                <div className="trail-sheet journal-empty">
-                  <span className="status-icon"><BookOpen aria-hidden="true" /></span>
-                  <div><h2>No hikes yet</h2><p className="muted">Add a trail name and date to start your first entry.</p></div>
+              {!orderedHikes.length ? (
+                <div className="journal-empty">
+                  <span className="journal-album-art" aria-hidden="true"><BookOpen /></span>
+                  <div className="journal-empty-copy">
+                    <h2>No hikes yet</h2>
+                    <p className="muted">Start with a trail name and date. Add photos and notes whenever you like.</p>
+                    <button type="button" className="primary-action" onClick={() => open({ page: "form" })}>
+                      <Plus aria-hidden="true" /> Log your first hike
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <h2>Recent hikes</h2>
-                  <ul className="journal-hikes">
-                    {[...hikes].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
-                      <li key={entry.id} className="journal-hike-card">
-                        <button type="button" onClick={() => open({ page: "hike", id: entry.id })}>
-                          {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].crop?.image ?? entry.photos[0].image} alt="" />
-                            : <span className="journal-cover-mark"><BookOpen aria-hidden="true" /></span>}
-                          <span className="journal-hike-summary">
-                            <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time></span>
-                            <strong>{entry.trail}</strong>
-                            {entry.location && <span className="muted">{entry.location}</span>}
-                            <span className="journal-cover-count">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
-                          </span>
-                          <ChevronRight aria-hidden="true" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <h2>Latest hike</h2>
+                  <JournalHikeCard entry={orderedHikes[0]} featured onOpen={() => open({ page: "hike", id: orderedHikes[0].id })} />
+                  {orderedHikes.length > 1 && (
+                    <>
+                      <h2>Earlier hikes</h2>
+                      <ul className="journal-hikes">
+                        {orderedHikes.slice(1).map((entry) => (
+                          <li key={entry.id}>
+                            <JournalHikeCard entry={entry} onOpen={() => open({ page: "hike", id: entry.id })} />
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </>
               )}
             </section>
@@ -441,6 +441,33 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
           </div>
         )}
     </div>
+  );
+}
+
+function JournalHikeCard({ entry, featured = false, onOpen }: {
+  entry: Hike;
+  featured?: boolean;
+  onOpen: () => void;
+}) {
+  const covers = entry.photos.slice(0, featured ? 2 : 1);
+  return (
+    <button type="button" className={featured ? "journal-hike-card journal-hike-featured" : "journal-hike-card"} onClick={onOpen}>
+      {covers.length > 0 ? (
+        <span className="journal-hike-cover" data-pair={covers.length === 2}>
+          {covers.map((photo) => <PhotoPreview key={photo.id} photo={photo.crop?.image ?? photo.image} alt="" />)}
+        </span>
+      ) : <span className="journal-album-art" aria-hidden="true"><BookOpen /></span>}
+      <span className="journal-hike-summary">
+        <time className="eyebrow" dateTime={entry.date}>{hikeDate(entry.date)}</time>
+        <strong>{entry.trail}</strong>
+        {entry.location && <span className="journal-hike-location muted"><MapPin aria-hidden="true" />{entry.location}</span>}
+        {featured ? (
+          <span className="journal-hike-open"><BookOpen aria-hidden="true" /> Open photo book <ChevronRight aria-hidden="true" /></span>
+        ) : (
+          <span className="journal-cover-count">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
+        )}
+      </span>
+    </button>
   );
 }
 

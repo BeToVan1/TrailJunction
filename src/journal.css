@@ -21,24 +21,25 @@
 .journal-title-row .secondary-action { min-height: 44px; }
 .journal-library, .journal-entries { display: grid; gap: 12px; align-items: start; min-width: 0; }
 .journal-entries > h2 { font-size: 1.13rem; }
-@media (min-width: 890px) {
-  .journal-library-with-account { grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 18px; }
-}
+.journal-entries > h2:not(:first-child) { margin-top: 10px; }
 .journal-heading h1, .journal-book-tools h2, .journal-hike-summary strong {
   font-family: var(--album-serif);
   font-weight: 400;
 }
 .journal-heading h1 { font-size: clamp(2.05rem, 6vw, 3.75rem); }
-.journal-account { gap: 10px; }
+.journal-account { display: grid; gap: 10px; margin-top: 4px; padding-block: 4px 8px; border-top: 1px solid var(--border); }
 .journal-account-heading { display: flex; align-items: start; gap: 11px; min-width: 0; }
 .journal-account-heading > svg { width: 20px; height: 20px; flex: none; color: var(--path); }
 .journal-account-heading .muted { margin-top: 4px; overflow-wrap: anywhere; }
 .journal-account-actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .journal-signout { justify-self: start; }
-.journal-signin { max-width: 420px; }
-.journal-signin summary { width: fit-content; padding: 11px 0; cursor: pointer; font-weight: 700; color: var(--path); }
+.journal-signin summary { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-weight: 700; color: var(--soft); }
+.journal-signin summary::-webkit-details-marker { display: none; }
+.journal-signin summary svg { width: 18px; height: 18px; flex: none; color: var(--path); }
+.journal-signin-link { margin-left: auto; color: var(--path); text-decoration: underline; text-underline-offset: 3px; }
 .journal-signin summary:focus-visible { outline: 2px solid var(--return); outline-offset: 3px; }
-.journal-signin[open] > .secondary-action { margin: 2px 0 13px; }
+.journal-signin-content { display: grid; gap: 12px; max-width: 420px; padding-block: 4px 10px; }
+.journal-signin-content > button { justify-self: start; }
 .journal-account-form, .journal-account-form label { display: grid; gap: 7px; min-width: 0; }
 .journal-account-form { gap: 12px; margin-bottom: 6px; }
 .journal-account-form label { font-size: .88rem; font-weight: 650; }
@@ -54,46 +55,61 @@
 }
 .journal-account-form button { justify-self: start; }
 .journal-new, .journal-delete { justify-self: start; }
-.journal-empty { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
-.journal-empty h2 { margin-bottom: 3px; }
+.journal-empty, .journal-hike-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--sheet);
+  color: var(--ink);
+}
+.journal-empty { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.journal-empty-copy { display: grid; align-content: center; justify-items: start; gap: 10px; padding: clamp(18px, 4vw, 42px); }
+.journal-empty-copy h2 { font: 400 clamp(1.8rem, 4vw, 2.65rem)/1.1 var(--album-serif); }
+.journal-empty-copy p { max-width: 35ch; }
+.journal-empty-copy button { margin-top: 4px; }
 .journal-hikes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
-.journal-hike-card { min-width: 0; }
-.journal-hike-card > button {
+.journal-hikes > li { min-width: 0; }
+.journal-hike-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto 1fr;
-  align-items: center;
-  gap: 12px;
   width: 100%;
   height: 100%;
-  padding: 0 12px 12px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--sheet);
-  overflow: hidden;
-  color: var(--ink);
+  min-width: 0;
+  padding: 0;
   text-align: start;
 }
-.journal-hike-card .photo-frame, .journal-cover-mark {
+.journal-hike-card:hover { border-color: var(--path); }
+.journal-hike-featured { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-rows: auto; }
+.journal-hike-cover, .journal-album-art { height: clamp(100px, 19vw, 170px); }
+.journal-hike-cover { display: grid; min-width: 0; background: var(--land-west); }
+.journal-hike-cover[data-pair="true"] { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 3px; background: var(--sheet); }
+.journal-hike-cover .photo-frame { display: grid; place-items: center; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: var(--land-west); }
+.journal-hike-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.journal-hike-cover .photo-placeholder { padding: 4px; text-align: center; }
+.journal-album-art {
   display: grid;
   place-items: center;
-  grid-column: 1 / -1;
-  height: clamp(100px, 19vw, 170px);
-  margin-inline: -12px;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--land-west);
-  color: var(--path);
+  background: linear-gradient(90deg, #0003 0 3%, transparent 9%), repeating-linear-gradient(120deg, #fff0 0 4px, #fff1 5px 6px), var(--album-cover);
+  color: var(--album-gilt);
 }
-.journal-hike-card button:hover { border-color: var(--path); }
-.journal-hike-card .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-.journal-hike-card .photo-placeholder { padding: 4px; font-size: .65rem; text-align: center; }
-.journal-cover-mark svg { width: 24px; height: 24px; }
-.journal-hike-summary { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.journal-album-art svg { width: 28px; height: 28px; }
+.journal-empty .journal-album-art, .journal-hike-featured :is(.journal-hike-cover, .journal-album-art) { height: clamp(210px, 28vw, 345px); }
+.journal-empty .journal-album-art svg, .journal-hike-featured .journal-album-art svg { width: 58px; height: 58px; stroke-width: 1.2; }
+.journal-hike-summary { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 12px; overflow-wrap: anywhere; }
 .journal-hike-summary strong { font-size: clamp(1.16rem, 4.5vw, 1.5rem); line-height: 1.08; }
 .journal-hike-summary .muted { font-size: .84rem; }
 .journal-cover-count { color: var(--path); font-size: .79rem; font-weight: 700; }
-.journal-hike-card button > svg { color: var(--path); }
+.journal-hike-featured .journal-hike-summary { align-content: center; gap: 9px; padding: clamp(16px, 4vw, 42px); }
+.journal-hike-featured .journal-hike-summary strong { font-size: clamp(1.75rem, 4vw, 3rem); }
+.journal-hike-location, .journal-hike-open { display: flex; align-items: center; gap: 6px; }
+.journal-hike-location svg, .journal-hike-open svg { width: 16px; height: 16px; }
+.journal-hike-open { margin-top: 4px; color: var(--path); font-size: .86rem; font-weight: 750; }
+
+@media (max-width: 680px) {
+  .journal-empty, .journal-hike-featured { grid-template-columns: minmax(0, 1fr); }
+  .journal-empty .journal-album-art { height: 120px; }
+  .journal-hike-featured :is(.journal-hike-cover, .journal-album-art) { height: clamp(155px, 48vw, 270px); }
+}
 .journal-notes, .journal-caption { white-space: pre-wrap; overflow-wrap: anywhere; }
 .journal-notes { max-width: 68ch; color: var(--soft); line-height: 1.6; }
 
@@ -634,10 +650,7 @@
 .journal-filmstrip img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 430px) {
   .journal-hikes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .journal-hike-card > button { gap: 8px; }
-  .journal-hike-card .journal-hike-summary strong { font-size: 1.05rem; }
-  .journal-hike-card button > svg { display: none; }
-  .journal-hike-summary { grid-column: 1 / -1; }
+  .journal-hikes .journal-hike-summary strong { font-size: 1.05rem; }
   .journal-pagination button { width: 44px; padding-inline: 0; }
   .journal-pagination button span { display: none; }
 }
