@@ -24,6 +24,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,png,webp,woff2,webmanifest}", "trails/parus-topo.jpg"],
         navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/__\//],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

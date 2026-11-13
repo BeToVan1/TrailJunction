@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Signpost, Wifi, WifiOff } from "lucide-react";
+import { AccountJournalView } from "./AccountJournalView.tsx";
+import { journalAccountsEnabled } from "./firebase-app.ts";
 import { TrailJournal, type JournalTrail } from "./TrailJournal.tsx";
 import { TrailLibrary } from "./TrailLibrary.tsx";
 import type { Trail } from "./trail-catalog.ts";
@@ -54,7 +56,9 @@ export function App() {
         <div hidden={view === "journal"}>
           <TrailLibrary view={libraryView} online={online} opened={opened} setOpened={setOpened} logTrail={logTrail} />
         </div>
-        {view === "journal" && <TrailJournal online={online} trail={journalTrail} />}
+        {view === "journal" && (journalAccountsEnabled
+          ? <AccountJournalView online={online} trail={journalTrail} />
+          : <TrailJournal online={online} trail={journalTrail} />)}
       </main>
     </div>
   );

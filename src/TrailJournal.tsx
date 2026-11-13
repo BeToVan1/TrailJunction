@@ -1,7 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type PointerEvent, type TouchEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type TouchEvent } from "react";
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
-import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
+import { deviceJournal, type Hike, type HikeDetails, type JournalStore } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
 import { capturePageTurn, playPageTurn, startPageDrag, type PageCorner } from "./journal-page-turn.ts";
 import { prepareOfflineApp } from "./offline.ts";
@@ -27,7 +27,16 @@ function hikeDate(date: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date(`${date}T12:00:00`));
 }
 
-export function TrailJournal({ online, trail }: { online: boolean; trail?: JournalTrail }) {
+export function TrailJournal({ online, trail, store = deviceJournal, accountPanel, accountLoading, revision, onChange }: {
+  online: boolean;
+  trail?: JournalTrail;
+  store?: JournalStore;
+  accountPanel?: ReactNode;
+  accountLoading?: boolean;
+  revision?: number;
+  onChange?: () => void;
+}) {
+  const { changeHike, deleteHike, getHikes, saveHike } = store;
   const [hikes, setHikes] = useState<Hike[]>([]);
   const [view, setView] = useState<JournalView>(() => ({ page: trail ? "form" : "list" }));
   const [loading, setLoading] = useState(true);
@@ -58,18 +67,22 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const endPhoto = Math.min(firstPhoto + pageSize, photoCount);
   const stripSize = 5;
   const stripStart = Math.max(0, Math.min(currentPhoto - 2, photoCount - stripSize));
+  const readRevision = view.page === "list" ? revision : undefined;
 
   useEffect(() => {
     let active = true;
     void getHikes().then((saved) => {
-      if (active) setHikes(saved);
+      if (active) {
+        setHikes(saved);
+        setLoadError(false);
+      }
     }).catch(() => {
       if (active) setLoadError(true);
     }).finally(() => {
       if (active) setLoading(false);
     });
     return () => { active = false; };
-  }, []);
+  }, [getHikes, readRevision]);
 
   useEffect(() => {
     if (online && import.meta.env.PROD) void prepareOfflineApp().catch(() => {});
@@ -104,6 +117,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }
 
   function remember(next: Hike) {
+    onChange?.();
     setHikes((previous) => {
       // IndexedDB clones Blobs on reads. Reuse in-memory photos with the same ID,
       // since changing captions, notes, or hike details never changes their images.
@@ -256,6 +270,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     setError("");
     try {
       await deleteHike(entry.id);
+      onChange?.();
       setHikes((previous) => previous.filter(({ id }) => id !== entry.id));
       open({ page: "list" });
       setStatus("Hike deleted.");
@@ -282,10 +297,13 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
         {view.page === "hike" && hike && <p className="eyebrow"><time dateTime={hike.date}>{hikeDate(hike.date)}</time>
           {hike.location && ` · ${hike.location}`}</p>}
         <h1 ref={heading} tabIndex={-1}>{title}</h1>
-        {view.page === "list" && <p className="muted">Hikes, notes, and photos saved on this device.</p>}
+        {view.page === "list" && <p className="muted">{store === deviceJournal
+          ? "Hikes, notes, and photos saved on this device."
+          : "Your account’s hikes, notes, and photos are available offline after syncing."}</p>}
       </div>
       <p className="screen-reader-only" role="status">{status}</p>
-      {loading ? <p className="muted" role="status">Opening your journal…</p>
+      {view.page === "list" && accountPanel}
+      {loading || accountLoading ? <p className="muted" role="status">Opening your journal…</p>
         : loadError ? <p className="error" role="alert">This browser could not open your journal storage.</p>
         : view.page === "form" ? (
           <>

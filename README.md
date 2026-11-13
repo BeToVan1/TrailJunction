@@ -6,7 +6,7 @@ Trail search uses the [USGS National Digital Trails layer](https://carto.nationa
 
 On any saved trail, choose **Choose photo**, or use **Take sign photo** on a phone or tablet, then select **Read sign**. The result shows readable labels and their visible arrows. The saved map provides context, but it does not identify your junction or plot a route from the photo. Captured sign photos are held for the current reading; downloaded maps remain in **Saved**.
 
-Open **Journal → Log a hike**, or choose **Log this hike** from a saved map to fill in the trail name and area. Record the date, add notes, and use the photo book to take or choose photos and write captions. Turn one page on mobile or a two-page spread on desktop. The journal uses this browser’s storage, so entries and photos work offline after the app is cached and stay on that device. **Ask Gemini about this photo** sends the selected image to Firebase AI Logic when you’re online and saves the suggested nature note with that photo for offline viewing.
+Open **Journal → Log a hike**, or choose **Log this hike** from a saved map to fill in the trail name and area. Record the date, add notes, and use the photo book to take or choose photos and write captions. Turn one page on mobile or a two-page spread on desktop. Hikes and photos work offline after the app is cached. Sign in with Google or a verified email address to sync them across devices. **Copy hikes from this device** adds existing device entries to the account journal. **Ask Gemini about this photo** sends the selected image to Firebase AI Logic when you’re online and saves the suggested nature note with that photo for offline viewing.
 
 **Try sign demo** opens a separate walkthrough at Fern Fork on the fictional Fern Creek Loop. Take a simulated photo of the sign, then enter **Rocky Point** or **Sloan Lake**. The app combines the sign's arrows with the downloaded demo map to show a route via **Trailhead** or **Cedar Spur**. **Open full demo map** opens the original five-checkpoint loop with photo uploads, junction matching, and route recovery.
 
@@ -42,6 +42,8 @@ Use a compatible desktop Chrome setup to test offline AI. An iPhone can supply t
 - `npm test` runs the matching, navigation, and model-response tests.
 - `npm run build` type-checks the app and builds the offline web app into `dist/`.
 - To publish with Firebase Hosting, build with the registered Web App configuration and run `firebase deploy --only hosting --project YOUR_PROJECT_ID` from an authenticated Firebase CLI.
+
+To enable journal accounts, enable Google and Email/Password in Firebase Authentication and create a Standard Cloud Firestore database in production mode. Deploy the rules and index settings with `firebase deploy --only firestore --project YOUR_PROJECT_ID`. Set `VITE_FIREBASE_JOURNAL_ACCOUNTS=true` in the Hosting build. For same-domain Google redirects on Firebase Hosting, authorize the Hosting domain and its `/__/auth/handler` URL in the OAuth client. Set `VITE_FIREBASE_AUTH_DOMAIN` if you use a custom Hosting domain.
 
 ## License
 

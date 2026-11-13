@@ -20,6 +20,30 @@
   font-weight: 400;
 }
 .journal-heading h1 { font-size: clamp(2.05rem, 6vw, 3.75rem); }
+.journal-account { gap: 10px; }
+.journal-account-heading { display: flex; align-items: start; gap: 11px; min-width: 0; }
+.journal-account-heading > svg { width: 20px; height: 20px; flex: none; color: var(--path); }
+.journal-account-heading .muted { margin-top: 4px; overflow-wrap: anywhere; }
+.journal-account-actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.journal-signout { justify-self: start; }
+.journal-signin { max-width: 420px; }
+.journal-signin summary { width: fit-content; padding: 11px 0; cursor: pointer; font-weight: 700; color: var(--path); }
+.journal-signin summary:focus-visible { outline: 2px solid var(--return); outline-offset: 3px; }
+.journal-signin[open] > .secondary-action { margin: 2px 0 13px; }
+.journal-account-form, .journal-account-form label { display: grid; gap: 7px; min-width: 0; }
+.journal-account-form { gap: 12px; margin-bottom: 6px; }
+.journal-account-form label { font-size: .88rem; font-weight: 650; }
+.journal-account-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1rem;
+}
+.journal-account-form button { justify-self: start; }
 .journal-new, .journal-delete { justify-self: start; }
 .journal-empty { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
 .journal-empty h2 { margin-bottom: 3px; }

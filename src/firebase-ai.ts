@@ -1,4 +1,4 @@
-import { initializeApp, type FirebaseOptions } from "firebase/app";
+import { firebaseConfigured, getTrailFirebaseApp } from "./firebase-app.ts";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import {
   getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, InferenceSource, Schema,
@@ -8,14 +8,9 @@ import { photoToJpeg } from "./photo.ts";
 import type { NatureNote } from "./journal.ts";
 import { parseSignReading, signDirections } from "./sign-reading.ts";
 
-const options: FirebaseOptions = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
 const siteKey: string | undefined = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
 const cloudModel: string = import.meta.env.VITE_FIREBASE_CLOUD_MODEL || "gemini-3.5-flash-lite";
-export const aiConfigured = Boolean(options.apiKey && options.projectId && options.appId && siteKey);
+export const aiConfigured = firebaseConfigured && Boolean(siteKey);
 
 const prompt = [
   "Read the text on the trail sign in the supplied photo.",
@@ -74,7 +69,7 @@ function getTrailAI() {
   if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG === "true") {
     Object.assign(globalThis, { FIREBASE_APPCHECK_DEBUG_TOKEN: true });
   }
-  const app = initializeApp(options);
+  const app = getTrailFirebaseApp();
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey) });
   ai = getAI(app, { backend: new GoogleAIBackend() });
   return ai;

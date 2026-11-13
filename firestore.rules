@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ownsJournal(uid) {
+      return request.auth != null && request.auth.uid == uid
+        && request.auth.token.email_verified == true;
+    }
+
+    function validHike() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['hike', 'version'])
+        && data.version is string && data.version.matches('^[0-9]{15}:[0-9a-f-]{36}$')
+        && (data.hike == null || (
+          data.hike is map && data.hike.keys().hasOnly(['trail', 'location', 'date', 'notes', 'photos'])
+          && data.hike.trail is string && data.hike.trail.size() <= 120
+          && data.hike.location is string && data.hike.location.size() <= 120
+          && data.hike.date is string && data.hike.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && data.hike.notes is string && data.hike.notes.size() <= 2500
+          && data.hike.photos is list
+        ));
+    }
+
+    match /journals/{uid}/hikes/{hikeId} {
+      allow read: if ownsJournal(uid);
+      allow create: if ownsJournal(uid) && validHike();
+      allow update: if ownsJournal(uid) && resource.data.hike != null && validHike()
+        && request.resource.data.version > resource.data.version;
+
+      match /media/{partId} {
+        allow get, delete: if ownsJournal(uid);
+        allow create: if ownsJournal(uid) && partId.matches('^[0-9a-f]{64}$')
+          && request.resource.data.keys().hasOnly(['data'])
+          && request.resource.data.data is bytes && request.resource.data.data.size() <= 655360;
+      }
+    }
+  }
+}

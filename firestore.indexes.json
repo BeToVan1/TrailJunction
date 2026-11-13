@@ -1,0 +1,7 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "hikes", "fieldPath": "hike", "indexes": [] },
+    { "collectionGroup": "media", "fieldPath": "data", "indexes": [] }
+  ]
+}

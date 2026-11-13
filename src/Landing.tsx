@@ -56,7 +56,7 @@ export function Landing() {
           <div className="landing-journal-copy">
             <p className="public-kicker"><BookOpen aria-hidden="true" /> Trail journal</p>
             <h2 id="landing-journal-title">Keep the hike in a photo book.</h2>
-            <p>Log your hikes, write notes, and flip through a photo book with your own captions. Your journal is saved on this device and available offline after you open it online.</p>
+            <p>Log your hikes, write notes, and flip through a photo book with your own captions. Keep your journal on this device or sign in to sync it across devices.</p>
             <p>When you’re connected, ask Gemini what plant or animal might be in a photo and save the note alongside it.</p>
             <a className="public-button" href="/app?view=journal">Open journal <ArrowUpRight aria-hidden="true" /></a>
           </div>
