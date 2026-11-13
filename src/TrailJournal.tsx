@@ -137,13 +137,13 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     if (!surface) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, target, surface, settling: false };
+    drag.current = { pointerId: event.pointerId, startX: event.pageX, startY: event.pageY, target, surface, settling: false };
   }
 
   function moveCorner(event: PointerEvent<HTMLSpanElement>) {
     const active = drag.current;
     if (active?.pointerId !== event.pointerId || active.settling) return;
-    active.surface.move(event.clientX - active.startX, event.clientY - active.startY);
+    active.surface.move(event.pageX - active.startX, event.pageY - active.startY);
   }
 
   function releaseCorner(event: PointerEvent<HTMLSpanElement>) {

@@ -2,17 +2,23 @@ type Point = { x: number; y: number };
 const visiblePages = ":scope > .journal-photo-card:not([hidden])";
 export type PageCorner = "top" | "bottom";
 
-function sheetCopy(page: HTMLElement | undefined, className: string) {
+function sheetCopy(page: HTMLElement | undefined, className: string, spread: boolean) {
   const sheet = document.createElement("div");
   sheet.className = className;
   if (page) {
-    const copy = page.cloneNode(true) as HTMLElement;
+    const content = spread ? page : page.querySelector(".journal-print");
+    if (!content) return sheet;
+    const copy = content.cloneNode(true) as HTMLElement;
     copy.hidden = false;
     copy.removeAttribute("aria-label");
     copy.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
     sheet.append(copy);
   }
   return sheet;
+}
+
+function leafBounds(page: HTMLElement | undefined, spread: boolean) {
+  return (spread ? page : page?.querySelector(".journal-print"))?.getBoundingClientRect();
 }
 
 // The fold lies halfway between the original corner and the pulled corner.
@@ -41,14 +47,19 @@ export function capturePageTurn(book: HTMLElement, forward: boolean, spread: boo
   const first = leaves[0];
   if (!first) return;
 
-  const { width, height } = first.getBoundingClientRect();
+  const bounds = leafBounds(first, spread);
+  if (!bounds) return;
+  const { width, height } = bounds;
+  const bookBounds = book.getBoundingClientRect();
+  const left = spread ? 0 : bounds.left - bookBounds.left;
+  const top = spread ? 0 : bounds.top - bookBounds.top;
   if (!width || !height) return;
   const right = spread && forward;
-  const front = sheetCopy(source, "journal-turn-face");
+  const front = sheetCopy(source, "journal-turn-face", spread);
   const underneath = spread
-    ? sheetCopy(leaves[right ? 0 : 1], "journal-turn-still")
+    ? sheetCopy(leaves[right ? 0 : 1], "journal-turn-still", spread)
     : undefined;
-  return { width, height, right, front, underneath, forward, spread };
+  return { width, height, left, top, right, front, underneath, forward, spread };
 }
 
 function mountPageTurn(
@@ -58,8 +69,8 @@ function mountPageTurn(
   corner: PageCorner,
   previewTarget: boolean,
 ) {
-  const { width, height, right, front, underneath, forward, spread } = turn;
-  const reverse = sheetCopy(spread ? next[right ? 0 : 1] : undefined, "journal-turn-reverse");
+  const { width, height, left, top, right, front, underneath, forward, spread } = turn;
+  const reverse = sheetCopy(spread ? next[right ? 0 : 1] : undefined, "journal-turn-reverse", spread);
   const fold = document.createElement("div");
   fold.className = "journal-turn-fold";
   const shade = document.createElement("span");
@@ -75,9 +86,13 @@ function mountPageTurn(
   layer.setAttribute("aria-hidden", "true");
   layer.style.setProperty("--leaf-width", `${width}px`);
   layer.style.setProperty("--leaf-height", `${height}px`);
+  if (!spread) {
+    layer.style.left = `${left}px`;
+    layer.style.top = `${top}px`;
+  }
   front.style.left = fold.style.left = right ? `${width}px` : "0";
   if (previewTarget) {
-    const revealed = sheetCopy(next[right ? 1 : 0], "journal-turn-still");
+    const revealed = sheetCopy(next[right ? 1 : 0], "journal-turn-still", spread);
     revealed.style.left = front.style.left;
     layer.append(revealed);
   }
@@ -170,7 +185,7 @@ export function startPageDrag(book: HTMLElement, forward: boolean, spread: boole
 
 export function playPageTurn(book: HTMLElement, turn: NonNullable<ReturnType<typeof capturePageTurn>>) {
   const next = [...book.querySelectorAll<HTMLElement>(visiblePages)];
-  const bounds = next[0]?.getBoundingClientRect();
+  const bounds = leafBounds(next[0], turn.spread);
   if (bounds?.width !== turn.width || bounds.height !== turn.height) return;
   const layer = mountPageTurn(book, turn, next, "bottom", false);
   layer.autoTurn();
