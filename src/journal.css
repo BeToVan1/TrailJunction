@@ -187,7 +187,6 @@
   padding: clamp(5px, 1vw, 9px);
   border: 1px solid var(--album-rule);
   background: var(--album-print);
-  box-shadow: 0 3px 8px -4px var(--album-shadow);
 }
 .journal-print .photo-frame {
   min-width: 0;
@@ -235,7 +234,7 @@
   background: transparent;
   color: #fffaf0;
 }
-.journal-photo-viewer::backdrop { background: #101913ef; }
+.journal-photo-viewer::backdrop { background: #101913; }
 .journal-viewer-content {
   display: grid;
   justify-items: center;
@@ -420,8 +419,7 @@
   inset: 12px var(--paper-gutter) auto;
   height: calc(var(--paper-stage-height) - 24px);
   border-radius: 2px;
-  box-shadow: 0 3px 0 -1px var(--album-print), 0 4px 0 -1px var(--album-rule),
-    0 10px 16px -12px var(--ink);
+  box-shadow: 0 3px 0 -1px var(--album-print), 0 4px 0 -1px var(--album-rule);
   pointer-events: none;
   z-index: -1;
 }
