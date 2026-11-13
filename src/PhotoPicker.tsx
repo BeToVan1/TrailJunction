@@ -56,25 +56,22 @@ export function PhotoPreview({ photo, alt, fallback }: {
   alt: string;
   fallback?: string;
 }) {
-  const [url, setUrl] = useState("");
-  const [broken, setBroken] = useState(false);
+  const [preview, setPreview] = useState<{ photo: Blob; src: string }>();
+  const [failedSrc, setFailedSrc] = useState<string>();
 
   useEffect(() => {
-    setBroken(false);
-    if (!photo) {
-      setUrl("");
-      return;
-    }
-    const nextUrl = URL.createObjectURL(photo);
-    setUrl(nextUrl);
-    return () => URL.revokeObjectURL(nextUrl);
-  }, [photo, fallback]);
+    if (!photo) return;
+    const src = URL.createObjectURL(photo);
+    setPreview({ photo, src });
+    return () => URL.revokeObjectURL(src);
+  }, [photo]);
 
-  const src = photo ? url : fallback;
+  const src = photo ? (preview?.photo === photo ? preview.src : undefined) : fallback;
+  const broken = Boolean(src && failedSrc === src);
   return (
     <span className="photo-frame">
       {src && !broken
-        ? <img src={src} alt={alt} onError={() => setBroken(true)} />
+        ? <img key={src} src={src} alt={alt} onError={() => setFailedSrc(src)} />
         : <span className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</span>}
     </span>
   );

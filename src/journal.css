@@ -66,6 +66,7 @@
 .journal-upload { display: grid; gap: 6px; }
 .journal-photo-book { display: grid; gap: 12px; }
 .journal-ai-hint { font-size: .83rem; }
+.journal-pagination { display: none; }
 .journal-photos {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -81,7 +82,6 @@
   padding: clamp(12px, 3vw, 24px);
   box-shadow: inset 10px 0 14px -16px var(--ink);
 }
-.journal-photo-card + .journal-photo-card { border-top: 1px solid var(--album-rule); }
 .journal-print {
   display: grid;
   gap: 8px;
@@ -155,7 +155,21 @@
 .journal-form :is(input, textarea):focus-visible { outline: 2px solid var(--path); outline-offset: 2px; }
 .journal-form input[type="date"] { appearance: none; }
 
-@media (min-width: 700px) {
+@media (width < 700px), (hover: none) and (pointer: coarse) {
+  .journal-pagination {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: center;
+    text-align: center;
+  }
+  .journal-pagination button { min-height: 44px; }
+  .journal-photos { touch-action: pan-y pinch-zoom; }
+  .journal-photo-card[data-current="false"] { display: none; }
+  .journal-print .photo-frame img { max-height: min(60svh, 440px); }
+}
+
+@media (min-width: 700px) and (hover: hover), (min-width: 700px) and (pointer: fine) {
   .journal-hikes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .journal-photos:has(.journal-photo-card:nth-child(2)) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -167,5 +181,4 @@
       transparent calc(50% + 12px));
   }
   .journal-photo-card { box-shadow: none; }
-  .journal-photo-card + .journal-photo-card { border-top: 0; }
 }

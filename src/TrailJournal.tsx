@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, BookOpen, ChevronRight, Images, Plus } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type TouchEvent } from "react";
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
@@ -27,8 +27,12 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [photoIndex, setPhotoIndex] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
+  const swipeStart = useRef<{ x: number; y: number }>(null);
   const hike = view.page === "list" ? undefined : hikes.find(({ id }) => id === view.id);
+  const photoCount = hike?.photos.length ?? 0;
+  const currentPhoto = Math.max(0, Math.min(photoIndex, photoCount - 1));
 
   useEffect(() => {
     let active = true;
@@ -51,6 +55,9 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }, [loading, view]);
 
   function open(next: JournalView) {
+    const currentId = view.page === "list" ? undefined : view.id;
+    const nextId = next.page === "list" ? undefined : next.id;
+    if (currentId !== nextId) setPhotoIndex(0);
     setView(next);
     setError("");
     setStatus("");
@@ -58,7 +65,35 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }
 
   function remember(next: Hike) {
-    setHikes((previous) => [...previous.filter(({ id }) => id !== next.id), next]);
+    setHikes((previous) => {
+      // IndexedDB clones Blobs on reads. Reuse in-memory photos with the same ID,
+      // since changing captions, notes, or hike details never changes their images.
+      const existing = previous.find(({ id }) => id === next.id);
+      const images = new Map(existing?.photos.map(({ id, image }) => [id, image]));
+      const photos = next.photos.map((photo) => ({ ...photo, image: images.get(photo.id) ?? photo.image }));
+      return [...previous.filter(({ id }) => id !== next.id), { ...next, photos }];
+    });
+  }
+
+  function turnPage(delta: number) {
+    setPhotoIndex(Math.max(0, Math.min(currentPhoto + delta, photoCount - 1)));
+  }
+
+  function beginSwipe(event: TouchEvent) {
+    const touch = event.touches[0];
+    swipeStart.current = event.touches.length === 1 && event.target instanceof Element
+      && !event.target.closest("button, input, summary, label")
+      ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  function finishSwipe(event: TouchEvent) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch || event.touches.length) return;
+    const x = touch.clientX - start.x;
+    const y = touch.clientY - start.y;
+    if (Math.abs(x) >= 55 && Math.abs(x) > 1.5 * Math.abs(y)) turnPage(x < 0 ? 1 : -1);
   }
 
   async function submit(details: HikeDetails) {
@@ -89,7 +124,9 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     try {
       const image = await photoToJpegBlob(file);
       const photo = { id: crypto.randomUUID(), image, caption: "" };
-      remember(await changeHike(id, (current) => ({ ...current, photos: [...current.photos, photo] })));
+      const next = await changeHike(id, (current) => ({ ...current, photos: [...current.photos, photo] }));
+      remember(next);
+      setPhotoIndex(next.photos.length - 1);
       setStatus("Photo saved to this hike.");
     } catch (reason) {
       setError(reason instanceof PhotoError ? reason.message : "The photo could not be saved. Check available storage and try again.");
@@ -160,7 +197,17 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                   : !aiConfigured ? "AI nature notes are unavailable on this build."
                   : "Asking Gemini sends the selected photo for a possible plant or wildlife identification."}</p>
               )}
-              <div className="journal-photos">
+              {photoCount > 1 && (
+                <nav className="journal-pagination" aria-label="Photo book pages">
+                  <button type="button" className="secondary-action" aria-label="Previous photo"
+                    disabled={currentPhoto === 0} onClick={() => turnPage(-1)}><ChevronLeft aria-hidden="true" /></button>
+                  <span className="eyebrow" aria-live="polite">Photo {currentPhoto + 1} of {photoCount}</span>
+                  <button type="button" className="secondary-action" aria-label="Next photo"
+                    disabled={currentPhoto === photoCount - 1} onClick={() => turnPage(1)}><ChevronRight aria-hidden="true" /></button>
+                </nav>
+              )}
+              <div className="journal-photos" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
+                onTouchCancel={() => { swipeStart.current = null; }}>
                 {!hike.photos.length && (
                   <div className="journal-blank-page">
                     <Images aria-hidden="true" />
@@ -169,13 +216,19 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 )}
                 {hike.photos.map((photo, index) => (
                   <JournalPhotoCard key={photo.id} photo={photo} number={index + 1} online={online}
+                    current={index === currentPhoto}
                     save={async (patch) => remember(await changeHike(hike.id, (current) => ({
                       ...current,
                       photos: current.photos.map((item) => item.id === photo.id ? { ...item, ...patch } : item),
                     })))}
-                    remove={async () => remember(await changeHike(hike.id, (current) => ({
-                      ...current, photos: current.photos.filter(({ id }) => id !== photo.id),
-                    })))} />
+                    remove={async () => {
+                      const next = await changeHike(hike.id, (current) => ({
+                        ...current, photos: current.photos.filter(({ id }) => id !== photo.id),
+                      }));
+                      remember(next);
+                      setPhotoIndex((selected) => Math.max(0, Math.min(
+                        index < selected ? selected - 1 : selected, next.photos.length - 1)));
+                    }} />
                 ))}
               </div>
             </section>
