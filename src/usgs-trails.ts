@@ -4,6 +4,7 @@ import {
   isCoordinate, normalizeTrailName, type Coordinate, type UsgsMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
 import { stateForPoint } from "./us-state.ts";
+import { indexedTrailIds } from "./trail-search-index.ts";
 
 export const usgsTrailsLayer = "https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/37";
 export const usgsTopoService = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer";
@@ -182,15 +183,39 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
     inSR: "4326",
     spatialRel: "esriSpatialRelIntersects",
   } : {};
-  const data = await queryFeatures({
-    where: `trailtype = 'Terra Trail' AND (hikerpedestrian IS NULL OR UPPER(hikerpedestrian) NOT IN ('N', 'NO')) AND (${nameMatches})`,
+  const geometryFields = {
     outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles",
     resultRecordCount: String(searchLimit),
     geometryPrecision: "5",
     maxAllowableOffset: "0.00002",
     cacheHint: "true",
-    ...spatial,
-  }, AbortSignal.any([signal, AbortSignal.timeout(12000)]));
+  };
+  const ids = await indexedTrailIds(terms, searchLimit, signal, place?.park.code);
+  let data: FeatureResponse | undefined;
+  if (ids) {
+    if (!ids.length) {
+      data = { features: [] };
+    } else {
+      try {
+        const result = await queryFeatures({ ...geometryFields, objectIds: ids.join(",") },
+          AbortSignal.any([signal, AbortSignal.timeout(2400)]));
+        // Verify the live IDs still refer to matching trails after a source refresh.
+        const namePattern = new RegExp(terms.join(".*"), "isu");
+        if (result.features?.length === ids.length && result.features.every(({ attributes }) =>
+          !terms.length || ["name", "namealternate", "maplabel"].some((field) =>
+            namePattern.test(trailName(attributes?.[field]))))) data = result;
+      } catch {
+        signal.throwIfAborted();
+      }
+    }
+  }
+  if (!data) {
+    data = await queryFeatures({
+      ...geometryFields,
+      ...spatial,
+      where: `trailtype = 'Terra Trail' AND (hikerpedestrian IS NULL OR UPPER(hikerpedestrian) NOT IN ('N', 'NO')) AND (${nameMatches})`,
+    }, AbortSignal.any([signal, AbortSignal.timeout(12000)]));
+  }
   signal.throwIfAborted();
   const matches = groupSegments(parseSegments(data)).flatMap((segments) => {
     const match = describeGroup(segments, place?.park);

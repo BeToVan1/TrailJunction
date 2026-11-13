@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:trail-index": "node scripts/build-trail-search-index.mjs",
     "preview": "vite preview",
     "test": "node --test"
   },

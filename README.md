@@ -41,6 +41,7 @@ Use a compatible desktop Chrome setup to test offline AI. An iPhone can supply t
 
 - `npm test` runs the matching, navigation, and model-response tests.
 - `npm run build` type-checks the app and builds the offline web app into `dist/`.
+- Run `npm run build:trail-index` before building for Hosting to generate the public USGS name index. It indexes the current national layer by trail name and aliases, and the app requests matching trail geometry by ID. Regenerate the index when the source layer refreshes. The app can query USGS directly when the index is unavailable.
 - To publish with Firebase Hosting, build with the registered Web App configuration and run `firebase deploy --only hosting --project YOUR_PROJECT_ID` from an authenticated Firebase CLI.
 
 To enable journal accounts, enable Google and Email/Password in Firebase Authentication and create a Standard Cloud Firestore database in production mode. Deploy the rules and index settings with `firebase deploy --only firestore --project YOUR_PROJECT_ID`. Set `VITE_FIREBASE_JOURNAL_ACCOUNTS=true` in the Hosting build. For same-domain Google redirects on Firebase Hosting, authorize the Hosting domain and its `/__/auth/handler` URL in the OAuth client. Set `VITE_FIREBASE_AUTH_DOMAIN` if you use a custom Hosting domain.

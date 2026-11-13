@@ -5,6 +5,7 @@ import { getSavedMaps, saveTrailMap } from "./offline.ts";
 import { matchParkQuery, parkForLines } from "./nps-parks.ts";
 import { SavedTrail } from "./SavedTrail.tsx";
 import { TrailCover } from "./TrailCover.tsx";
+import { warmTrailSearchIndex } from "./trail-search-index.ts";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
@@ -71,6 +72,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
     preconnect(new URL(usgsTrailsLayer).origin, { crossOrigin: "anonymous" });
     preconnect("https://commons.wikimedia.org", { crossOrigin: "anonymous" });
     preconnect("https://thumb.wikimedia.org");
+    void warmTrailSearchIndex();
   }, [view, online]);
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
         if (!controller.signal.aborted) setNational({ query: searchQuery, trails: [], limited: false, failed: true });
       });
     }
-    const timer = window.setTimeout(start, 180);
+    const timer = window.setTimeout(start, 120);
     startPendingSearch.current = start;
     return () => {
       window.clearTimeout(timer);
