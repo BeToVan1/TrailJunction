@@ -211,6 +211,80 @@
     transparent calc(50% + 12px));
 }
 .journal-photo-book[data-spread="true"] .journal-photo-card { box-shadow: none; }
+.journal-photo-book[data-spread="false"] {
+  gap: 9px;
+  padding: 12px;
+  border-color: var(--album-rule);
+  border-inline-start: 4px solid var(--album-binding);
+  border-radius: 5px 13px 13px 5px;
+  background: var(--album-print);
+  color: var(--ink);
+  box-shadow: 0 4px 0 -2px var(--album-paper), 0 5px 0 -2px var(--album-rule),
+    0 9px 22px -17px var(--ink);
+}
+.journal-photo-book[data-spread="false"] :is(h2, .journal-page-number) { color: var(--ink); }
+.journal-photo-book[data-spread="false"] .journal-ai-hint { color: var(--soft); }
+.journal-photo-book[data-spread="false"] :is(.file-button, .journal-pagination button) {
+  border-color: var(--album-rule);
+  background: var(--album-print);
+  color: var(--ink);
+}
+.journal-photo-book[data-spread="false"] .file-button.primary-action {
+  border-color: transparent;
+  background: var(--action);
+  color: var(--action-text);
+}
+.journal-photo-book[data-spread="false"] :is(button, .file-button):focus-visible,
+.journal-photo-book[data-spread="false"] .file-button:focus-within { outline-color: var(--path); }
+.journal-photo-book[data-spread="false"] .journal-photos {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.journal-photo-book[data-spread="false"] .journal-photo-card { padding: 0; box-shadow: none; }
+.journal-photo-book[data-spread="false"] .journal-print {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.journal-photo-book[data-spread="false"] .journal-print .photo-frame {
+  max-height: 52svh;
+  background: var(--album-paper);
+  border-radius: 4px;
+}
+.journal-photo-book[data-spread="false"] .journal-caption { padding-inline: 0; font-size: 1.25rem; }
+.journal-photo-book[data-spread="false"] .journal-pagination {
+  padding-top: 9px;
+  border-top: 1px solid var(--album-rule);
+}
+.journal-filmstrip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  padding-bottom: 2px;
+}
+.journal-filmstrip button {
+  flex: 0 0 clamp(44px, 15vw, 56px);
+  height: 46px;
+  padding: 2px;
+  border: 1px solid var(--album-rule);
+  border-radius: 5px;
+  background: var(--album-print);
+}
+.journal-filmstrip button[aria-current] { border: 2px solid var(--path); }
+.journal-filmstrip .photo-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--album-paper);
+}
+.journal-filmstrip img { width: 100%; height: 100%; object-fit: cover; }
 @media (min-width: 700px) {
   .journal-hikes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Camera, ImagePlus } from "lucide-react";
-import { validatePhoto } from "./photo.ts";
+import { photoPreviewUrl, validatePhoto } from "./photo.ts";
 
 function isMobileDevice() {
   const { userAgent, maxTouchPoints } = navigator;
@@ -51,28 +51,33 @@ export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera
   );
 }
 
-export function PhotoPreview({ photo, alt, fallback }: {
+export function PhotoPreview({ photo, alt, fallback, compact = false }: {
   photo?: Blob | null;
   alt: string;
   fallback?: string;
+  compact?: boolean;
 }) {
-  const [preview, setPreview] = useState<{ photo: Blob; src: string }>();
+  const [preview, setPreview] = useState<{ photo: Blob; src?: string }>();
   const [failedSrc, setFailedSrc] = useState<string>();
 
   useEffect(() => {
     if (!photo) return;
-    const src = URL.createObjectURL(photo);
-    setPreview({ photo, src });
-    return () => URL.revokeObjectURL(src);
+    let active = true;
+    void photoPreviewUrl(photo).then((src) => {
+      if (active) setPreview({ photo, src });
+    }, () => {
+      if (active) setPreview({ photo });
+    });
+    return () => { active = false; };
   }, [photo]);
 
   const src = photo ? (preview?.photo === photo ? preview.src : undefined) : fallback;
-  const broken = Boolean(src && failedSrc === src);
+  const broken = Boolean((src && failedSrc === src) || (photo && preview?.photo === photo && !preview.src));
   return (
     <span className="photo-frame">
       {src && !broken
         ? <img key={src} src={src} alt={alt} onError={() => setFailedSrc(src)} />
-        : <span className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</span>}
+        : !compact && <span className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</span>}
     </span>
   );
 }

@@ -1,5 +1,28 @@
 export class PhotoError extends Error {}
 
+const previewUrls = new WeakMap<Blob, Promise<string>>();
+
+export function photoPreviewUrl(photo: Blob) {
+  const cached = previewUrls.get(photo);
+  if (cached) return cached;
+  // A saved photo may mount, unmount, and mount again during page turns.
+  // Keep its preview independent of any one image element's lifetime.
+  const preview = new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new PhotoError("This photo could not be previewed."));
+    };
+    reader.onerror = reader.onabort = () => reject(new PhotoError("This photo could not be previewed."));
+    reader.readAsDataURL(photo);
+  }).catch((error) => {
+    previewUrls.delete(photo);
+    throw error;
+  });
+  previewUrls.set(photo, preview);
+  return preview;
+}
+
 export function validatePhoto(photo: Blob) {
   if (!photo.size) throw new PhotoError("This photo is empty. Try taking another one.");
   if (photo.size > 20 * 1024 * 1024) throw new PhotoError("Choose a photo smaller than 20 MB.");

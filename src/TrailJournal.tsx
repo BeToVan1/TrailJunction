@@ -45,6 +45,8 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const pageSize = singlePage ? 1 : 2;
   const firstPhoto = Math.floor(currentPhoto / pageSize) * pageSize;
   const endPhoto = Math.min(firstPhoto + pageSize, photoCount);
+  const stripSize = 5;
+  const stripStart = Math.max(0, Math.min(currentPhoto - 2, photoCount - stripSize));
 
   useEffect(() => {
     let active = true;
@@ -87,13 +89,16 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     });
   }
 
-  function turnPage(delta: number) {
-    const next = firstPhoto + delta * pageSize;
+  function goToPhoto(next: number) {
     if (next < 0 || next >= photoCount) return;
     setPhotoIndex(next);
     if (book.current && book.current.getBoundingClientRect().top < 0) {
       book.current.scrollIntoView({ block: "start" });
     }
+  }
+
+  function turnPage(delta: number) {
+    goToPhoto(firstPhoto + delta * pageSize);
   }
 
   function handleBookKey(event: KeyboardEvent) {
@@ -263,6 +268,20 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                     <span>Next</span><ChevronRight aria-hidden="true" />
                   </button>
                 </nav>
+              )}
+              {singlePage && photoCount > 1 && (
+                <div className="journal-filmstrip" role="group" aria-label="Jump to a photo">
+                  {hike.photos.slice(stripStart, stripStart + stripSize).map((photo, offset) => {
+                    const index = stripStart + offset;
+                    return (
+                      <button type="button" key={photo.id} aria-label={`Go to page ${index + 1}`}
+                        aria-current={index === currentPhoto ? "page" : undefined} aria-controls="journal-pages"
+                        onClick={() => goToPhoto(index)}>
+                        <PhotoPreview photo={photo.image} alt="" compact />
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </section>
             <button type="button" className="text-action journal-delete" disabled={busy}
