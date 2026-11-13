@@ -17,7 +17,6 @@ function sheetCopy(page: HTMLElement | undefined, className: string, spread: boo
     if (editCaption) {
       const spacer = document.createElement("span");
       spacer.className = editCaption.className;
-      spacer.style.visibility = "hidden";
       spacer.append(...editCaption.childNodes);
       editCaption.replaceWith(spacer);
     }

@@ -1,5 +1,8 @@
 export class PhotoError extends Error {}
 
+export const photoEdges = ["left", "top", "right", "bottom"] as const;
+export type PhotoCrop = Record<(typeof photoEdges)[number], number>;
+
 const previewUrls = new WeakMap<Blob, Promise<string>>();
 
 export function photoPreviewUrl(photo: Blob) {
@@ -62,10 +65,23 @@ export async function photoToJpeg(photo: Blob) {
   return data;
 }
 
-export async function photoToJpegBlob(photo: Blob) {
+export async function photoToJpegBlob(photo: Blob, crop?: PhotoCrop) {
   const canvas = await preparePhotoCanvas(photo);
+  let output = canvas;
+  if (crop) {
+    const left = Math.round(canvas.width * crop.left / 100);
+    const top = Math.round(canvas.height * crop.top / 100);
+    const right = Math.round(canvas.width * (1 - crop.right / 100));
+    const bottom = Math.round(canvas.height * (1 - crop.bottom / 100));
+    output = document.createElement("canvas");
+    output.width = Math.max(1, right - left);
+    output.height = Math.max(1, bottom - top);
+    const context = output.getContext("2d");
+    if (!context) throw new PhotoError("This browser could not crop the photo.");
+    context.drawImage(canvas, left, top, output.width, output.height, 0, 0, output.width, output.height);
+  }
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
+    output.toBlob((blob) => {
       if (blob) resolve(blob);
       else reject(new PhotoError("This browser could not prepare the photo."));
     }, "image/jpeg", .88);

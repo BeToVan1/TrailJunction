@@ -6,7 +6,7 @@ import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
 import { capturePageTurn, playPageTurn, startPageDrag, type PageCorner } from "./journal-page-turn.ts";
 import { prepareOfflineApp } from "./offline.ts";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
-import { PhotoError, photoToJpegBlob } from "./photo.ts";
+import { PhotoError, photoEdges, photoToJpegBlob } from "./photo.ts";
 
 export type JournalTrail = Pick<HikeDetails, "trail" | "location">;
 type JournalView = { page: "list" } | { page: "hike"; id: string } | { page: "form"; id?: string };
@@ -108,8 +108,14 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
       // IndexedDB clones Blobs on reads. Reuse in-memory photos with the same ID,
       // since changing captions, notes, or hike details never changes their images.
       const existing = previous.find(({ id }) => id === next.id);
-      const images = new Map(existing?.photos.map(({ id, image }) => [id, image]));
-      const photos = next.photos.map((photo) => ({ ...photo, image: images.get(photo.id) ?? photo.image }));
+      const existingPhotos = new Map(existing?.photos.map((photo) => [photo.id, photo]));
+      const photos = next.photos.map((photo) => {
+        const before = existingPhotos.get(photo.id);
+        const crop = photo.crop;
+        const savedCrop = before?.crop;
+        const sameCrop = crop && savedCrop && photoEdges.every((edge) => crop.bounds[edge] === savedCrop.bounds[edge]);
+        return { ...photo, image: before?.image ?? photo.image, crop: sameCrop ? savedCrop : crop };
+      });
       return [...previous.filter(({ id }) => id !== next.id), { ...next, photos }];
     });
   }
@@ -366,7 +372,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                       <button type="button" key={photo.id} aria-label={`Go to page ${index + 1}`}
                         aria-current={index === currentPhoto ? "page" : undefined} aria-controls="journal-pages"
                         onClick={() => goToPhoto(index)}>
-                        <PhotoPreview photo={photo.image} alt="" compact />
+                        <PhotoPreview photo={photo.crop?.image ?? photo.image} alt="" compact />
                       </button>
                     );
                   })}
@@ -391,7 +397,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 {[...hikes].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
                   <li key={entry.id} className="journal-hike-card">
                     <button type="button" onClick={() => open({ page: "hike", id: entry.id })}>
-                      {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].image} alt="" />
+                      {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].crop?.image ?? entry.photos[0].image} alt="" />
                         : <span className="journal-cover-mark"><BookOpen aria-hidden="true" /></span>}
                       <span className="journal-hike-summary">
                         <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time></span>

@@ -1,4 +1,5 @@
 import { createStore, del, set, update, values } from "idb-keyval";
+import type { PhotoCrop } from "./photo.ts";
 
 export interface NatureNote {
   label: string;
@@ -10,6 +11,7 @@ export interface JournalPhoto {
   image: Blob;
   caption: string;
   nature?: NatureNote;
+  crop?: { bounds: PhotoCrop; image: Blob };
 }
 
 export interface HikeDetails {

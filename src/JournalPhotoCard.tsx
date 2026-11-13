@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Maximize2, Pencil, Sparkles, X } from "lucide-react";
+import { Crop, Maximize2, Pencil, Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
+import { JournalPhotoCrop } from "./JournalPhotoCrop.tsx";
 import { PhotoPreview } from "./PhotoPicker.tsx";
 
 export function JournalPhotoCard({ photo, number, online, visible, preparePreview, save, remove }: {
@@ -10,7 +11,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   online: boolean;
   visible: boolean;
   preparePreview: boolean;
-  save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature">>) => Promise<void>;
+  save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature" | "crop">>) => Promise<void>;
   remove: () => Promise<void>;
 }) {
   const [caption, setCaption] = useState("");
@@ -22,10 +23,12 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   const captionInput = useRef<HTMLInputElement>(null);
   const captionTitle = useId();
   const photoDialog = useRef<HTMLDialogElement>(null);
+  const cropDialog = useRef<HTMLDialogElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const noteDialog = useRef<HTMLDialogElement>(null);
   const noteTitle = useId();
   const photoLabel = photo.caption || `Hike photo ${number}`;
+  const displayedPhoto = photo.crop?.image ?? photo.image;
 
   useEffect(() => () => request.current?.abort(), []);
 
@@ -58,7 +61,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
     setError("");
     let received = false;
     try {
-      const nature = await describeNaturePhoto(photo.image, controller.signal);
+      const nature = await describeNaturePhoto(displayedPhoto, controller.signal);
       controller.signal.throwIfAborted();
       received = true;
       await save({ nature });
@@ -95,7 +98,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
               photoDialog.current?.showModal();
               setViewerOpen(true);
             }}>
-            <PhotoPreview photo={photo.image} alt={photoLabel} />
+            <PhotoPreview photo={displayedPhoto} alt={photoLabel} />
             <span className="journal-enlarge-icon" aria-hidden="true"><Maximize2 /></span>
           </button>
           <figcaption className="journal-caption-row">
@@ -125,12 +128,18 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
         onClose={() => setViewerOpen(false)}
         onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
         <figure className="journal-viewer-content">
-          <button type="button" className="journal-viewer-close" aria-label="Close photo"
-            onClick={() => photoDialog.current?.close()}><X aria-hidden="true" /></button>
-          {viewerOpen && <PhotoPreview photo={photo.image} alt={photoLabel} />}
+          <div className="journal-viewer-toolbar">
+            <button type="button" className="journal-viewer-close" aria-label="Close photo"
+              onClick={() => photoDialog.current?.close()}><X aria-hidden="true" /></button>
+            <button type="button" className="journal-viewer-crop" onClick={() => cropDialog.current?.showModal()}>
+              <Crop aria-hidden="true" /> Crop photo
+            </button>
+          </div>
+          {viewerOpen && <PhotoPreview photo={displayedPhoto} alt={photoLabel} />}
           {photo.caption && <figcaption>{photo.caption}</figcaption>}
         </figure>
       </dialog>
+      {viewerOpen && <JournalPhotoCrop photo={photo} dialog={cropDialog} save={(crop) => save({ crop })} />}
       <div className="journal-card-body">
         <div className="journal-photo-actions">
           {photo.nature ? (
