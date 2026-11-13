@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { preconnect } from "react-dom";
 import { CircleCheck, CloudDownload, Map, Search } from "lucide-react";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
@@ -8,7 +8,7 @@ import { TrailCover } from "./TrailCover.tsx";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
-import { cachedUsgsTrails, downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms } from "./usgs-trails.ts";
+import { cachedUsgsTrails, downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms, usgsTrailsLayer } from "./usgs-trails.ts";
 
 type LibraryView = "search" | "saved";
 type NationalSearch = { query: string; trails: UsgsTrail[]; limited: boolean; failed: boolean };
@@ -47,7 +47,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   const [announcement, setAnnouncement] = useState("");
   const [national, setNational] = useState<NationalSearch>();
   const [retry, setRetry] = useState(0);
-  const [submitted, setSubmitted] = useState<string>();
+  const startPendingSearch = useRef<() => void>(undefined);
   const searchQuery = query.trim();
   const canSearch = view === "search" && usgsSearchTerms(searchQuery).join("").length >= 3;
   const localDownloads = useMemo(() => Object.values(saved)
@@ -67,23 +67,33 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   }, []);
 
   useEffect(() => {
-    if (!canSearch || !online) return;
+    if (view !== "search" || !online) return;
+    preconnect(new URL(usgsTrailsLayer).origin, { crossOrigin: "anonymous" });
     preconnect("https://commons.wikimedia.org", { crossOrigin: "anonymous" });
     preconnect("https://thumb.wikimedia.org");
+  }, [view, online]);
+
+  useEffect(() => {
+    if (!canSearch || !online) return;
     if (cachedUsgsTrails(searchQuery)) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(() => {
+    function start() {
+      window.clearTimeout(timer);
+      startPendingSearch.current = undefined;
       void searchUsgsTrails(searchQuery, controller.signal).then((result) => {
         if (!controller.signal.aborted) setNational({ query: searchQuery, ...result, failed: false });
       }).catch(() => {
         if (!controller.signal.aborted) setNational({ query: searchQuery, trails: [], limited: false, failed: true });
       });
-    }, submitted === searchQuery ? 0 : 180);
+    }
+    const timer = window.setTimeout(start, 180);
+    startPendingSearch.current = start;
     return () => {
       window.clearTimeout(timer);
+      startPendingSearch.current = undefined;
       controller.abort();
     };
-  }, [canSearch, online, searchQuery, retry, submitted]);
+  }, [canSearch, online, searchQuery, retry]);
 
   async function download(trail: Trail) {
     setPending((ids) => new Set(ids).add(trail.id));
@@ -145,7 +155,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
               setNational(undefined);
               setRetry((attempt) => attempt + 1);
             }
-            setSubmitted(searchQuery);
+            startPendingSearch.current?.();
           }}>
             <Search aria-hidden="true" />
             <input type="search" aria-label="Trail or park name" value={query} placeholder="Search for a trail or park" maxLength={80}
@@ -153,7 +163,6 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
                 const value = event.target.value;
                 if (value.trim() !== searchQuery) {
                   setNational(undefined);
-                  setSubmitted(undefined);
                 }
                 setQuery(value);
               }} />

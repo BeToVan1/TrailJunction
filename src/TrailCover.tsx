@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ImageOff } from "lucide-react";
 import meadowPhoto from "./journal-meadow.webp";
 import { nearbyTrailPhotos, photoSearchCenter, type NearbyPhoto } from "./nearby-trail-photos.ts";
 import parkPhotos from "./nps-park-photos.json";
@@ -21,18 +22,32 @@ export function TrailCover({ trail, online }: { trail: Trail; online: boolean })
   const photo = featured[trail.id] ?? (parkCode === "zion" ? zionPhoto : parkCode && photos[parkCode]);
   if (!photo || photo.url === failedUrl) {
     const center = trail.format === "usgs-topo" ? photoSearchCenter(trail.lines) : undefined;
-    return center && <NearbyTrailCover key={center.join("|")} trail={trail} center={center} online={online} />;
+    return center ? <NearbyTrailCover key={center.join("|")} trail={trail} center={center} online={online} />
+      : <figure className="catalog-cover"><PhotoPlaceholder /></figure>;
   }
   const { url, source, credit } = photo;
   const subject = parkCode ? trail.park.split(" · ")[0] : trail.name;
+  const loaded = loadedUrl === url;
   return (
-    <figure className="catalog-cover" data-trail={trail.id} hidden={loadedUrl !== url}>
-      <img src={url} alt={`Photo of ${subject}`} decoding="async"
-        onLoad={() => setLoadedUrl(url)} onError={() => setFailedUrl(url)} />
-      <figcaption>
+    <figure className="catalog-cover" data-trail={trail.id}>
+      <div className="catalog-cover-image">
+        {!loaded && <PhotoPlaceholder loading />}
+        <img src={url} alt={`Photo of ${subject}`} hidden={!loaded} loading="lazy" decoding="async"
+          onLoad={() => setLoadedUrl(url)} onError={() => setFailedUrl(url)} />
+      </div>
+      {loaded && <figcaption>
         <a href={source} target="_blank" rel="noreferrer" aria-label={`Photo source for ${subject}: ${credit}`}>{credit}</a>
-      </figcaption>
+      </figcaption>}
     </figure>
+  );
+}
+
+function PhotoPlaceholder({ loading = false }: { loading?: boolean }) {
+  return (
+    <div className="catalog-cover-placeholder">
+      <ImageOff aria-hidden="true" />
+      <span>{loading ? "Looking for a photo…" : "No photo available"}</span>
+    </div>
   );
 }
 
@@ -41,14 +56,14 @@ function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
   center: [string, string];
   online: boolean;
 }) {
-  const anchor = useRef<HTMLSpanElement>(null);
+  const cover = useRef<HTMLElement>(null);
   const [nearby, setNearby] = useState<NearbyPhoto[]>();
   const [index, setIndex] = useState(0);
   const [loadedUrl, setLoadedUrl] = useState<string>();
 
   useEffect(() => {
-    const card = anchor.current?.parentElement;
-    if (!card || !online || nearby?.length) return;
+    const target = cover.current;
+    if (!target || !online || nearby?.length) return;
     let active = true;
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
@@ -57,7 +72,7 @@ function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
         if (active) setNearby(photos);
       });
     }, { rootMargin: "180px 0px" });
-    observer.observe(card);
+    observer.observe(target);
     return () => {
       active = false;
       observer.disconnect();
@@ -65,21 +80,24 @@ function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
   }, [online, nearby?.length, trail.name, latitude, longitude]);
 
   const photo = nearby?.[index];
-  if (!photo) return <span ref={anchor} hidden />;
+  const loaded = photo && loadedUrl === photo.url;
 
   return (
-    <figure className="catalog-cover catalog-cover-nearby" data-trail={trail.id} hidden={loadedUrl !== photo.url}>
+    <figure ref={cover} className="catalog-cover catalog-cover-nearby" data-trail={trail.id}>
       <div className="catalog-cover-image">
-        <img key={photo.url} src={photo.url} alt="" decoding="async" onLoad={() => setLoadedUrl(photo.url)}
-          onError={() => setIndex((failedIndex) => failedIndex + 1)} />
-        <span>Nearby photo</span>
+        {!loaded && <PhotoPlaceholder loading={Boolean(online && (photo || nearby === undefined))} />}
+        {photo && (
+          <img key={photo.url} src={photo.url} alt="" hidden={!loaded} decoding="async"
+            onLoad={() => setLoadedUrl(photo.url)} onError={() => setIndex((failedIndex) => failedIndex + 1)} />
+        )}
+        {loaded && <span>Nearby photo</span>}
       </div>
-      <figcaption>
+      {loaded && <figcaption>
         <a href={photo.source} target="_blank" rel="noreferrer">{photo.author}</a>
         {photo.licenseUrl
           ? <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a>
           : <span>{photo.license}</span>}
-      </figcaption>
+      </figcaption>}
     </figure>
   );
 }
