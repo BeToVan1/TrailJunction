@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { preconnect } from "react-dom";
 import { CircleCheck, CloudDownload, Map, Search } from "lucide-react";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
 import { matchParkQuery, parkForLines } from "./nps-parks.ts";
@@ -66,7 +67,10 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   }, []);
 
   useEffect(() => {
-    if (!canSearch || !online || cachedUsgsTrails(searchQuery)) return;
+    if (!canSearch || !online) return;
+    preconnect("https://commons.wikimedia.org", { crossOrigin: "anonymous" });
+    preconnect("https://thumb.wikimedia.org");
+    if (cachedUsgsTrails(searchQuery)) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void searchUsgsTrails(searchQuery, controller.signal).then((result) => {

@@ -61,9 +61,9 @@ function fetchArea(latitude: string, longitude: string) {
   const params = new URLSearchParams({
     action: "query", generator: "geosearch", ggsnamespace: "6", ggscoord: key,
     ggsradius: "3500", ggslimit: "24", prop: "coordinates|imageinfo",
-    iiprop: "url|mime|size|extmetadata", iiurlwidth: "500",
+    iiprop: "url|mime|size|extmetadata", iiurlwidth: "330",
     iiextmetadatafilter: "LicenseShortName|LicenseUrl|Artist|Attribution|ImageDescription",
-    format: "json", formatversion: "2", origin: "*", maxlag: "5",
+    format: "json", formatversion: "2", origin: "*", maxlag: "5", maxage: "1800", smaxage: "1800",
   });
   const pages = requestArea(params).catch(() => {
     const entry = cache.get(key);

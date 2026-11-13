@@ -163,7 +163,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-field input:focus { outline: none; }
 .catalog-field .catalog-submit { flex: none; min-height: 38px; margin-inline-end: -6px; padding-inline: 10px; border-radius: 7px; }
 .catalog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; padding-block: 4px 1px; }
-.catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+.catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 12px; list-style: none; padding: 0; margin: 0; }
 .catalog-trail {
   display: grid;
   grid-template-rows: 1fr;
@@ -173,7 +173,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   background: var(--sheet);
   overflow: hidden;
 }
-.catalog-trail:has(.catalog-cover) { grid-template-rows: auto 1fr; }
+.catalog-trail:has(.catalog-cover:not([hidden])) { grid-template-rows: auto 1fr; }
 .catalog-cover {
   overflow: hidden;
   position: relative;
@@ -195,6 +195,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   text-underline-offset: 2px;
 }
 .catalog-cover.catalog-cover-nearby { display: block; place-items: normal; height: auto; }
+.catalog-cover[hidden] { display: none; }
 .catalog-cover-image { position: relative; height: clamp(110px, 18vw, 195px); }
 .catalog-cover-image img { position: absolute; inset: 0; }
 .catalog-cover-image > span {

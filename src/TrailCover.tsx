@@ -16,6 +16,7 @@ const featured: Record<string, Photo> = {
 
 export function TrailCover({ trail, online }: { trail: Trail; online: boolean }) {
   const [failedUrl, setFailedUrl] = useState<string>();
+  const [loadedUrl, setLoadedUrl] = useState<string>();
   const parkCode = trail.format === "usgs-topo" ? trail.parkCode : undefined;
   const photo = featured[trail.id] ?? (parkCode === "zion" ? zionPhoto : parkCode && photos[parkCode]);
   if (!photo || photo.url === failedUrl) {
@@ -25,8 +26,9 @@ export function TrailCover({ trail, online }: { trail: Trail; online: boolean })
   const { url, source, credit } = photo;
   const subject = parkCode ? trail.park.split(" · ")[0] : trail.name;
   return (
-    <figure className="catalog-cover" data-trail={trail.id}>
-      <img src={url} alt={`Photo of ${subject}`} loading="lazy" decoding="async" onError={() => setFailedUrl(url)} />
+    <figure className="catalog-cover" data-trail={trail.id} hidden={loadedUrl !== url}>
+      <img src={url} alt={`Photo of ${subject}`} decoding="async"
+        onLoad={() => setLoadedUrl(url)} onError={() => setFailedUrl(url)} />
       <figcaption>
         <a href={source} target="_blank" rel="noreferrer" aria-label={`Photo source for ${subject}: ${credit}`}>{credit}</a>
       </figcaption>
@@ -42,6 +44,7 @@ function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
   const anchor = useRef<HTMLSpanElement>(null);
   const [nearby, setNearby] = useState<NearbyPhoto[]>();
   const [index, setIndex] = useState(0);
+  const [loadedUrl, setLoadedUrl] = useState<string>();
 
   useEffect(() => {
     const card = anchor.current?.parentElement;
@@ -65,9 +68,9 @@ function NearbyTrailCover({ trail, center: [latitude, longitude], online }: {
   if (!photo) return <span ref={anchor} hidden />;
 
   return (
-    <figure className="catalog-cover catalog-cover-nearby" data-trail={trail.id}>
+    <figure className="catalog-cover catalog-cover-nearby" data-trail={trail.id} hidden={loadedUrl !== photo.url}>
       <div className="catalog-cover-image">
-        <img key={photo.url} src={photo.url} alt="" decoding="async"
+        <img key={photo.url} src={photo.url} alt="" decoding="async" onLoad={() => setLoadedUrl(photo.url)}
           onError={() => setIndex((failedIndex) => failedIndex + 1)} />
         <span>Nearby photo</span>
       </div>
