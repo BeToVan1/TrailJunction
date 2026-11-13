@@ -75,9 +75,12 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
         <h1 ref={heading} tabIndex={-1}>Read a trail sign</h1>
         <p className="muted">Keep the lettering and arrows in view.</p>
       </div>
-      <PhotoPreview photo={photo} alt="Your trail sign photo" />
-      <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy} />
-      <section className="trail-sheet result-sheet" aria-label="Sign reading">
+      <div className="saved-trail-layout">
+        <div className="trail-sheet sign-photo-panel">
+          <PhotoPreview photo={photo} alt="Your trail sign photo" />
+          <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy} />
+        </div>
+        <section className="trail-sheet result-sheet" aria-label="Sign reading">
         {sign && (
           <div aria-live="polite">
             <div className="reading-heading">
@@ -110,7 +113,8 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
           </button>
         )}
         <span className="screen-reader-only" role="status">{busy ? "Reading your sign photo." : sign ? "Sign reading finished." : ""}</span>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

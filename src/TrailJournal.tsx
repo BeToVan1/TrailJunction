@@ -296,13 +296,23 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
           ? back("Back to hike", { page: "hike", id: hike.id }) : back("All hikes", { page: "list" }))}
         {view.page === "hike" && hike && <p className="eyebrow"><time dateTime={hike.date}>{hikeDate(hike.date)}</time>
           {hike.location && ` · ${hike.location}`}</p>}
-        <h1 ref={heading} tabIndex={-1}>{title}</h1>
+        <div className="journal-title-row">
+          <h1 ref={heading} tabIndex={-1}>{title}</h1>
+          {view.page === "list" && !loading && !accountLoading && !loadError && (
+            <button type="button" className="primary-action journal-new" onClick={() => open({ page: "form" })}>
+              <Plus aria-hidden="true" /> Log a hike
+            </button>
+          )}
+          {view.page === "hike" && hike && (
+            <button type="button" className="secondary-action" disabled={busy}
+              onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
+          )}
+        </div>
         {view.page === "list" && <p className="muted">{store === deviceJournal
           ? "Hikes, notes, and photos saved on this device."
           : "Your account’s hikes, notes, and photos are available offline after syncing."}</p>}
       </div>
       <p className="screen-reader-only" role="status">{status}</p>
-      {view.page === "list" && accountPanel}
       {loading || accountLoading ? <p className="muted" role="status">Opening your journal…</p>
         : loadError ? <p className="error" role="alert">This browser could not open your journal storage.</p>
         : view.page === "form" ? (
@@ -313,10 +323,6 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
         ) : view.page === "hike" && hike ? (
           <>
             {hike.notes && <p className="journal-notes">{hike.notes}</p>}
-            <div className="journal-actions">
-              <button type="button" className="text-action" disabled={busy}
-                onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
-            </div>
             <section className="journal-photo-book" data-spread={!singlePage && photoCount > 0}
               aria-labelledby="photo-book-title" onKeyDown={handleBookKey}>
               <div className="journal-book-tools">
@@ -401,35 +407,38 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
               onClick={() => void removeHike(hike)}>Delete hike</button>
           </>
         ) : (
-          <>
-            <button type="button" className="primary-action journal-new" onClick={() => open({ page: "form" })}>
-              <Plus aria-hidden="true" /> Log a hike
-            </button>
-            {!hikes.length ? (
-              <div className="trail-sheet journal-empty">
-                <span className="status-icon"><BookOpen aria-hidden="true" /></span>
-                <div><h2>No hikes yet</h2><p className="muted">Add a trail name and date to start your first entry.</p></div>
-              </div>
-            ) : (
-              <ul className="journal-hikes">
-                {[...hikes].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
-                  <li key={entry.id} className="journal-hike-card">
-                    <button type="button" onClick={() => open({ page: "hike", id: entry.id })}>
-                      {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].crop?.image ?? entry.photos[0].image} alt="" />
-                        : <span className="journal-cover-mark"><BookOpen aria-hidden="true" /></span>}
-                      <span className="journal-hike-summary">
-                        <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time></span>
-                        <strong>{entry.trail}</strong>
-                        {entry.location && <span className="muted">{entry.location}</span>}
-                        <span className="journal-cover-count">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
-                      </span>
-                      <ChevronRight aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
+          <div className={`journal-library${accountPanel ? " journal-library-with-account" : ""}`}>
+            <section className="journal-entries" aria-label="Your hikes">
+              {!hikes.length ? (
+                <div className="trail-sheet journal-empty">
+                  <span className="status-icon"><BookOpen aria-hidden="true" /></span>
+                  <div><h2>No hikes yet</h2><p className="muted">Add a trail name and date to start your first entry.</p></div>
+                </div>
+              ) : (
+                <>
+                  <h2>Recent hikes</h2>
+                  <ul className="journal-hikes">
+                    {[...hikes].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
+                      <li key={entry.id} className="journal-hike-card">
+                        <button type="button" onClick={() => open({ page: "hike", id: entry.id })}>
+                          {entry.photos[0] ? <PhotoPreview photo={entry.photos[0].crop?.image ?? entry.photos[0].image} alt="" />
+                            : <span className="journal-cover-mark"><BookOpen aria-hidden="true" /></span>}
+                          <span className="journal-hike-summary">
+                            <span className="eyebrow"><time dateTime={entry.date}>{hikeDate(entry.date)}</time></span>
+                            <strong>{entry.trail}</strong>
+                            {entry.location && <span className="muted">{entry.location}</span>}
+                            <span className="journal-cover-count">{entry.photos.length} {entry.photos.length === 1 ? "photo" : "photos"}</span>
+                          </span>
+                          <ChevronRight aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+            {accountPanel}
+          </div>
         )}
     </div>
   );

@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
-import { ArrowUpRight, BookOpen, Compass, Map, Mountain, Play, Signpost } from "lucide-react";
+import { ArrowUpRight, BookOpen, Map, Play, Signpost } from "lucide-react";
 import meadowPhoto from "./journal-meadow.webp";
 import squirrelPhoto from "./journal-squirrel.webp";
 
 export function PublicHeader({ label, children }: { label?: string; children?: ReactNode }) {
   return (
     <header className="public-header">
-      <a className="public-brand" href="/" aria-label="Trail Junction home">
-        <span><Mountain aria-hidden="true" /></span> Trail Junction
-      </a>
-      {label && <span className="public-kicker">{label}</span>}
-      {children}
+      <div className="public-header-inner">
+        <a className="public-brand" href="/" aria-label="Trail Junction home">
+          <span><Signpost aria-hidden="true" /></span> Trail Junction
+        </a>
+        {label && <span className="public-kicker">{label}</span>}
+        {children}
+      </div>
     </header>
   );
 }
@@ -26,31 +28,40 @@ export function Landing() {
       <main>
         <section className="landing-hero">
           <div className="landing-copy">
-            <p className="public-kicker"><span className="landing-dot" />Offline trail maps</p>
             <h1>Go beyond<br /><em>the signal.</em></h1>
-            <p>Download trail maps before you lose service, then turn your hike into a photo book.</p>
+            <p>Download trail maps, read trail signs, and turn your hikes into photo books.</p>
             <div className="landing-actions">
               <a className="public-button" href="/app">Open trail app <ArrowUpRight aria-hidden="true" /></a>
               <a className="public-button landing-demo-link" href="/demo"><Play aria-hidden="true" /> Try sign demo</a>
             </div>
           </div>
-          <span className="landing-legend" aria-hidden="true"><Compass /> Illustrated terrain</span>
+          <a className="landing-photo-credit" href="https://www.nps.gov/yose/planyourvisit/fall.htm">Yosemite National Park · NPS photo</a>
         </section>
         <div className="landing-paths">
-          <article>
+          <a href="/app">
             <span className="landing-icon"><Map aria-hidden="true" /></span>
             <div>
               <h2>Find and save real trails</h2>
               <p>Search U.S. trails and download a topographic map to open offline.</p>
             </div>
-          </article>
-          <article>
+            <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
+          </a>
+          <a href="/demo">
             <span className="landing-icon"><Signpost aria-hidden="true" /></span>
             <div>
               <h2>See how sign reading works</h2>
               <p>Try a sample sign at Fern Fork and see which branch leads to your destination.</p>
             </div>
-          </article>
+            <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
+          </a>
+          <a href="#trail-journal">
+            <span className="landing-icon"><BookOpen aria-hidden="true" /></span>
+            <div>
+              <h2>Keep a trail journal</h2>
+              <p>Record hikes and revisit the photos and notes from each one.</p>
+            </div>
+            <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
+          </a>
         </div>
         <section id="trail-journal" className="landing-journal" aria-labelledby="landing-journal-title">
           <div className="landing-journal-copy">

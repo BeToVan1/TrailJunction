@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { CloudDownload, Map, Search } from "lucide-react";
+import { CircleCheck, CloudDownload, Map, Search } from "lucide-react";
+import meadowPhoto from "./journal-meadow.webp";
 import { getSavedMaps, saveTrailMap } from "./offline.ts";
+import { PhotoPreview } from "./PhotoPicker.tsx";
 import { SavedTrail } from "./SavedTrail.tsx";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
@@ -15,6 +17,23 @@ const featuredStates: Record<(typeof trails)[number]["id"], string> = {
   "cooks-meadow": "California",
   parus: "Utah",
 };
+
+function TrailCover({ trail, map }: { trail: Trail; map?: TrailMapData }) {
+  const base = import.meta.env.BASE_URL;
+  if (trail.id === "cooks-meadow") {
+    return <div className="catalog-cover catalog-cover-meadow"><img src={meadowPhoto} alt="" /></div>;
+  }
+  if (trail.id === "lower-yosemite-fall" || trail.id === "parus") {
+    const image = trail.id === "parus" ? "parus-topo.jpg" : "lower-yosemite-fall.jpg";
+    return <div className={`catalog-cover catalog-cover-${trail.id}`}><img src={`${base}trails/${image}`} alt="" /></div>;
+  }
+  return (
+    <div className="catalog-cover catalog-cover-topo">
+      <Map aria-hidden="true" />
+      {map?.format === "usgs-topo" && <PhotoPreview photo={map.image} alt="" compact />}
+    </div>
+  );
+}
 
 function duplicatesFeatured(trail: UsgsTrail) {
   const name = (label: string) => normalizeTrailName(label).replace(/ trail$/, "");
@@ -97,7 +116,7 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
   if (opened && saved[opened.id]) {
     return (
       <SavedTrail key={opened.id} trail={opened} map={saved[opened.id]} online={online}
-        backLabel={view === "saved" ? "Saved trails" : "Search trails"} back={() => setOpened(undefined)}
+        backLabel={view === "saved" ? "Saved trails" : "Explore trails"} back={() => setOpened(undefined)}
         logHike={() => logTrail(opened)} />
     );
   }
@@ -114,32 +133,36 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
     ? [...trails.filter((trail) => saved[trail.id]), ...localDownloads]
     : [...searchTrails(query), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
   return (
-    <div className="trail-library">
-      <div className="intro">
-        <h1>{view === "search" ? "Find a trail" : "Saved trails"}</h1>
-      </div>
-      {view === "search" && (
-        <label className="catalog-search">
-          <span>Trail or park name</span>
-          <span className="catalog-field">
+    <div className="trail-library trail-catalog">
+      <section className="catalog-banner" data-view={view}>
+        <div className="intro">
+          <h1>{view === "search" ? "Find a trail" : "Saved trails"}</h1>
+          <p>{view === "search" ? "Find U.S. trails and download a map before you go." : "Maps ready to open offline."}</p>
+        </div>
+        {view === "search" && (
+          <label className="catalog-search catalog-field">
             <Search aria-hidden="true" />
-            <input type="search" value={query} placeholder="e.g. Angels Landing" maxLength={80}
+            <span className="screen-reader-only">Trail or park name</span>
+            <input type="search" value={query} placeholder="Search for a trail or park" maxLength={80}
               onChange={(event) => {
                 const value = event.target.value;
                 if (value.trim() !== searchQuery) setNational(undefined);
                 setQuery(value);
               }} />
-          </span>
-        </label>
-      )}
-      <p className="muted catalog-status" aria-live="polite">
+          </label>
+        )}
+      </section>
+      <div className="catalog-heading">
+        <h2>{view === "saved" ? "Downloaded maps" : searchQuery ? "Search results" : "Featured trails"}</h2>
+        <p className="muted" aria-live="polite">
         {loading ? "Loading trail maps…" : searching ? "Searching U.S. trails…" : shownTrails.length > 0
           ? `${shownTrails.length} ${shownTrails.length === 1 ? "trail" : "trails"}${view === "saved" ? " available offline" : ""}`
           : view === "saved" ? "Download a trail from search to find it here."
           : result?.failed ? "No local matches."
           : online && !canSearch ? "Enter at least three letters or numbers to search U.S. trails."
           : "No trails match. Try a different trail name."}
-      </p>
+        </p>
+      </div>
       {!online && view === "search" && <p className="muted">Reconnect to search U.S. trails or download a new map.</p>}
       {result?.limited && <p className="muted">More trails match. Enter a more specific trail name.</p>}
       {result?.failed && (
@@ -156,25 +179,32 @@ export function TrailLibrary({ view, online, opened, setOpened, logTrail }: {
       <ul className="catalog-results">
         {shownTrails.map((trail) => (
           <li key={trail.id} className="catalog-trail">
-            <div>
-              <h2>{trail.name}</h2>
-              <p className="muted">{trail.park}</p>
-              <p className="muted catalog-detail">{trail.details}</p>
-              {saved[trail.id] && <p className="catalog-ready">Saved offline</p>}
+            <TrailCover trail={trail} map={saved[trail.id]} />
+            <div className="catalog-card-content">
+              <div className="catalog-card-copy">
+                <h3>{trail.name}</h3>
+                <p className="muted">{trail.park}</p>
+                <p className="muted catalog-detail">{trail.details}</p>
+              </div>
+              <div className="catalog-card-action">
+                {saved[trail.id] ? (
+                  <>
+                    <p className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</p>
+                    <button type="button" className="secondary-action" aria-label={`Open map for ${trail.name}`} onClick={() => open(trail)}>
+                      <Map aria-hidden="true" /> Open map
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button" className="primary-action" aria-label={`Download ${trail.name}`}
+                    disabled={loading || !online || pending.has(trail.id)}
+                    onClick={() => void download(trail)}
+                  >
+                    <CloudDownload aria-hidden="true" /> {pending.has(trail.id) ? "Saving…" : "Download"}
+                  </button>
+                )}
+              </div>
             </div>
-            {saved[trail.id] ? (
-              <button type="button" className="secondary-action" aria-label={`Open map for ${trail.name}`} onClick={() => open(trail)}>
-                <Map aria-hidden="true" /> Open map
-              </button>
-            ) : (
-              <button
-                type="button" className="primary-action" aria-label={`Download ${trail.name}`}
-                disabled={loading || !online || pending.has(trail.id)}
-                onClick={() => void download(trail)}
-              >
-                <CloudDownload aria-hidden="true" /> {pending.has(trail.id) ? "Saving…" : "Download"}
-              </button>
-            )}
           </li>
         ))}
       </ul>

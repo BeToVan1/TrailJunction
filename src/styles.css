@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
-  --surface: light-dark(#faf8ee, #1c2822);
-  --sheet: light-dark(#fffdf6, #25322b);
+  --surface: light-dark(#eaede4, #1b251f);
+  --sheet: light-dark(#f9f9f2, #26332a);
   --ink: light-dark(#182b20, #f2f5e8);
   --soft: light-dark(#506255, #b4c4b8);
   --border: light-dark(#d7ddcc, #46574b);
@@ -18,6 +18,11 @@
   --return: light-dark(#a83c18, #ffa573);
   --return-wash: light-dark(#f7e5d7, #543427);
   --halo: light-dark(#fffcf1, #182921);
+  --forest: #172e23;
+  --forest-text: #f8f6e9;
+  --forest-muted: #c6d3bf;
+  --field-accent: #dceeaa;
+  --page-width: 1260px;
   background: var(--surface);
   color: var(--ink);
   font-family: "DM Sans Variable", system-ui, sans-serif;
@@ -43,30 +48,50 @@ h1 {
 }
 h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wrap: anywhere; }
 
-.app-bar { background: var(--sheet); border-bottom: 1px solid var(--border); }
+.app { min-height: 100svh; }
+.app-bar { padding-top: env(safe-area-inset-top); background: var(--forest); color: var(--forest-text); }
 .bar-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  max-width: 1100px;
-  padding: 6px 18px;
+  gap: clamp(12px, 2vw, 28px);
+  max-width: var(--page-width);
+  min-height: 62px;
+  padding: 7px clamp(12px, 3vw, 30px);
   margin: auto;
 }
-.section-nav { border-bottom: 1px solid var(--border); background: var(--sheet); }
-.section-nav > div { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 1100px; margin: auto; padding-inline: 14px; }
-.section-nav button {
+.section-nav, .bar-tools { display: flex; align-items: center; gap: 5px; }
+.bar-tools { margin-inline-start: auto; gap: clamp(8px, 2vw, 24px); }
+.bar-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
   min-height: 44px;
-  padding: 4px 3px;
+  font-size: .84rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bar-demo:hover { text-decoration: underline; text-underline-offset: 4px; }
+.bar-demo svg, .section-nav svg { width: 16px; height: 16px; }
+.section-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px;
   border: 0;
-  border-bottom: 3px solid transparent;
-  color: var(--soft);
+  border-radius: 9px;
+  color: var(--forest-text);
   background: transparent;
   font-weight: 700;
   font-size: .88rem;
   white-space: nowrap;
 }
-.section-nav button[aria-current] { border-bottom-color: var(--path); color: var(--ink); }
+.section-nav button:hover { background: #ffffff15; }
+.section-nav button[aria-current] { background: var(--field-accent); color: var(--forest); }
+.app-bar :is(a, button):focus-visible { outline-color: var(--field-accent); }
 .wordmark {
   display: inline-flex;
   align-items: center;
@@ -75,7 +100,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: inherit;
   font-size: 1rem;
   font-weight: 750;
   letter-spacing: -.02em;
@@ -87,12 +112,14 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  color: var(--action-text);
-  background: var(--action);
+  color: var(--forest);
+  background: var(--field-accent);
+  flex: none;
 }
-.connection { display: inline-flex; align-items: center; gap: 5px; color: var(--soft); font-size: .8rem; }
+.brand-icon svg { width: 18px; height: 18px; }
+.connection { display: inline-flex; align-items: center; gap: 5px; color: var(--forest-muted); font-size: .79rem; }
 .connection svg { width: 15px; height: 15px; }
-.workspace { max-width: 1100px; margin: auto; padding: 18px 14px 26px; }
+.workspace { max-width: var(--page-width); margin: auto; padding: clamp(12px, 2.6vw, 26px) clamp(12px, 3vw, 30px) 28px; }
 .intro { display: grid; justify-items: start; gap: 5px; margin: 0 3px 16px; }
 .intro .back { margin: -9px 0 3px; }
 .eyebrow { color: var(--soft); font-size: .82rem; font-weight: 700; line-height: 1.4; }
@@ -110,27 +137,63 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .map-layout, .sign-layout, .map-actions { display: grid; gap: 13px; align-items: start; }
 .trail-library { max-width: 680px; display: grid; gap: 12px; }
 .trail-library .intro { margin-bottom: 0; }
-.catalog-search { display: grid; gap: 5px; font-size: .86rem; font-weight: 700; color: var(--soft); }
+.trail-catalog { max-width: none; gap: 12px; }
+.catalog-banner {
+  display: grid;
+  gap: 15px;
+  padding: clamp(17px, 3vw, 29px);
+  border-radius: 16px;
+  color: var(--forest-text);
+  background: linear-gradient(92deg, #172e23 8%, #172e23e8 39%, #172e2359 100%), url("./journal-meadow.webp") center 54% / cover, var(--forest);
+}
+.catalog-banner[data-view="saved"] { background-image: linear-gradient(95deg, #172e23 16%, #172e239c), url("./journal-meadow.webp"); }
+.catalog-banner .intro { margin: 0; gap: 6px; }
+.catalog-banner h1, .saved-trail h1, .trail-sign-reader h1 {
+  font: 400 clamp(2.4rem, 5.8vw, 4.2rem)/1 Georgia, serif;
+  letter-spacing: -.057em;
+}
+.catalog-banner .intro > p { color: #f0f1e3; font-size: .9rem; }
+.catalog-banner .catalog-search { width: min(100%, 570px); }
+.catalog-search { font-size: .86rem; color: var(--soft); }
 .catalog-field { display: flex; align-items: center; gap: 9px; padding: 0 11px; }
 .catalog-field { border: 1px solid var(--border); border-radius: 10px; background: var(--sheet); }
 .catalog-field:focus-within { outline: 2px solid var(--path); outline-offset: 2px; }
 .catalog-field svg { width: 17px; height: 17px; flex: none; }
 .catalog-field input { width: 100%; min-width: 0; min-height: 46px; border: 0; color: var(--ink); background: transparent; font-size: 1rem; }
 .catalog-field input:focus { outline: none; }
-.catalog-results { display: grid; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.catalog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; padding-block: 4px 1px; }
+.catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .catalog-trail {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  padding: 11px;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--sheet);
+  overflow: hidden;
 }
-.catalog-trail h2 { font-size: 1rem; margin-bottom: 3px; }
-.catalog-trail .catalog-detail, .catalog-ready { font-size: .76rem; }
-.catalog-ready { margin-top: 3px; color: var(--path); font-weight: 750; }
+.catalog-cover {
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: clamp(110px, 18vw, 195px);
+  background: var(--land-west);
+}
+.catalog-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.catalog-cover-lower-yosemite-fall img { position: absolute; inset: auto 0 0; height: 195%; object-position: 50% 100%; }
+.catalog-cover-parus img { object-position: 50% 48%; }
+.catalog-cover-topo { background: var(--land-west) url("./landing-terrain.svg") center / cover; color: var(--path); }
+.catalog-cover-topo > svg { padding: 10px; width: 45px; height: 45px; border-radius: 12px; background: var(--sheet); }
+.catalog-cover-topo > .photo-frame { position: absolute; inset: 0; min-height: 0; pointer-events: none; }
+.catalog-cover-topo img { object-position: center; }
+.catalog-card-content { display: grid; grid-template-rows: 1fr auto; gap: 9px; padding: 12px; min-width: 0; }
+.catalog-card-copy { display: grid; align-content: start; gap: 3px; }
+.catalog-trail h3 { font-size: clamp(.98rem, 2vw, 1.18rem); line-height: 1.18; letter-spacing: -.026em; margin: 0; overflow-wrap: anywhere; }
+.catalog-trail .muted { font-size: .81rem; }
+.catalog-card-action { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.catalog-ready { display: inline-flex; align-items: center; gap: 5px; color: var(--path); font-size: .74rem; font-weight: 750; }
+.catalog-ready svg { width: 14px; height: 14px; flex: none; }
 .catalog-trail button { font-size: .82rem; padding-inline: 9px; }
 .catalog-trail button svg { width: 15px; height: 15px; }
 .screen-reader-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -275,6 +338,18 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .file-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: inherit; }
 .file-button:has(input:disabled) { cursor: default; opacity: .62; }
 .trail-sign-tools { display: grid; gap: 4px; }
+.saved-trail, .trail-sign-reader { max-width: none; gap: 16px; }
+.saved-trail-meta { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+.saved-trail-layout { display: grid; gap: 12px; align-items: start; min-width: 0; }
+.saved-trail-layout .park-map { max-width: none; min-width: 0; }
+.saved-trail-tools { display: grid; gap: 12px; min-width: 0; }
+.saved-trail-tools .trail-sign-tools { gap: 9px; }
+.trail-sign-tools h2 { display: flex; align-items: center; gap: 7px; }
+.trail-sign-tools h2 svg { width: 19px; height: 19px; flex: none; color: var(--path); }
+.saved-trail-details .park-elevation { margin: 0; }
+.sign-photo-panel { min-width: 0; }
+.sign-photo-panel .photo-frame { background: var(--surface); border-radius: 9px; overflow: hidden; }
+.sign-photo-panel .photo-controls { margin-top: 1px; }
 .photo-error { margin: 0; }
 .trail-sign-reader h1:focus { outline: none; }
 .trail-log-action { justify-self: start; }
@@ -346,9 +421,43 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .checkpoint small { display: block; color: var(--soft); font-size: .8rem; font-weight: 500; }
 
 @media (min-width: 640px) {
-  .workspace { padding: 32px 24px; }
-  .bar-inner { padding-inline: 24px; }
   .intro { margin: 0 0 20px; }
   .map-layout, .sign-layout { grid-template-columns: minmax(0, 1.75fr) minmax(245px, 1fr); gap: 18px; }
   .trail-sheet { padding: 17px; }
+}
+
+@media (min-width: 760px) {
+  .saved-trail-layout { grid-template-columns: minmax(0, 1.55fr) minmax(260px, 1fr); gap: 18px; }
+  .saved-trail-layout .park-map { background: var(--map-paper); }
+  .saved-trail-layout :is(.park-map-art, .park-zion-map) { max-width: 100%; margin-inline: auto; }
+  .saved-trail-layout .park-map-art { width: min(100%, 645px); }
+  .saved-trail-layout .park-zion-map { max-height: 555px; width: auto; }
+}
+
+@media (max-width: 699px) {
+  .bar-inner { min-height: 56px; gap: 6px; padding-block: 5px; }
+  .wordmark { white-space: nowrap; }
+  .bar-tools { gap: 8px; }
+  .bar-demo { min-width: 44px; justify-content: center; font-size: .75rem; }
+  .section-nav {
+    position: fixed;
+    z-index: 10;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 5px max(7px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom)) max(7px, env(safe-area-inset-left));
+    background: var(--forest);
+    box-shadow: 0 -3px 15px #13261c1f;
+  }
+  .section-nav button { min-height: 46px; flex-direction: column; gap: 3px; font-size: .75rem; }
+  .app .workspace { padding-bottom: calc(77px + env(safe-area-inset-bottom)); }
+  .catalog-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .catalog-cover { height: clamp(91px, 28vw, 170px); }
+  .catalog-card-content { padding: 9px; }
+  .catalog-card-action > button { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  .bar-demo span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Signpost, Wifi, WifiOff } from "lucide-react";
+import { BookOpen, Compass, Download, Play, Signpost, Wifi, WifiOff } from "lucide-react";
 import { AccountJournalView } from "./AccountJournalView.tsx";
 import { journalAccountsEnabled } from "./firebase-app.ts";
 import { TrailJournal, type JournalTrail } from "./TrailJournal.tsx";
@@ -42,16 +42,23 @@ export function App() {
           <a className="wordmark" href="/">
             <span className="brand-icon"><Signpost aria-hidden="true" /></span> Trail Junction
           </a>
-          <span className="connection"><ConnectionIcon aria-hidden="true" /> {online ? "Online" : "Offline"}</span>
+          <nav className="section-nav" aria-label="Trail app">
+            <button type="button" aria-current={view === "search" ? "page" : undefined} onClick={() => show("search")}>
+              <Compass aria-hidden="true" /> Explore
+            </button>
+            <button type="button" aria-current={view === "saved" ? "page" : undefined} onClick={() => show("saved")}>
+              <Download aria-hidden="true" /> Saved
+            </button>
+            <button type="button" aria-current={view === "journal" ? "page" : undefined} onClick={() => show("journal")}>
+              <BookOpen aria-hidden="true" /> Journal
+            </button>
+          </nav>
+          <div className="bar-tools">
+            <span className="connection"><ConnectionIcon aria-hidden="true" /> {online ? "Online" : "Offline"}</span>
+            <a className="bar-demo" href="/demo"><Play aria-hidden="true" /> <span>Sign demo</span></a>
+          </div>
         </div>
       </header>
-      <nav className="section-nav" aria-label="Trail app">
-        <div>
-          <button type="button" aria-current={view === "search" ? "page" : undefined} onClick={() => show("search")}>Search trails</button>
-          <button type="button" aria-current={view === "saved" ? "page" : undefined} onClick={() => show("saved")}>Saved</button>
-          <button type="button" aria-current={view === "journal" ? "page" : undefined} onClick={() => show("journal")}>Journal</button>
-        </div>
-      </nav>
       <main className="workspace">
         <div hidden={view === "journal"}>
           <TrailLibrary view={libraryView} online={online} opened={opened} setOpened={setOpened} logTrail={logTrail} />
