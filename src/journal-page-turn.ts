@@ -12,6 +12,14 @@ function sheetCopy(page: HTMLElement | undefined, className: string, spread: boo
     copy.hidden = false;
     copy.removeAttribute("aria-label");
     copy.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+    const trigger = copy.querySelector(".journal-enlarge-photo");
+    if (trigger) {
+      const print = document.createElement("span");
+      print.className = trigger.className;
+      trigger.querySelector(".journal-enlarge-icon")?.remove();
+      print.append(...trigger.childNodes);
+      trigger.replaceWith(print);
+    }
     sheet.append(copy);
   }
   return sheet;

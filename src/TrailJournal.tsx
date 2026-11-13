@@ -49,6 +49,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const heading = useRef<HTMLHeadingElement>(null);
   const pages = useRef<HTMLDivElement>(null);
   const swipeStart = useRef<{ x: number; y: number }>(null);
+  const suppressPhotoClick = useRef(false);
   const hike = view.page === "list" ? undefined : hikes.find(({ id }) => id === view.id);
   const photoCount = hike?.photos.length ?? 0;
   const currentPhoto = Math.max(0, Math.min(photoIndex, photoCount - 1));
@@ -184,8 +185,10 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
 
   function beginSwipe(event: TouchEvent) {
     const touch = event.touches[0];
-    swipeStart.current = event.touches.length === 1 && event.target instanceof Element
-      && !event.target.closest("button, input, dialog, label, .journal-grab-corner")
+    suppressPhotoClick.current = false;
+    const target = event.target instanceof Element ? event.target : null;
+    swipeStart.current = event.touches.length === 1 && target
+      && (!target.closest("button, input, dialog, label, .journal-grab-corner") || target.closest(".journal-enlarge-photo"))
       ? { x: touch.clientX, y: touch.clientY } : null;
   }
 
@@ -196,7 +199,10 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     if (!start || !touch || event.touches.length) return;
     const x = touch.clientX - start.x;
     const y = touch.clientY - start.y;
-    if (Math.abs(x) >= 55 && Math.abs(x) > 1.5 * Math.abs(y)) turnPage(x < 0 ? 1 : -1);
+    if (Math.abs(x) >= 55 && Math.abs(x) > 1.5 * Math.abs(y)) {
+      suppressPhotoClick.current = true;
+      turnPage(x < 0 ? 1 : -1);
+    }
   }
 
   async function submit(details: HikeDetails) {
@@ -302,7 +308,15 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                   : "Asking Gemini sends the selected photo for a possible plant or wildlife identification."}</p>
               )}
               <div ref={pages} className="journal-photos" id="journal-pages" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
-                onTouchCancel={() => { swipeStart.current = null; }}>
+                onTouchCancel={() => { swipeStart.current = null; }}
+                onPointerDown={(event) => { if (event.pointerType !== "touch") suppressPhotoClick.current = false; }}
+                onClickCapture={(event) => {
+                  if (suppressPhotoClick.current && event.detail !== 0 && event.target instanceof Element
+                    && event.target.closest(".journal-enlarge-photo")) {
+                    event.stopPropagation();
+                    suppressPhotoClick.current = false;
+                  }
+                }}>
                 {!hike.photos.length && (
                   <div className="journal-blank-page">
                     <Images aria-hidden="true" />

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Maximize2, Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { PhotoPreview } from "./PhotoPicker.tsx";
@@ -18,8 +18,11 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   const [busy, setBusy] = useState<"gemini" | "save" | "remove">();
   const [error, setError] = useState("");
   const request = useRef<AbortController>(null);
+  const photoDialog = useRef<HTMLDialogElement>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const noteDialog = useRef<HTMLDialogElement>(null);
   const noteTitle = useId();
+  const photoLabel = photo.caption || `Hike photo ${number}`;
 
   useEffect(() => () => request.current?.abort(), []);
 
@@ -77,10 +80,27 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
     <article className="journal-photo-card" hidden={!visible} aria-label={`Photo ${number}`}>
       {preparePreview && (
         <figure className="journal-print">
-          <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
+          <button type="button" className="journal-enlarge-photo" aria-label={`View larger: ${photoLabel}`}
+            aria-haspopup="dialog" onClick={() => {
+              photoDialog.current?.showModal();
+              setViewerOpen(true);
+            }}>
+            <PhotoPreview photo={photo.image} alt={photoLabel} />
+            <span className="journal-enlarge-icon" aria-hidden="true"><Maximize2 /></span>
+          </button>
           {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}
         </figure>
       )}
+      <dialog ref={photoDialog} className="journal-photo-viewer" aria-label={`Enlarged photo ${number}`}
+        onClose={() => setViewerOpen(false)}
+        onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
+        <figure className="journal-viewer-content">
+          <button type="button" className="journal-viewer-close" aria-label="Close photo"
+            onClick={() => photoDialog.current?.close()}><X aria-hidden="true" /></button>
+          {viewerOpen && <PhotoPreview photo={photo.image} alt={photoLabel} />}
+          {photo.caption && <figcaption>{photo.caption}</figcaption>}
+        </figure>
+      </dialog>
       <div className="journal-card-body">
         {editing && (
           <form className="journal-form" onSubmit={(event) => void saveCaption(event)}>
