@@ -6,7 +6,9 @@ import type { Trail } from "./trail-catalog.ts";
 import { useOnline } from "./use-online.ts";
 
 export function App() {
-  const [view, setView] = useState<"search" | "saved" | "journal">("search");
+  const [view, setView] = useState<"search" | "saved" | "journal">(() =>
+    new URLSearchParams(window.location.search).get("view") === "journal" ? "journal" : "search",
+  );
   const [libraryView, setLibraryView] = useState<"search" | "saved">("search");
   const [opened, setOpened] = useState<Trail>();
   const [journalTrail, setJournalTrail] = useState<JournalTrail>();
@@ -19,6 +21,10 @@ export function App() {
     setJournalTrail(undefined);
     if (next !== "journal") setLibraryView(next);
     setView(next);
+    const url = new URL(window.location.href);
+    if (next === "journal") url.searchParams.set("view", "journal");
+    else url.searchParams.delete("view");
+    if (url.href !== window.location.href) window.history.replaceState(null, "", url);
     window.scrollTo(0, 0);
   }
 

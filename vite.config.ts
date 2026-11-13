@@ -22,7 +22,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,woff2,webmanifest}", "trails/parus-topo.jpg"],
+        globPatterns: ["**/*.{js,css,html,png,webp,woff2,webmanifest}", "trails/parus-topo.jpg"],
         navigateFallback: "index.html",
         cleanupOutdatedCaches: true,
         clientsClaim: true,

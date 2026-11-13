@@ -11,5 +11,5 @@ import "./public-pages.css";
 const path = window.location.pathname.replace(/\/+$/, "");
 const Page = path === "/app" ? App : path === "/demo" ? ForkDemo : path === "/demo/loop" ? DemoLoop : Landing;
 if (Page === ForkDemo || Page === DemoLoop) document.title = "Sign demo | Trail Junction";
-if (Page === App) document.title = "Trail maps | Trail Junction";
+if (Page === App) document.title = "Trail app | Trail Junction";
 createRoot(document.getElementById("root")!).render(<Page />);
