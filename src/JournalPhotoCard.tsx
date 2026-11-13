@@ -4,11 +4,11 @@ import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { PhotoPreview } from "./PhotoPicker.tsx";
 
-export function JournalPhotoCard({ photo, number, online, current, save, remove }: {
+export function JournalPhotoCard({ photo, number, online, visible, save, remove }: {
   photo: JournalPhoto;
   number: number;
   online: boolean;
-  current: boolean;
+  visible: boolean;
   save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature">>) => Promise<void>;
   remove: () => Promise<void>;
 }) {
@@ -71,11 +71,13 @@ export function JournalPhotoCard({ photo, number, online, current, save, remove 
   }
 
   return (
-    <article className="journal-photo-card" data-current={current} aria-label={`Photo ${number}`}>
-      <figure className="journal-print">
-        <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
-        {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}
-      </figure>
+    <article className="journal-photo-card" hidden={!visible} aria-label={`Photo ${number}`}>
+      {visible && (
+        <figure className="journal-print">
+          <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
+          {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}
+        </figure>
+      )}
       <div className="journal-card-body">
         {editing && (
           <form className="journal-form" onSubmit={(event) => void saveCaption(event)}>

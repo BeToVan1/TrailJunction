@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type TouchEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type TouchEvent } from "react";
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
@@ -9,6 +9,13 @@ import { PhotoError, photoToJpegBlob } from "./photo.ts";
 
 export type JournalTrail = Pick<HikeDetails, "trail" | "location">;
 type JournalView = { page: "list" } | { page: "hike"; id: string } | { page: "form"; id?: string };
+
+const singlePageQuery = window.matchMedia("(width < 760px), (hover: none) and (pointer: coarse)");
+
+function watchPageLayout(onChange: () => void) {
+  singlePageQuery.addEventListener("change", onChange);
+  return () => singlePageQuery.removeEventListener("change", onChange);
+}
 
 function today() {
   const date = new Date();
@@ -28,11 +35,16 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
+  const singlePage = useSyncExternalStore(watchPageLayout, () => singlePageQuery.matches);
   const heading = useRef<HTMLHeadingElement>(null);
+  const book = useRef<HTMLElement>(null);
   const swipeStart = useRef<{ x: number; y: number }>(null);
   const hike = view.page === "list" ? undefined : hikes.find(({ id }) => id === view.id);
   const photoCount = hike?.photos.length ?? 0;
   const currentPhoto = Math.max(0, Math.min(photoIndex, photoCount - 1));
+  const pageSize = singlePage ? 1 : 2;
+  const firstPhoto = Math.floor(currentPhoto / pageSize) * pageSize;
+  const endPhoto = Math.min(firstPhoto + pageSize, photoCount);
 
   useEffect(() => {
     let active = true;
@@ -76,7 +88,21 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   }
 
   function turnPage(delta: number) {
-    setPhotoIndex(Math.max(0, Math.min(currentPhoto + delta, photoCount - 1)));
+    const next = firstPhoto + delta * pageSize;
+    if (next < 0 || next >= photoCount) return;
+    setPhotoIndex(next);
+    if (book.current && book.current.getBoundingClientRect().top < 0) {
+      book.current.scrollIntoView({ block: "start" });
+    }
+  }
+
+  function handleBookKey(event: KeyboardEvent) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+      || !(event.target instanceof Element) || event.target.closest("input, textarea, [contenteditable]")) return;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      turnPage(event.key === "ArrowLeft" ? -1 : 1);
+    }
   }
 
   function beginSwipe(event: TouchEvent) {
@@ -184,7 +210,8 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
               <button type="button" className="text-action" disabled={busy}
                 onClick={() => open({ page: "form", id: hike.id })}>Edit hike</button>
             </div>
-            <section className="journal-photo-book" aria-labelledby="photo-book-title">
+            <section ref={book} className="journal-photo-book" data-spread={!singlePage && photoCount > 0}
+              aria-labelledby="photo-book-title" onKeyDown={handleBookKey}>
               <div className="journal-book-tools">
                 <h2 id="photo-book-title">Photo book</h2>
                 <div className="journal-upload">
@@ -197,16 +224,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                   : !aiConfigured ? "AI nature notes are unavailable on this build."
                   : "Asking Gemini sends the selected photo for a possible plant or wildlife identification."}</p>
               )}
-              {photoCount > 1 && (
-                <nav className="journal-pagination" aria-label="Photo book pages">
-                  <button type="button" className="secondary-action" aria-label="Previous photo"
-                    disabled={currentPhoto === 0} onClick={() => turnPage(-1)}><ChevronLeft aria-hidden="true" /></button>
-                  <span className="eyebrow" aria-live="polite">Photo {currentPhoto + 1} of {photoCount}</span>
-                  <button type="button" className="secondary-action" aria-label="Next photo"
-                    disabled={currentPhoto === photoCount - 1} onClick={() => turnPage(1)}><ChevronRight aria-hidden="true" /></button>
-                </nav>
-              )}
-              <div className="journal-photos" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
+              <div className="journal-photos" id="journal-pages" onTouchStart={beginSwipe} onTouchEnd={finishSwipe}
                 onTouchCancel={() => { swipeStart.current = null; }}>
                 {!hike.photos.length && (
                   <div className="journal-blank-page">
@@ -216,7 +234,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 )}
                 {hike.photos.map((photo, index) => (
                   <JournalPhotoCard key={photo.id} photo={photo} number={index + 1} online={online}
-                    current={index === currentPhoto}
+                    visible={index >= firstPhoto && index < endPhoto}
                     save={async (patch) => remember(await changeHike(hike.id, (current) => ({
                       ...current,
                       photos: current.photos.map((item) => item.id === photo.id ? { ...item, ...patch } : item),
@@ -231,6 +249,21 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                     }} />
                 ))}
               </div>
+              {photoCount > 0 && (
+                <nav className="journal-pagination" aria-label="Photo book pages">
+                  <button type="button" className="secondary-action" aria-label="Previous page" aria-controls="journal-pages"
+                    aria-disabled={firstPhoto === 0} onClick={() => turnPage(-1)}>
+                    <ChevronLeft aria-hidden="true" /><span>Previous</span>
+                  </button>
+                  <span className="journal-page-number" aria-live="polite">
+                    {endPhoto === firstPhoto + 1 ? `Page ${endPhoto}` : `Pages ${firstPhoto + 1}–${endPhoto}`} of {photoCount}
+                  </span>
+                  <button type="button" className="secondary-action" aria-label="Next page" aria-controls="journal-pages"
+                    aria-disabled={endPhoto === photoCount} onClick={() => turnPage(1)}>
+                    <span>Next</span><ChevronRight aria-hidden="true" />
+                  </button>
+                </nav>
+              )}
             </section>
             <button type="button" className="text-action journal-delete" disabled={busy}
               onClick={() => void removeHike(hike)}>Delete hike</button>
