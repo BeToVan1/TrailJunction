@@ -4,11 +4,12 @@ import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { PhotoPreview } from "./PhotoPicker.tsx";
 
-export function JournalPhotoCard({ photo, number, online, visible, save, remove }: {
+export function JournalPhotoCard({ photo, number, online, visible, preparePreview, save, remove }: {
   photo: JournalPhoto;
   number: number;
   online: boolean;
   visible: boolean;
+  preparePreview: boolean;
   save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature">>) => Promise<void>;
   remove: () => Promise<void>;
 }) {
@@ -74,7 +75,7 @@ export function JournalPhotoCard({ photo, number, online, visible, save, remove 
 
   return (
     <article className="journal-photo-card" hidden={!visible} aria-label={`Photo ${number}`}>
-      {visible && (
+      {preparePreview && (
         <figure className="journal-print">
           <PhotoPreview photo={photo.image} alt={photo.caption || `Hike photo ${number}`} />
           {photo.caption && !editing && <figcaption className="journal-caption">{photo.caption}</figcaption>}

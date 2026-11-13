@@ -1,9 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type TouchEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type PointerEvent, type TouchEvent } from "react";
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
 import { changeHike, deleteHike, getHikes, saveHike, type Hike, type HikeDetails } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
-import { capturePageTurn, playPageTurn } from "./journal-page-turn.ts";
+import { capturePageTurn, playPageTurn, startPageDrag, type PageCorner } from "./journal-page-turn.ts";
 import { prepareOfflineApp } from "./offline.ts";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { PhotoError, photoToJpegBlob } from "./photo.ts";
@@ -37,6 +37,14 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   const [status, setStatus] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
   const pendingTurn = useRef<ReturnType<typeof capturePageTurn>>(undefined);
+  const drag = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    target: number;
+    surface: NonNullable<ReturnType<typeof startPageDrag>>;
+    settling: boolean;
+  }>(null);
   const singlePage = useSyncExternalStore(watchPageLayout, () => singlePageQuery.matches);
   const heading = useRef<HTMLHeadingElement>(null);
   const pages = useRef<HTMLDivElement>(null);
@@ -76,6 +84,13 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
     if (turn && pages.current) return playPageTurn(pages.current, turn);
   }, [firstPhoto, singlePage, photoCount]);
 
+  useLayoutEffect(() => cancelPageDrag, [firstPhoto, singlePage, photoCount, view]);
+
+  function cancelPageDrag() {
+    drag.current?.surface.dispose();
+    drag.current = null;
+  }
+
   function open(next: JournalView) {
     const currentId = view.page === "list" ? undefined : view.id;
     const nextId = next.page === "list" ? undefined : next.id;
@@ -100,6 +115,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
 
   function goToPhoto(next: number) {
     if (next < 0 || next >= photoCount || next === currentPhoto) return;
+    cancelPageDrag();
     if (pages.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       pendingTurn.current = capturePageTurn(pages.current, next > currentPhoto, !singlePage);
     }
@@ -108,6 +124,48 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
 
   function turnPage(delta: number) {
     goToPhoto(firstPhoto + delta * pageSize);
+  }
+
+  function grabCorner(event: PointerEvent<HTMLSpanElement>, forward: boolean, corner: PageCorner) {
+    if (event.button !== 0 || !event.isPrimary || !pages.current || drag.current
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const target = firstPhoto + (forward ? pageSize : -pageSize);
+    if (target < 0 || target >= photoCount) return;
+    // Finish any decorative button turn before starting a pointer-controlled turn.
+    pages.current.querySelector(":scope > .journal-turn-layer")?.remove();
+    const surface = startPageDrag(pages.current, forward, !singlePage, target, corner);
+    if (!surface) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, target, surface, settling: false };
+  }
+
+  function moveCorner(event: PointerEvent<HTMLSpanElement>) {
+    const active = drag.current;
+    if (active?.pointerId !== event.pointerId || active.settling) return;
+    active.surface.move(event.clientX - active.startX, event.clientY - active.startY);
+  }
+
+  function releaseCorner(event: PointerEvent<HTMLSpanElement>) {
+    const active = drag.current;
+    if (active?.pointerId !== event.pointerId || active.settling) return;
+    if (event.type === "pointerup") moveCorner(event);
+    const complete = event.type === "pointerup" && active.surface.shouldTurn();
+    active.settling = true;
+    active.surface.settle(complete, () => {
+      if (drag.current !== active) return;
+      cancelPageDrag();
+      if (complete) setPhotoIndex(active.target);
+    });
+  }
+
+  function cornerHandle(forward: boolean, corner: PageCorner) {
+    return (
+      <span key={`${forward}-${corner}`} className="journal-grab-corner"
+        data-edge={forward ? "right" : "left"} data-corner={corner} aria-hidden="true"
+        onPointerDown={(event) => grabCorner(event, forward, corner)} onPointerMove={moveCorner}
+        onPointerUp={releaseCorner} onPointerCancel={releaseCorner} onLostPointerCapture={releaseCorner} />
+    );
   }
 
   function handleBookKey(event: KeyboardEvent) {
@@ -122,7 +180,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
   function beginSwipe(event: TouchEvent) {
     const touch = event.touches[0];
     swipeStart.current = event.touches.length === 1 && event.target instanceof Element
-      && !event.target.closest("button, input, dialog, label")
+      && !event.target.closest("button, input, dialog, label, .journal-grab-corner")
       ? { x: touch.clientX, y: touch.clientY } : null;
   }
 
@@ -249,6 +307,7 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                 {hike.photos.map((photo, index) => (
                   <JournalPhotoCard key={photo.id} photo={photo} number={index + 1} online={online}
                     visible={index >= firstPhoto && index < endPhoto}
+                    preparePreview={index >= firstPhoto - pageSize && index < endPhoto + pageSize}
                     save={async (patch) => remember(await changeHike(hike.id, (current) => ({
                       ...current,
                       photos: current.photos.map((item) => item.id === photo.id ? { ...item, ...patch } : item),
@@ -262,6 +321,8 @@ export function TrailJournal({ online, trail }: { online: boolean; trail?: Journ
                         index < selected ? selected - 1 : selected, next.photos.length - 1)));
                     }} />
                 ))}
+                {firstPhoto > 0 && (["top", "bottom"] as const).map((corner) => cornerHandle(false, corner))}
+                {endPhoto < photoCount && (["top", "bottom"] as const).map((corner) => cornerHandle(true, corner))}
               </div>
               {photoCount > 0 && (
                 <nav className="journal-pagination" aria-label="Photo book pages">

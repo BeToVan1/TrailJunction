@@ -1,11 +1,13 @@
 type Point = { x: number; y: number };
 const visiblePages = ":scope > .journal-photo-card:not([hidden])";
+export type PageCorner = "top" | "bottom";
 
 function sheetCopy(page: HTMLElement | undefined, className: string) {
   const sheet = document.createElement("div");
   sheet.className = className;
   if (page) {
     const copy = page.cloneNode(true) as HTMLElement;
+    copy.hidden = false;
     copy.removeAttribute("aria-label");
     copy.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
     sheet.append(copy);
@@ -50,10 +52,14 @@ export function capturePageTurn(book: HTMLElement, forward: boolean, spread: boo
   return { width, height, right, front, underneath, forward, spread };
 }
 
-export function playPageTurn(book: HTMLElement, turn: NonNullable<ReturnType<typeof capturePageTurn>>) {
+function mountPageTurn(
+  book: HTMLElement,
+  turn: NonNullable<ReturnType<typeof capturePageTurn>>,
+  next: readonly HTMLElement[],
+  corner: PageCorner,
+  previewTarget: boolean,
+) {
   const { width, height, right, front, underneath, forward, spread } = turn;
-  const next = book.querySelectorAll<HTMLElement>(visiblePages);
-  if (next[0]?.offsetWidth !== width || next[0]?.offsetHeight !== height) return;
   const reverse = sheetCopy(spread ? next[right ? 0 : 1] : undefined, "journal-turn-reverse");
   const fold = document.createElement("div");
   fold.className = "journal-turn-fold";
@@ -71,6 +77,11 @@ export function playPageTurn(book: HTMLElement, turn: NonNullable<ReturnType<typ
   layer.style.setProperty("--leaf-width", `${width}px`);
   layer.style.setProperty("--leaf-height", `${height}px`);
   front.style.left = fold.style.left = right ? `${width}px` : "0";
+  if (previewTarget) {
+    const revealed = sheetCopy(next[right ? 1 : 0], "journal-turn-still");
+    revealed.style.left = front.style.left;
+    layer.append(revealed);
+  }
   if (underneath) {
     underneath.style.left = right ? "0" : `${width}px`;
     layer.append(underneath);
@@ -79,39 +90,87 @@ export function playPageTurn(book: HTMLElement, turn: NonNullable<ReturnType<typ
   book.append(layer);
 
   const corners = [{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }];
-  const outer = forward ? width : 0;
+  const origin = { x: forward ? width : 0, y: corner === "bottom" ? height : 0 };
   const direction = forward ? -1 : 1;
   const foldDepth = Math.min(height * .30, width * .45);
-  const duration = 520;
   let frame = 0;
-  const started = performance.now();
+  let pulled = origin;
 
-  function draw(progress: number) {
-    const t = progress < .5 ? 2 * progress ** 2 : 1 - 2 * (1 - progress) ** 2;
-    const corner = { x: outer + direction * (1 + (2 * width - 1) * t), y: height - foldDepth * Math.sin(Math.PI * t) };
-    const length = Math.hypot(corner.x - outer, corner.y - height);
-    const nx = (corner.x - outer) / length;
-    const ny = (corner.y - height) / length;
-    const offset = nx * (outer + corner.x) / 2 + ny * (height + corner.y) / 2;
+  function draw(point: Point) {
+    pulled = point;
+    const dx = point.x - origin.x;
+    const dy = point.y - origin.y;
+    const length = Math.hypot(dx, dy);
+    const nx = dx / length;
+    const ny = dy / length;
+    const offset = nx * (origin.x + point.x) / 2 + ny * (origin.y + point.y) / 2;
     const distance = ({ x, y }: Point) => nx * x + ny * y - offset;
     front.style.clipPath = clipSheet(corners, distance, 1);
     fold.style.clipPath = clipSheet(corners, distance, -1);
     fold.style.transform = `matrix(${1 - 2 * nx * nx}, ${-2 * nx * ny}, ${-2 * nx * ny}, ${1 - 2 * ny * ny}, ${2 * offset * nx}, ${2 * offset * ny})`;
-    const peak = Math.sin(Math.PI * t);
+    const peak = Math.sin(Math.PI * Math.min(1, length / (2 * width)));
     cast.style.filter = `drop-shadow(${direction * 6 * peak}px 3px ${8 * peak}px rgb(29 24 15 / ${.27 * peak}))`;
     shade.style.opacity = String(.8 * peak);
   }
   shade.style.background = `linear-gradient(${forward ? 100 : 260}deg, #30281c44, transparent 36%, #fff9 72%, #342e242c)`;
 
-  function animate(now: number) {
-    const progress = Math.min(1, (now - started) / duration);
-    if (progress === 1) layer.remove();
-    else {
-      draw(progress);
-      frame = requestAnimationFrame(animate);
-    }
+  function move(dx: number, dy: number) {
+    const distance = Math.max(1, Math.min(2 * width - 1, direction * dx));
+    const lift = Math.min(height * .75, Math.max(-height * .35, (corner === "bottom" ? -1 : 1) * dy));
+    draw({ x: origin.x + direction * distance, y: origin.y + (corner === "bottom" ? -lift : lift) });
   }
-  draw(0);
-  frame = requestAnimationFrame(animate);
-  return () => { cancelAnimationFrame(frame); layer.remove(); };
+
+  function animate(duration: number, drawFrame: (progress: number) => void, done: () => void) {
+    cancelAnimationFrame(frame);
+    const started = performance.now();
+    function step(now: number) {
+      const progress = Math.min(1, (now - started) / duration);
+      drawFrame(progress);
+      if (progress < 1) frame = requestAnimationFrame(step);
+      else done();
+    }
+    frame = requestAnimationFrame(step);
+  }
+
+  function dispose() {
+    cancelAnimationFrame(frame);
+    layer.remove();
+  }
+
+  move(0, 0);
+  return {
+    move,
+    dispose,
+    shouldTurn: () => direction * (pulled.x - origin.x) >= width * .55,
+    settle(complete: boolean, done: () => void) {
+      const from = pulled;
+      const target = origin.x + direction * (complete ? 2 * width : 1);
+      animate(complete ? 280 : 230, (progress) => {
+        const t = 1 - (1 - progress) ** 3;
+        draw({ x: from.x + (target - from.x) * t, y: from.y + (origin.y - from.y) * t });
+      }, done);
+    },
+    autoTurn() {
+      animate(520, (progress) => {
+        const t = progress < .5 ? 2 * progress ** 2 : 1 - 2 * (1 - progress) ** 2;
+        move(direction * (1 + (2 * width - 1) * t), -foldDepth * Math.sin(Math.PI * t));
+      }, dispose);
+    },
+  };
+}
+
+export function startPageDrag(book: HTMLElement, forward: boolean, spread: boolean, target: number, corner: PageCorner) {
+  const turn = capturePageTurn(book, forward, spread);
+  if (!turn) return;
+  const pages = [...book.querySelectorAll<HTMLElement>(":scope > .journal-photo-card")];
+  const next = pages.slice(target, target + (spread ? 2 : 1));
+  return mountPageTurn(book, turn, next, corner, true);
+}
+
+export function playPageTurn(book: HTMLElement, turn: NonNullable<ReturnType<typeof capturePageTurn>>) {
+  const next = [...book.querySelectorAll<HTMLElement>(visiblePages)];
+  if (next[0]?.offsetWidth !== turn.width || next[0]?.offsetHeight !== turn.height) return;
+  const layer = mountPageTurn(book, turn, next, "bottom", false);
+  layer.autoTurn();
+  return layer.dispose;
 }

@@ -127,6 +127,30 @@
   border-radius: inherit;
   pointer-events: none;
 }
+.journal-grab-corner {
+  position: absolute;
+  z-index: 3;
+  inline-size: 44px;
+  block-size: 34px;
+  touch-action: none;
+  cursor: grab;
+}
+.journal-grab-corner:active { cursor: grabbing; }
+.journal-grab-corner[data-edge="left"] { left: 0; --corner-angle: 135deg; }
+.journal-grab-corner[data-edge="right"] { right: 0; --corner-angle: 225deg; }
+.journal-grab-corner[data-corner="top"] { top: 0; }
+.journal-grab-corner[data-corner="bottom"] { bottom: 0; rotate: x 180deg; }
+.journal-grab-corner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--corner-angle), var(--album-shadow), transparent 40%);
+  opacity: .5;
+}
+.journal-grab-corner:hover::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .journal-grab-corner { display: none; }
+}
 .journal-turn-face, .journal-turn-fold, .journal-turn-still {
   position: absolute;
   inset-block-start: 0;
