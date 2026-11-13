@@ -167,19 +167,7 @@
 .landing-paths h2 { font-size: 1.06rem; margin-bottom: 4px; }
 .landing-paths p { color: var(--soft); font-size: .9rem; line-height: 1.45; }
 
-.landing-journal-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  color: var(--forest-text);
-  font-size: .83rem;
-  font-weight: 720;
-  text-decoration: none;
-}
-
-.landing-journal-nav:hover { text-decoration: underline; text-underline-offset: 4px; }
-.landing-journal-nav svg, .landing-journal-copy .public-kicker svg { width: 16px; height: 16px; flex: none; }
+.landing-journal-copy .public-kicker svg { width: 16px; height: 16px; flex: none; }
 .landing-journal {
   display: grid;
   grid-template-columns: minmax(0, .84fr) minmax(0, 1.16fr);

@@ -1,9 +1,8 @@
-import type { ReactNode } from "react";
 import { ArrowUpRight, BookOpen, Map, Play, Signpost } from "lucide-react";
 import meadowPhoto from "./journal-meadow.webp";
 import squirrelPhoto from "./journal-squirrel.webp";
 
-export function PublicHeader({ label, children }: { label?: string; children?: ReactNode }) {
+export function PublicHeader({ label }: { label?: string }) {
   return (
     <header className="public-header">
       <div className="public-header-inner">
@@ -11,7 +10,6 @@ export function PublicHeader({ label, children }: { label?: string; children?: R
           <span><Signpost aria-hidden="true" /></span> Trail Junction
         </a>
         {label && <span className="public-kicker">{label}</span>}
-        {children}
       </div>
     </header>
   );
@@ -20,11 +18,7 @@ export function PublicHeader({ label, children }: { label?: string; children?: R
 export function Landing() {
   return (
     <div className="public-page landing">
-      <PublicHeader>
-        <a className="landing-journal-nav" href="#trail-journal">
-          <BookOpen aria-hidden="true" /> Trail journal
-        </a>
-      </PublicHeader>
+      <PublicHeader />
       <main>
         <section className="landing-hero">
           <div className="landing-copy">
