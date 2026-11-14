@@ -4,6 +4,15 @@ import test from "node:test";
 import { demoRoute } from "../src/demo-route.ts";
 import { findRecovery, matchJunction } from "../src/route.ts";
 
+const sharedLabelRoute = {
+  ...demoRoute,
+  junctions: demoRoute.junctions.map((junction) => ({
+    ...junction,
+    signLines: ["fern-fork", "cedar-spur"].includes(junction.id)
+      ? [...junction.signLines, "Trail Junction"] : junction.signLines,
+  })),
+};
+
 test("matches an exact sign line after normalizing spacing, case, and arrow glyphs", () => {
   const result = matchJunction(demoRoute, ["  CEDAR   Spur → "]);
 
@@ -13,24 +22,24 @@ test("matches an exact sign line after normalizing spacing, case, and arrow glyp
 });
 
 test("leaves shared sign text ambiguous", () => {
-  const result = matchJunction(demoRoute, ["Trail Junction"]);
+  const result = matchJunction(sharedLabelRoute, ["Trail Junction"]);
 
   assert.equal(result.status, "ambiguous");
-  assert.deepEqual(result.junctions.map((junction) => junction.id), ["ridge", "fern-fork"]);
+  assert.deepEqual(result.junctions.map((junction) => junction.id), ["fern-fork", "cedar-spur"]);
 });
 
 test("uses a second sign line to resolve a shared label", () => {
-  const result = matchJunction(demoRoute, ["Trail Junction", "Ridge Junction"]);
+  const result = matchJunction(sharedLabelRoute, ["Trail Junction", "Fern Fork"]);
 
   assert.equal(result.status, "candidate");
-  assert.equal(result.junction.id, "ridge");
+  assert.equal(result.junction.id, "fern-fork");
 });
 
 test("keeps conflicting evidence ambiguous", () => {
-  const result = matchJunction(demoRoute, ["Ridge Junction", "Cedar Spur"]);
+  const result = matchJunction(demoRoute, ["Fern Fork", "Cedar Spur"]);
 
   assert.equal(result.status, "ambiguous");
-  assert.deepEqual(result.junctions.map((junction) => junction.id), ["ridge", "cedar-spur"]);
+  assert.deepEqual(result.junctions.map((junction) => junction.id), ["fern-fork", "cedar-spur"]);
 });
 
 test("does not match an unreadable or unrelated sign", () => {
@@ -39,16 +48,24 @@ test("does not match an unreadable or unrelated sign", () => {
   }
 });
 
-test("returns the marked branch from Cedar Spur to the planned loop", () => {
+test("returns the marked branch from Cedar Spur to Fern Fork", () => {
   assert.deepEqual(findRecovery(demoRoute, "cedar-spur"), {
     status: "return",
     segments: [{ from: "cedar-spur", to: "fern-fork", branch: "To Fern Fork" }],
   });
 });
 
-test("distinguishes a confirmed on-loop junction from an unknown one", () => {
-  assert.deepEqual(findRecovery(demoRoute, "ridge"), { status: "on-loop" });
+test("distinguishes Fern Fork from an unknown junction", () => {
+  assert.deepEqual(findRecovery(demoRoute, "fern-fork"), { status: "at-return-point" });
   assert.deepEqual(findRecovery(demoRoute, "unknown"), { status: "unavailable" });
+});
+
+test("returns to Fern Fork through the marked stop on either branch", () => {
+  for (const [destination, stop] of [["rocky-point", "trailhead"], ["sloan-lake", "cedar-spur"]]) {
+    const result = findRecovery(demoRoute, destination);
+    assert.equal(result.status, "return");
+    assert.deepEqual(result.segments.map(({ to }) => to), [stop, "fern-fork"]);
+  }
 });
 
 test("does not infer a reverse connection from a one-way segment", () => {

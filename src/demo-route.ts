@@ -1,12 +1,10 @@
 import type { RoutePack } from "./route.ts";
 
 export const demoMapWidth = 360;
-export const demoMapHeight = 280;
+export const demoMapHeight = 260;
 
 export const demoMapPoints = {
   trailhead: { name: "Trailhead", x: 97, y: 136 },
-  footbridge: { name: "Footbridge", x: 54, y: 198 },
-  ridge: { name: "Ridge Junction", x: 173, y: 257 },
   "fern-fork": { name: "Fern Fork", x: 180, y: 196 },
   "cedar-spur": { name: "Cedar Spur", x: 263, y: 136 },
   "rocky-point": { name: "Rocky Point", x: 75, y: 48 },
@@ -21,7 +19,6 @@ export const fernForkBranches = [
 type DemoPointId = keyof typeof demoMapPoints;
 
 export const fernForkLegs = [
-  { from: "ridge", to: "fern-fork", d: "M180 196C169 219 185 230 177 245Q174 251 173 257" },
   { from: "fern-fork", to: "trailhead", d: "M180 196C157 175 138 179 118 162S105 147 97 136" },
   { from: "trailhead", to: "rocky-point", d: "M97 136C100 116 119 103 109 86S74 74 75 48" },
   { from: "fern-fork", to: "cedar-spur", d: "M180 196C202 174 225 178 244 158S253 145 263 136" },
@@ -35,28 +32,23 @@ function demoJunction(id: DemoPointId, signLines: readonly string[]) {
 
 export const demoRoute: RoutePack = {
   id: "fern-creek-loop",
-  version: 1,
-  name: "Fern Creek Loop",
+  version: 2,
+  name: "Fern Creek Trail",
   kind: "demo",
-  loop: ["trailhead", "footbridge", "ridge", "fern-fork"],
+  returnJunctionId: "fern-fork",
   junctions: [
     demoJunction("trailhead", ["Fern Creek Trailhead"]),
-    demoJunction("footbridge", ["Fern Creek Footbridge"]),
-    demoJunction("ridge", ["Ridge Junction", "Trail Junction"]),
-    demoJunction("fern-fork", ["Fern Fork", "Trail Junction"]),
+    demoJunction("fern-fork", ["Fern Fork"]),
     demoJunction("cedar-spur", ["Cedar Spur", "To Fern Fork"]),
     demoJunction("rocky-point", ["Rocky Point"]),
     demoJunction("sloan-lake", ["Sloan Lake"]),
   ],
   segments: [
-    { from: "trailhead", to: "footbridge", branch: "Footbridge" },
-    { from: "footbridge", to: "ridge", branch: "Ridge Junction" },
-    { from: "ridge", to: "fern-fork", branch: "Fern Fork" },
     ...fernForkBranches.flatMap(({ stop, destination }) => [
       { from: "fern-fork", to: stop, branch: demoMapPoints[stop].name },
+      { from: stop, to: "fern-fork", branch: "To Fern Fork" },
       { from: stop, to: destination, branch: demoMapPoints[destination].name },
       { from: destination, to: stop, branch: `To ${demoMapPoints[stop].name}` },
     ]),
-    { from: "cedar-spur", to: "fern-fork", branch: "To Fern Fork" },
   ],
 };

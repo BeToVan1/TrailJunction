@@ -4,11 +4,7 @@ import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { matchJunction, type JunctionMatch, type RoutePack } from "./route.ts";
 
-const samples = [
-  { name: "Cedar Spur", src: "/signs/cedar.png", lines: ["Cedar Spur", "To Fern Fork"] },
-  { name: "Ridge Junction", src: "/signs/ridge.png", lines: ["Ridge Junction"] },
-  { name: "Shared junction sign", src: "/signs/junction.png", lines: ["Trail Junction"] },
-];
+const sample = { name: "Cedar Spur", src: "/signs/cedar.png", lines: ["Cedar Spur", "To Fern Fork"] };
 
 type Result = { match: JunctionMatch; lines: string[]; source: string };
 
@@ -21,11 +17,9 @@ export function SignCheck({
   showCheckpoints: () => void;
 }) {
   const [photo, setPhoto] = useState<File | null>(null);
-  const [sample, setSample] = useState(0);
   const [result, setResult] = useState<Result>();
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
-  const selectedSample = samples[sample];
 
   function selectPhoto(file: File | null) {
     setPhoto(file);
@@ -38,15 +32,15 @@ export function SignCheck({
     setResult(undefined);
     if (!photo && !aiConfigured) {
       setResult({
-        match: matchJunction(pack, selectedSample.lines),
-        lines: selectedSample.lines,
+        match: matchJunction(pack, sample.lines),
+        lines: sample.lines,
         source: "Sample result",
       });
       return;
     }
     setReading(true);
     try {
-      const image = photo ? photo : await fetch(selectedSample.src).then((response) => {
+      const image = photo ? photo : await fetch(sample.src).then((response) => {
         if (!response.ok) throw new Error("The sample photo could not be loaded.");
         return response.blob();
       });
@@ -69,27 +63,18 @@ export function SignCheck({
   return (
     <div className="sign-layout">
       <section className="photo-area" aria-label="Sign photo">
-        <PhotoPreview photo={photo} fallback={selectedSample.src} alt={photo ? "Selected trail sign" : selectedSample.name} />
+        <PhotoPreview photo={photo} fallback={sample.src} alt={photo ? "Selected trail sign" : sample.name} />
         <PhotoPicker onPhoto={selectPhoto} disabled={reading} />
-        <div className="photo-controls">
-          <label className="sample-select">
-            <span>Demo photos</span>
-            <select value={sample} disabled={reading} onChange={(event) => {
-              setSample(Number(event.target.value));
-              selectPhoto(null);
-            }}>
-              {samples.map(({ name }, index) => <option value={index} key={name}>{name}</option>)}
-            </select>
-          </label>
-          {photo && <button type="button" className="text-action" disabled={reading} onClick={() => selectPhoto(null)}>Use demo photo</button>}
-        </div>
+        {photo && <div className="photo-controls">
+          <button type="button" className="text-action" disabled={reading} onClick={() => selectPhoto(null)}>Use demo photo</button>
+        </div>}
       </section>
       <section className="trail-sheet result-sheet">
         <div aria-live="polite">
           {!result && (
             <>
               <p className="eyebrow">{photo ? "Selected photo" : "Demo photo"}</p>
-              <h2>{photo ? photo.name : selectedSample.name}</h2>
+              <h2>{photo ? photo.name : sample.name}</h2>
               <p className="muted">{aiConfigured
                 ? "If local AI is unavailable, your photo may be processed by Gemini in the cloud."
                 : "Live photo checks need a Firebase project. You can try the demo photos and sample results here."}</p>

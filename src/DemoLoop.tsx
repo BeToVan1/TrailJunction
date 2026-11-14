@@ -62,15 +62,12 @@ export function DemoLoop() {
   const recovery = confirmedId ? findRecovery(demoRoute, confirmedId) : undefined;
   const segments = recovery?.status === "return" ? recovery.segments : [];
   const nextBranch = segments[0]?.branch;
-  const loopIndex = confirmedId ? demoRoute.loop.indexOf(confirmedId) : -1;
-  const plannedNextId = loopIndex >= 0 ? demoRoute.loop[(loopIndex + 1) % demoRoute.loop.length] : undefined;
-  const plannedBranch = demoRoute.segments.find(({ from, to }) => from === confirmedId && to === plannedNextId)?.branch;
   const ConnectionIcon = online ? Wifi : WifiOff;
   const title = screen === "sign" ? "Check a trail sign" :
-    screen === "checkpoints" ? "Choose a junction" : nextBranch ? "Rejoin the loop" : demoRoute.name;
+    screen === "checkpoints" ? "Choose a junction" : nextBranch ? "Return to Fern Fork" : demoRoute.name;
   const intro = screen === "sign" ? "Match the visible words to a saved junction." :
     screen === "checkpoints" ? "Select the checkpoint you can confirm." :
-    nextBranch ? `Follow the marked path to ${demoRoute.junctions.find(({ id }) => id === segments.at(-1)?.to)?.name}.` :
+    nextBranch ? "Follow the highlighted path back to the fork." :
     `${demoRoute.junctions.length} checkpoints · Demo route`;
 
   return (
@@ -111,7 +108,6 @@ export function DemoLoop() {
                     <h2>{nextBranch ?? current?.name ?? "Choose a starting point"}</h2>
                   </div>
                 </div>
-                {plannedBranch && <p className="muted">Next on the loop: {plannedBranch}</p>}
                 <button type="button" className="primary-action" onClick={() => show("sign")} disabled={loading || downloading}>
                   <ScanLine aria-hidden="true" /> {nextBranch ? "Check another sign" : "Check a trail sign"}
                 </button>
@@ -132,7 +128,7 @@ export function DemoLoop() {
             {demoRoute.junctions.map(({ id, name }) => (
               <button type="button" className="checkpoint" key={id} onClick={() => confirm(id)}>
                 <MapPin aria-hidden="true" />
-                <span>{name}<small>{demoRoute.loop.includes(id) ? "On the planned loop" : "Side trail"}</small></span>
+                <span>{name}</span>
                 <ChevronRight aria-hidden="true" />
               </button>
             ))}

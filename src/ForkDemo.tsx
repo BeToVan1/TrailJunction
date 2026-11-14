@@ -131,7 +131,7 @@ export function ForkDemo() {
             </figure>}
           <div className="fern-content">
             {step === 0 && <section>
-              <p className="public-kicker">Fern Creek Loop · Sample hike</p>
+              <p className="public-kicker">Fern Creek Trail · Sample hike</p>
               <h1 ref={heading} tabIndex={-1}>You’ve reached a fork.</h1>
               <p className="fern-copy">Cell service has dropped. You reach Fern Fork with a downloaded map and a sign pointing to the two branches.</p>
               <div className="fern-chips">

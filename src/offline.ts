@@ -12,10 +12,19 @@ const savedMapsKey = "trail-junction/saved-maps";
 
 export async function getSavedRoute(pack: RoutePack): Promise<SavedRoute | undefined> {
   const saved = await get<SavedRoute>(savedRouteKey);
-  if (saved?.pack?.id === pack.id && saved.pack.version === pack.version) {
-    return saved;
-  }
-  return undefined;
+  if (saved?.pack?.id !== pack.id || saved.pack.version > pack.version) return undefined;
+  if (saved.pack.version === pack.version) return saved;
+
+  // The demo map remains downloaded when its checkpoints change.
+  let migrated: SavedRoute | undefined;
+  await update<SavedRoute | undefined>(savedRouteKey, (latest) => {
+    if (latest?.pack?.id !== pack.id || latest.pack.version > pack.version) return latest;
+    const confirmedJunctionId = pack.junctions.some(({ id }) => id === latest.confirmedJunctionId)
+      ? latest.confirmedJunctionId : null;
+    migrated = { pack, confirmedJunctionId };
+    return migrated;
+  });
+  return migrated;
 }
 
 export async function saveRoute(pack: RoutePack, confirmedJunctionId: string | null) {

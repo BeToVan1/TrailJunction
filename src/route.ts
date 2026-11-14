@@ -16,7 +16,7 @@ export interface RoutePack {
   version: number;
   name: string;
   kind: "demo" | "verified";
-  loop: readonly string[];
+  returnJunctionId: string;
   junctions: readonly Junction[];
   segments: readonly TrailSegment[];
 }
@@ -27,7 +27,7 @@ export type JunctionMatch =
   | { status: "unmatched" };
 
 export type Recovery =
-  | { status: "on-loop" }
+  | { status: "at-return-point" }
   | { status: "return"; segments: TrailSegment[] }
   | { status: "unavailable" };
 
@@ -83,9 +83,8 @@ export function findRecovery(pack: RoutePack, confirmedJunctionId: string): Reco
     return { status: "unavailable" };
   }
 
-  const loop = new Set(pack.loop);
-  if (loop.has(confirmedJunctionId)) {
-    return { status: "on-loop" };
+  if (confirmedJunctionId === pack.returnJunctionId) {
+    return { status: "at-return-point" };
   }
 
   const visited = new Set([confirmedJunctionId]);
@@ -100,7 +99,7 @@ export function findRecovery(pack: RoutePack, confirmedJunctionId: string): Reco
       }
 
       const nextPath = [...path, segment];
-      if (loop.has(segment.to)) {
+      if (segment.to === pack.returnJunctionId) {
         return { status: "return", segments: nextPath };
       }
 

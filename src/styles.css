@@ -367,13 +367,11 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 }
 .map-frame, .photo-frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--map-paper); }
 .trail-map { display: block; width: 100%; height: auto; }
-.route-halo, .loop-route, .spur-route, .selected-route, .return-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.route-halo, .spur-route, .selected-route, .return-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .route-halo { stroke: var(--halo); stroke-width: 9; }
-.loop-route { stroke: var(--path); stroke-width: 5; }
 .spur-route { stroke: var(--spur); stroke-width: 2.5; }
 .selected-route { stroke: var(--fern-route); stroke-width: 6; stroke-dasharray: none; }
 .return-route { stroke: var(--return); stroke-width: 5.5; stroke-dasharray: none; }
-.trail-map:has(.selected-route) .loop-route { stroke-opacity: .5; }
 .map-point { fill: var(--halo); stroke: var(--path); stroke-width: 2.5; }
 .map-point.selected-point { fill: var(--fern-route); stroke: var(--halo); }
 .current-pin, .return-pin { stroke: var(--halo); stroke-width: 2; }
@@ -503,28 +501,6 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 }
 .sign-direction svg { width: 17px; height: 17px; }
 .sign-lines ~ .muted + .muted { margin-top: 5px; }
-.sample-select {
-  display: grid;
-  flex: 1;
-  min-width: 120px;
-  align-content: center;
-  padding: 3px 7px 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: var(--sheet);
-  color: var(--soft);
-  font-size: .72rem;
-  font-weight: 700;
-}
-.sample-select select {
-  min-width: 0;
-  width: 100%;
-  padding: 1px 2px 2px 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 1rem;
-}
 .result-sheet h2 { margin: 2px 0 5px; }
 .result-sheet .error { margin: 8px 0 0; }
 .observed { margin-bottom: 4px; overflow-wrap: anywhere; }
@@ -547,7 +523,6 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .checkpoint + .checkpoint { border-top: 1px solid var(--border); }
 .checkpoint > svg:first-child { color: var(--path); }
 .checkpoint > svg:last-child { margin-inline-start: auto; color: var(--soft); }
-.checkpoint small { display: block; color: var(--soft); font-size: .8rem; font-weight: 500; }
 
 @media (min-width: 640px) {
   .intro { margin: 0 0 20px; }

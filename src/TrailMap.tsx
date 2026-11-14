@@ -12,30 +12,13 @@ function segmentKey(segment: Pick<TrailSegment, "from" | "to">) {
   return [segment.from, segment.to].sort().join("/");
 }
 
-const forkPaths = new Map(fernForkLegs.map((leg) => [segmentKey(leg), leg.d]));
-const { junctions, loop, segments, name } = demoRoute;
-const points = new Map(junctions.map(({ id, point }) => [
-  id, { x: point.x * demoMapWidth, y: point.y * demoMapHeight },
-]));
-const loopKeys = new Set(loop.map((from, index) =>
-  segmentKey({ from, to: loop[(index + 1) % loop.length] }),
-));
-const mapPaths = [...new Map(segments.map((segment) => [segmentKey(segment), segment])).entries()]
-  .map(([key, { from, to }]) => {
-    const a = points.get(from)!;
-    const b = points.get(to)!;
-    const x = (a.x + b.x) / 2 - (b.y - a.y) * 0.15;
-    const y = (a.y + b.y) / 2 + (b.x - a.x) * 0.15;
-    return { key, d: forkPaths.get(key) ?? `M${a.x},${a.y} Q${x},${y} ${b.x},${b.y}` };
-  });
+const { junctions, name } = demoRoute;
 const labels: Record<string, { dx: number; dy: number; anchor?: "middle" | "end" }> = {
   "rocky-point": { dx: 0, dy: -12, anchor: "middle" },
   "sloan-lake": { dx: 0, dy: -12, anchor: "middle" },
   trailhead: { dx: -9, dy: 4, anchor: "end" },
   "cedar-spur": { dx: 9, dy: 4 },
   "fern-fork": { dx: 11, dy: 18 },
-  footbridge: { dx: -1, dy: 18, anchor: "middle" },
-  ridge: { dx: 0, dy: 16, anchor: "middle" },
 };
 
 export function TrailMap({
@@ -56,7 +39,7 @@ export function TrailMap({
   ]) : undefined;
 
   useLayoutEffect(() => {
-    for (const path of svg.current?.querySelectorAll<SVGPathElement>("[data-side-trail]") ?? []) {
+    for (const path of svg.current?.querySelectorAll<SVGPathElement>("[data-trail-leg]") ?? []) {
       const length = path.getTotalLength();
       const clearance = 10;
       const dash = 3;
@@ -89,19 +72,20 @@ export function TrailMap({
         <g fill="none" stroke="var(--fern-contour)" strokeWidth="1.3">
           {contours.flatMap(({ id: contour, offsets }) => offsets.map((y) => <use href={`#${id}-${contour}`} y={y} key={`${contour}-${y}`} />))}
         </g>
-        {mapPaths.map(({ key, d }) => {
-          const onLoop = loopKeys.has(key);
+        {fernForkLegs.map((leg) => {
+          const key = segmentKey(leg);
           const active = recoveryKeys.has(key);
           const selected = selectedKeys?.has(key);
           return (
             <g key={key}>
-              {(onLoop || active || selected) && <path className="route-halo" d={d} />}
-              <path data-side-trail={onLoop ? undefined : ""} className={active ? "return-route" : selected ? "selected-route" : onLoop ? "loop-route" : "spur-route"} d={d} />
+              {(active || selected) && <path className="route-halo" d={leg.d} />}
+              <path data-trail-leg="" className={active ? "return-route" : selected ? "selected-route" : "spur-route"} d={leg.d} />
             </g>
           );
         })}
-        {junctions.map(({ id, name }) => {
-          const { x, y } = points.get(id)!;
+        {junctions.map(({ id, name, point }) => {
+          const x = point.x * demoMapWidth;
+          const y = point.y * demoMapHeight;
           const current = id === confirmedId;
           const selected = id === selectedBranch?.stop || id === selectedBranch?.destination;
           const label = labels[id] ?? { dx: 10, dy: 4 };
@@ -115,8 +99,7 @@ export function TrailMap({
         })}
       </svg>
       <figcaption className="map-key">
-        <span><i className="loop-key" /> Planned loop</span>
-        <span><i className="spur-key" /> Side trail</span>
+        <span><i className="spur-key" /> Trail branch</span>
         {selectedBranch && <span><i className="selected-key" /> Your route</span>}
         {recovery.length > 0 && <span><i className="return-key" /> Path back</span>}
       </figcaption>
