@@ -228,7 +228,6 @@
   --fern-route: light-dark(#245b3d, #d8ee8b);
   --fern-terrain: light-dark(#e5ebdb, #26372e);
   --fern-contour: light-dark(#c3d1b9, #455b49);
-  --fern-branch: light-dark(#81947c, #8a9f87);
 }
 
 .fern-body { max-width: var(--page-width); margin: auto; padding: 18px clamp(12px, 3vw, 30px) 28px; }
@@ -243,13 +242,6 @@
 
 .fern-steps li { border-top: 2px solid var(--border); padding-top: 7px; color: var(--soft); font-size: .75rem; }
 .fern-steps [aria-current="step"] { border-color: var(--fern-route); color: var(--ink); font-weight: 780; }
-.fern-scene {
-  display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(16px, 3vw, 29px);
-}
-
 .fern-visual {
   position: relative;
   height: 296px;
@@ -257,53 +249,6 @@
   border: 1px solid var(--border);
   border-radius: 13px;
   background: var(--fern-terrain);
-}
-
-.fern-map > svg { display: block; width: 100%; height: 100%; }
-.fern-leg { fill: none; stroke: var(--fern-branch); stroke-width: 4; stroke-linecap: round; }
-.fern-leg[data-highlighted="true"] { stroke: var(--fern-route); stroke-width: 6; stroke-dasharray: none; }
-.fern-point { fill: var(--fern-branch); }
-.fern-point[data-highlighted="true"] { fill: var(--fern-route); stroke: var(--fern-terrain); stroke-width: 2; }
-.fern-label {
-  position: absolute;
-  width: max-content;
-  transform: translateX(-50%);
-  padding: 4px 7px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--sheet);
-  color: var(--ink);
-  font-size: .75rem;
-  font-weight: 680;
-  line-height: 1.2;
-}
-
-.fern-left-end { left: 21%; top: 5%; }
-.fern-right-end { left: 79%; top: 5%; }
-.fern-left-stop, .fern-right-stop {
-  top: 52.3%;
-  transform: translateY(-50%);
-  padding-inline: 5px;
-  font-size: .6875rem;
-}
-
-.fern-left-stop { right: calc(73% + 8px); }
-.fern-right-stop { left: calc(73% + 8px); }
-.fern-here { left: 55%; top: 72%; transform: none; }
-.fern-label[data-highlighted="true"] { border-color: var(--fern-route); color: var(--fern-route); font-weight: 800; }
-.fern-left-stop[data-highlighted="true"], .fern-right-stop[data-highlighted="true"] {
-  background: var(--primary);
-  color: var(--on-primary);
-}
-
-.fern-caption {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  padding: 2px 4px;
-  background: var(--fern-terrain);
-  color: var(--soft);
-  font-size: .6875rem;
 }
 
 .fern-photo { background: #142920; }
@@ -403,14 +348,7 @@ a.text-action svg { width: 18px; height: 18px; }
 }
 
 @media (max-width: 560px) {
-  .fern-scene { grid-template-columns: 1fr; gap: 16px; }
   .fern-visual { height: 225px; }
   .fern-steps { margin-bottom: 14px; }
   .fern-actions .public-button { flex: 1; }
-}
-
-@media (max-width: 360px) {
-  .fern-left-stop, .fern-right-stop { padding-inline: 3px; }
-  .fern-left-stop { right: calc(73% + 6px); }
-  .fern-right-stop { left: calc(73% + 6px); }
 }

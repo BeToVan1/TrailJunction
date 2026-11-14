@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Camera, Check, WifiOff } from "lucide-react";
-import { FernForkMap } from "./FernForkMap.tsx";
 import { fernForkPaths, fernForkSample, findFernForkPath, matchesFernForkSample } from "./fern-fork.ts";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { PublicHeader } from "./Landing.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { normalizeSignLine } from "./route.ts";
 import type { SignArrow } from "./sign-reading.ts";
+import { TrailMap } from "./TrailMap.tsx";
 import { useOnline } from "./use-online.ts";
 
 const samplePhoto = `${import.meta.env.BASE_URL}signs/fork.png`;
 const stepLabels = ["Junction", "Photo", "Destination", "Route"] as const;
-const mapDescription = "Fern Fork trail map. The left branch passes through Trailhead to Rocky Point. The right branch passes through Cedar Spur to Sloan Lake.";
 
 interface ForkReading {
   arrows: SignArrow[];
@@ -113,8 +112,8 @@ export function ForkDemo() {
   const route = step === 3 ? result : undefined;
   const activeBranch = route?.arrow.direction;
   const mapLabel = route
-    ? `Fern Fork map highlighting the ${activeBranch} branch via ${route.path[1]} to ${route.path[2]}.`
-    : mapDescription;
+    ? `Highlighted route via ${route.path[1]} to ${route.path[2]}.`
+    : "You are at Fern Fork.";
 
   return (
     <div className="public-page fern-demo">
@@ -123,8 +122,8 @@ export function ForkDemo() {
         <ol className="fern-steps" aria-label="Walkthrough steps">
           {stepLabels.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined}>{index + 1}. {label}</li>)}
         </ol>
-        <div className="fern-scene">
-          {step === 0 || step === 3 ? <FernForkMap branch={activeBranch} description={mapLabel} /> :
+        <div className="map-layout">
+          {step === 0 || step === 3 ? <TrailMap confirmedId="fern-fork" branch={activeBranch} description={mapLabel} /> :
             <figure className="fern-visual fern-photo">
               <img src={samplePhoto} alt="Wooden trail sign at Fern Fork. Trailhead points left and Cedar Spur points right." />
               <figcaption>{step === 1 ? "Simulated viewfinder" : "Captured sample photo"}</figcaption>

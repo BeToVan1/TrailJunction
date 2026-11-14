@@ -1,13 +1,33 @@
-import { useId } from "react";
-import { demoMapHeight, demoMapWidth, fernForkLegs } from "./demo-route.ts";
-import { FernMapTerrain } from "./FernForkMap.tsx";
-import type { RoutePack, TrailSegment } from "./route.ts";
+import { useId, useLayoutEffect, useRef } from "react";
+import { demoMapHeight, demoMapWidth, demoRoute, fernForkBranches, fernForkLegs } from "./demo-route.ts";
+import type { TrailSegment } from "./route.ts";
+
+const contours = [
+  { id: "top", d: "M99 -16C126 -3 138 12 152 31C168 54 186 71 207 65C230 58 244 22 276 9C293 2 317 1 332 -12", offsets: [0, -12, -24, -36] },
+  { id: "west", d: "M-16 124C38 113 55 136 87 161C114 182 149 182 177 205C197 222 210 245 239 270", offsets: [0, 12, 24, 36, 48] },
+  { id: "east", d: "M374 112C340 117 324 143 309 168C294 192 268 219 260 262", offsets: [0, 12, 24, 36] },
+];
 
 function segmentKey(segment: Pick<TrailSegment, "from" | "to">) {
   return [segment.from, segment.to].sort().join("/");
 }
 
 const forkPaths = new Map(fernForkLegs.map((leg) => [segmentKey(leg), leg.d]));
+const { junctions, loop, segments, name } = demoRoute;
+const points = new Map(junctions.map(({ id, point }) => [
+  id, { x: point.x * demoMapWidth, y: point.y * demoMapHeight },
+]));
+const loopKeys = new Set(loop.map((from, index) =>
+  segmentKey({ from, to: loop[(index + 1) % loop.length] }),
+));
+const mapPaths = [...new Map(segments.map((segment) => [segmentKey(segment), segment])).entries()]
+  .map(([key, { from, to }]) => {
+    const a = points.get(from)!;
+    const b = points.get(to)!;
+    const x = (a.x + b.x) / 2 - (b.y - a.y) * 0.15;
+    const y = (a.y + b.y) / 2 + (b.x - a.x) * 0.15;
+    return { key, d: forkPaths.get(key) ?? `M${a.x},${a.y} Q${x},${y} ${b.x},${b.y}` };
+  });
 const labels: Record<string, { dx: number; dy: number; anchor?: "middle" | "end" }> = {
   "rocky-point": { dx: 0, dy: -12, anchor: "middle" },
   "sloan-lake": { dx: 0, dy: -12, anchor: "middle" },
@@ -19,56 +39,77 @@ const labels: Record<string, { dx: number; dy: number; anchor?: "middle" | "end"
 };
 
 export function TrailMap({
-  pack, confirmedId, recovery,
+  confirmedId, recovery = [], branch, description,
 }: {
-  pack: RoutePack;
   confirmedId: string | null;
-  recovery: TrailSegment[];
+  recovery?: readonly TrailSegment[];
+  branch?: "left" | "right" | "straight";
+  description?: string;
 }) {
   const id = useId();
-  const points = new Map(pack.junctions.map(({ id, point }) => [
-    id, { x: point.x * demoMapWidth, y: point.y * demoMapHeight },
-  ]));
-  const loopKeys = new Set(pack.loop.map((from, index) =>
-    segmentKey({ from, to: pack.loop[(index + 1) % pack.loop.length] }),
-  ));
+  const svg = useRef<SVGSVGElement>(null);
   const recoveryKeys = new Set(recovery.map(segmentKey));
-  const segments = [...new Map(pack.segments.map((segment) => [segmentKey(segment), segment])).entries()];
+  const selectedBranch = fernForkBranches.find(({ direction }) => direction === branch);
+  const selectedKeys = selectedBranch ? new Set([
+    segmentKey({ from: "fern-fork", to: selectedBranch.stop }),
+    segmentKey({ from: selectedBranch.stop, to: selectedBranch.destination }),
+  ]) : undefined;
+
+  useLayoutEffect(() => {
+    for (const path of svg.current?.querySelectorAll<SVGPathElement>("[data-side-trail]") ?? []) {
+      const length = path.getTotalLength();
+      const clearance = 10;
+      const dash = 3;
+      const available = length - 2 * clearance;
+      const count = Math.max(2, Math.round((available + 7) / (dash + 7)));
+      const gap = (available - count * dash) / (count - 1);
+      // Keep whole dashes away from the markers at both ends.
+      path.setAttribute("stroke-dasharray", [...Array(count - 1).fill(`${dash} ${gap}`), `${dash} ${length}`].join(" "));
+      path.setAttribute("stroke-dashoffset", String(-clearance));
+    }
+  }, []);
 
   return (
     <figure className="map-frame fern-terrain">
-      <svg className="trail-map" viewBox={`0 0 ${demoMapWidth} ${demoMapHeight}`} role="img" aria-labelledby={`${id}-title ${id}-detail`}>
-        <title id={`${id}-title`}>{pack.name} schematic</title>
+      <svg ref={svg} className="trail-map" viewBox={`0 0 ${demoMapWidth} ${demoMapHeight}`} role="img" aria-labelledby={`${id}-title`} aria-describedby={`${id}-detail`}>
+        <title id={`${id}-title`}>{name} schematic</title>
         <desc id={`${id}-detail`}>
           From Fern Fork, the left branch passes through Trailhead to Rocky Point. The right branch passes through Cedar Spur to Sloan Lake.{" "}
-          {confirmedId ? `Last confirmed at ${pack.junctions.find(({ id }) => id === confirmedId)?.name}.` : "Choose a checkpoint to mark your position."}
+          {description ?? (confirmedId ? `Last confirmed at ${junctions.find(({ id }) => id === confirmedId)?.name}.` : "Choose a checkpoint to mark your position.")}
           {recovery.length > 0 && ` Return via the branch marked ${recovery[0].branch}.`}
         </desc>
-        <FernMapTerrain height={demoMapHeight} />
-        {segments.map(([key, segment]) => {
+        <defs>
+          <pattern id={`${id}-grid`} width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0H0V28" fill="none" stroke="var(--fern-contour)" strokeOpacity=".5" />
+          </pattern>
+          {contours.map(({ id: contour, d }) => <path id={`${id}-${contour}`} d={d} key={contour} />)}
+        </defs>
+        <rect width={demoMapWidth} height={demoMapHeight} fill="var(--fern-terrain)" />
+        <rect width={demoMapWidth} height={demoMapHeight} fill={`url(#${id}-grid)`} />
+        <g fill="none" stroke="var(--fern-contour)" strokeWidth="1.3">
+          {contours.flatMap(({ id: contour, offsets }) => offsets.map((y) => <use href={`#${id}-${contour}`} y={y} key={`${contour}-${y}`} />))}
+        </g>
+        {mapPaths.map(({ key, d }) => {
           const onLoop = loopKeys.has(key);
           const active = recoveryKeys.has(key);
-          const from = points.get(segment.from)!;
-          const to = points.get(segment.to)!;
-          const x = (from.x + to.x) / 2 - (to.y - from.y) * 0.15;
-          const y = (from.y + to.y) / 2 + (to.x - from.x) * 0.15;
-          const d = forkPaths.get(key) ?? `M${from.x},${from.y} Q${x},${y} ${to.x},${to.y}`;
+          const selected = selectedKeys?.has(key);
           return (
             <g key={key}>
-              {(onLoop || active) && <path className="route-halo" d={d} />}
-              <path className={active ? "return-route" : onLoop ? "loop-route" : "spur-route"} d={d} />
+              {(onLoop || active || selected) && <path className="route-halo" d={d} />}
+              <path data-side-trail={onLoop ? undefined : ""} className={active ? "return-route" : selected ? "selected-route" : onLoop ? "loop-route" : "spur-route"} d={d} />
             </g>
           );
         })}
-        {pack.junctions.map(({ id, name }) => {
+        {junctions.map(({ id, name }) => {
           const { x, y } = points.get(id)!;
           const current = id === confirmedId;
+          const selected = id === selectedBranch?.stop || id === selectedBranch?.destination;
           const label = labels[id] ?? { dx: 10, dy: 4 };
           return (
             <g key={id}>
               {current && <circle className={recovery.length ? "return-pin" : "current-pin"} cx={x} cy={y} r="10" />}
-              <circle className="map-point" cx={x} cy={y} r={current ? 3.5 : 4.5} />
-              <text className="map-label" x={x + label.dx} y={y + label.dy} textAnchor={label.anchor}>{name}</text>
+              <circle className={selected ? "map-point selected-point" : "map-point"} cx={x} cy={y} r={current ? 3.5 : selected ? 5.5 : 4.5} />
+              <text className={selected ? "map-label selected-label" : "map-label"} x={x + label.dx} y={y + label.dy} textAnchor={label.anchor}>{name}</text>
             </g>
           );
         })}
@@ -76,6 +117,7 @@ export function TrailMap({
       <figcaption className="map-key">
         <span><i className="loop-key" /> Planned loop</span>
         <span><i className="spur-key" /> Side trail</span>
+        {selectedBranch && <span><i className="selected-key" /> Your route</span>}
         {recovery.length > 0 && <span><i className="return-key" /> Path back</span>}
       </figcaption>
     </figure>

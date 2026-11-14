@@ -99,7 +99,7 @@ export function DemoLoop() {
         {notice && <p role="status" className="notice">{notice}</p>}
         {screen === "map" && (
           <div className="map-layout">
-            <TrailMap pack={demoRoute} confirmedId={confirmedId} recovery={segments} />
+            <TrailMap confirmedId={confirmedId} recovery={segments} />
             <div className="map-actions">
               <section className="trail-sheet">
                 <div className="sheet-status">

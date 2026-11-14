@@ -21,19 +21,12 @@ export const fernForkBranches = [
 type DemoPointId = keyof typeof demoMapPoints;
 
 export const fernForkLegs = [
-  { from: "ridge", to: "fern-fork", d: "M180 196C169 219 185 230 177 245Q174 251 173 257", start: 16, end: 5 },
-  { from: "fern-fork", to: "trailhead", d: "M180 196C157 175 138 179 118 162S105 147 97 136", start: 16, end: 10, branch: "left" },
-  { from: "trailhead", to: "rocky-point", d: "M97 136C100 116 119 103 109 86S74 74 75 48", start: 10, end: 10, branch: "left" },
-  { from: "fern-fork", to: "cedar-spur", d: "M180 196C202 174 225 178 244 158S253 145 263 136", start: 16, end: 10, branch: "right" },
-  { from: "cedar-spur", to: "sloan-lake", d: "M263 136C258 115 239 105 252 88S283 76 285 48", start: 10, end: 10, branch: "right" },
-] satisfies readonly (Pick<RoutePack["segments"][number], "from" | "to"> & {
-  from: DemoPointId;
-  to: DemoPointId;
-  d: string;
-  start: number;
-  end: number;
-  branch?: "left" | "right";
-})[];
+  { from: "ridge", to: "fern-fork", d: "M180 196C169 219 185 230 177 245Q174 251 173 257" },
+  { from: "fern-fork", to: "trailhead", d: "M180 196C157 175 138 179 118 162S105 147 97 136" },
+  { from: "trailhead", to: "rocky-point", d: "M97 136C100 116 119 103 109 86S74 74 75 48" },
+  { from: "fern-fork", to: "cedar-spur", d: "M180 196C202 174 225 178 244 158S253 145 263 136" },
+  { from: "cedar-spur", to: "sloan-lake", d: "M263 136C258 115 239 105 252 88S283 76 285 48" },
+] satisfies readonly { from: DemoPointId; to: DemoPointId; d: string }[];
 
 function demoJunction(id: DemoPointId, signLines: readonly string[]) {
   const { name, x, y } = demoMapPoints[id];
