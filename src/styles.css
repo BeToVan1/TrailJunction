@@ -367,12 +367,6 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 }
 .map-frame, .photo-frame { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--map-paper); }
 .trail-map { display: block; width: 100%; height: auto; }
-.map-background { fill: var(--map-paper); }
-.map-dot { fill: var(--map-grid); }
-.map-land-west { fill: var(--land-west); }
-.map-land-east { fill: var(--land-east); }
-.contours { fill: none; stroke: var(--contour); stroke-width: 1; }
-.map-stream { fill: none; stroke: var(--stream); stroke-width: 3.5; stroke-linecap: round; }
 .route-halo, .loop-route, .spur-route, .return-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .route-halo { stroke: var(--halo); stroke-width: 9; }
 .loop-route { stroke: var(--path); stroke-width: 5; }
@@ -384,10 +378,10 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .return-pin { fill: var(--return); }
 .map-label {
   fill: var(--ink);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 750;
   paint-order: stroke;
-  stroke: var(--map-paper);
+  stroke: var(--fern-terrain);
   stroke-width: 3.7px;
   stroke-linejoin: round;
 }

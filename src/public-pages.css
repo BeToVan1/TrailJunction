@@ -224,7 +224,7 @@
 .landing-journal-preview figcaption { margin-top: 9px; color: var(--soft); font-size: .69rem; line-height: 1.35; }
 .landing-journal-preview a { color: inherit; text-underline-offset: 2px; }
 
-.fern-demo {
+.fern-demo, .fern-terrain {
   --fern-route: light-dark(#245b3d, #d8ee8b);
   --fern-terrain: light-dark(#e5ebdb, #26372e);
   --fern-contour: light-dark(#c3d1b9, #455b49);

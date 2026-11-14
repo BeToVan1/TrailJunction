@@ -71,7 +71,7 @@ export function DemoLoop() {
   const intro = screen === "sign" ? "Match the visible words to a saved junction." :
     screen === "checkpoints" ? "Select the checkpoint you can confirm." :
     nextBranch ? `Follow the marked path to ${demoRoute.junctions.find(({ id }) => id === segments.at(-1)?.to)?.name}.` :
-    "5 checkpoints · Demo route";
+    `${demoRoute.junctions.length} checkpoints · Demo route`;
 
   return (
     <div className="app">

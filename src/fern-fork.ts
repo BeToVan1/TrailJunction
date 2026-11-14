@@ -1,15 +1,14 @@
+import { demoMapPoints, fernForkBranches } from "./demo-route.ts";
 import { normalizeSignLine } from "./route.ts";
 import type { SignArrow, SignReading } from "./sign-reading.ts";
 
-export const fernForkPaths = [
-  ["Fern Fork", "Trailhead", "Rocky Point"],
-  ["Fern Fork", "Cedar Spur", "Sloan Lake"],
-] as const;
+export const fernForkPaths = fernForkBranches.map(({ stop, destination }) => [
+  demoMapPoints["fern-fork"].name, demoMapPoints[stop].name, demoMapPoints[destination].name,
+] as const);
 
-export const fernForkSample: SignArrow[] = [
-  { label: "Trailhead", direction: "left" },
-  { label: "Cedar Spur", direction: "right" },
-];
+export const fernForkSample: SignArrow[] = fernForkBranches.map(({ direction, stop }) => ({
+  label: demoMapPoints[stop].name, direction,
+}));
 
 export function findFernForkPath(destination: string) {
   const name = normalizeSignLine(destination);
