@@ -21,31 +21,41 @@ const sampleAlt = "National Park Service photo of both sign panels at Rampart Ri
 
 function JunctionMap({ trip }: { trip?: RampartTrip }) {
   const { extent, size, lines, url, junction, pyramid } = rampartMap;
-  const marks: { location: Coordinate; label: string; dx: number; dy: number; anchor?: "end" }[] = [
-    { location: junction, label: "Rampart Ridge Junction", dx: -23, dy: -20, anchor: "end" },
+  const [junctionX, junctionY] = mapPoint(junction, extent, size, size);
+  const marks: { location: Coordinate; label: string; dx: number; dy: number }[] = [
     { location: pyramid, label: "Pyramid Creek", dx: 20, dy: -22 },
     { location: rampartTrips[0].lines[0].at(-1)!, label: "Devil’s Dream Camp", dx: 19, dy: -24 },
     { location: rampartTrips[1].lines[0].at(-1)!, label: "Longmire", dx: 20, dy: -19 },
   ];
+  const mapLabel = `You are at ${rampartName} in this demo. ${trip
+    ? `The highlighted trail leads from the junction to ${trip.name}.`
+    : "The map shows the Wonderland Trail and Rampart Ridge Trail."}`;
 
   return (
     <figure className="map-frame park-map rampart-map">
-      <TopoOverlay extent={extent} width={size} height={size} url={url} lines={lines}
-        label={trip ? `USGS map highlighting the trail from Rampart Ridge Junction to ${trip.name}.` : "USGS map of the Wonderland Trail and Rampart Ridge junction."}>
+      <TopoOverlay extent={extent} width={size} height={size} url={url} lines={lines} label={mapLabel}>
         {trip?.lines.map((line) => {
           const points = line.map((point) => mapPoint(point, extent, size, size).join(",")).join(" ");
           return <g key={trip.id}><polyline className="park-route-halo" points={points} />
             <polyline className="rampart-highlight" points={points} /></g>;
         })}
-        {marks.map(({ location, label, dx, dy, anchor }) => {
+        {marks.map(({ location, label, dx, dy }) => {
           const [x, y] = mapPoint(location, extent, size, size);
           return <g key={label}>
             <circle className="park-route-end" cx={x} cy={y} r="10" />
-            <text x={x + dx} y={y + dy} textAnchor={anchor}>{label}</text>
+            <text x={x + dx} y={y + dy}>{label}</text>
           </g>;
         })}
         <text x="945" y="66" textAnchor="middle">N</text>
         <path d="M945 124V83m-13 15 13-15 13 15" className="park-north-arrow" />
+        <g className="rampart-location" transform={`translate(${junctionX} ${junctionY})`}>
+          <path className="rampart-location-leader" d="M-55 -32H-22" />
+          <path className="rampart-location-pin" d="M0 0C-5-8-24-24-24-38a24 24 0 1 1 48 0C24-24 5-8 0 0Z" />
+          <circle cy="-38" r="8" fill="#fff" />
+          <rect className="rampart-location-label" x="-418" y="-103" width="366" height="98" rx="17" />
+          <text x="-392" y="-61">You are here</text>
+          <text className="rampart-location-name" x="-392" y="-29">{rampartName}</text>
+        </g>
       </TopoOverlay>
       <figcaption className="map-key">
         {trip && <span><i /> Route to {trip.name}</span>}
@@ -198,7 +208,7 @@ export function RampartJunction() {
                 }}>Confirm branch to {trip.name}</button>
                   <button type="button" className="text-action" onClick={() => setManual(false)}>{photo ? "Back to photo" : "Cancel"}</button>
                 </> : <>
-                  <p className="muted">Use the sample camera to practice reading the two sign panels at this junction.</p>
+                  <p className="muted">You’re at the signpost marked on the map. Use the sample camera to read both panels.</p>
                   <MobileSignReadingNotice />
                   <button type="button" className="primary-action" onClick={openCamera}>
                     <Camera aria-hidden="true" /> Open sample camera

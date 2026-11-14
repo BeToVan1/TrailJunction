@@ -517,6 +517,16 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .rampart-map .park-route-halo { stroke-width: 15; }
 .rampart-map .park-zion-map text { font-size: 33px; }
 .rampart-highlight { fill: none; stroke: var(--path); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.rampart-location { --location-ink: #873817; }
+.rampart-location-pin, .rampart-location-label, .rampart-location-leader {
+  fill: var(--location-ink);
+  stroke: #fff;
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+.rampart-location-leader { stroke: var(--location-ink); stroke-width: 8; }
+.rampart-map .rampart-location text { fill: #fff; stroke: none; font-size: 42px; font-weight: 800; }
+.rampart-map .rampart-location .rampart-location-name { fill: #fff5e9; font-size: 28px; font-weight: 650; }
 .junction-result { border-left: 3px solid var(--path); padding: 9px 11px; background: var(--surface); border-radius: 5px; }
 .junction-result p { margin-top: 4px; font-size: .87rem; }
 .result-sheet .error { margin: 8px 0 0; }
