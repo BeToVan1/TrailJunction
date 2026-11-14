@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
 import { findFernForkPath, matchesFernForkSample } from "../src/fern-fork.ts";
-import { matchRampartSign, rampartTrips } from "../src/rampart-junction.ts";
+import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips } from "../src/rampart-junction.ts";
 
 test("trims visible labels and ignores blank model output", () => {
   assert.deepEqual(parseSignReading('{"readable":true,"lines":[" Cedar Spur "," "]}'), {
@@ -81,4 +81,24 @@ test("matches Longmire across formatting differences without mixing the two sign
   }
   reading.arrows = [right, { label: right.label, direction: "left" }];
   assert.equal(matchRampartSign(review(), longmire), undefined);
+});
+
+test("pairs the abbreviated Devil’s Dream sign with its full arrow label and prefers that row", () => {
+  const reading = parseSignReading(JSON.stringify({
+    readable: true,
+    lines: ["PYRAMID CRK. CAMP 1.7", "DEVIL'S DREAM CMP. 3.9", "LONGMIRE 3.0"],
+    arrows: [
+      { label: "Pyramid Creek Camp", direction: "left" },
+      { label: "Devil’s Dream Camp (3.90 mi)", direction: "left" },
+      { label: "Longmire", direction: "left" },
+    ],
+  }));
+  const entries = describeSign(reading, rampartName, rampartSignLabelKey).entries;
+  assert.deepEqual(entries.map(({ direction }) => direction), ["left", "left", undefined]);
+  assert.equal(matchRampartSign(entries, rampartTrips[0])?.label, "DEVIL'S DREAM CMP. 3.9");
+  assert.equal(matchRampartSign(entries.slice(0, 1), rampartTrips[0])?.label, "PYRAMID CRK. CAMP 1.7");
+  assert.equal(matchRampartSign(entries.slice(2), rampartTrips[0]), undefined);
+  assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 3.9", direction: "right" }], rampartTrips[0]), undefined);
+  assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 1.7", direction: "left" }], rampartTrips[0]), undefined);
+  assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 3.9" }], rampartTrips[0]), undefined);
 });

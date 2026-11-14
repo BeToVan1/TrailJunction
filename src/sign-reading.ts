@@ -65,17 +65,17 @@ export function signLabelKey(label: string): string {
   return `${place.trim()} ${Number(distance.replace(",", ".").replace(/\s/g, ""))}`;
 }
 
-export function describeSign(reading: SignReading, trailName: string) {
+export function describeSign(reading: SignReading, trailName: string, labelKey = signLabelKey) {
   const normalizeName = (name: string) => normalizeSignLine(name).replace(/['’]/g, "").replace(/\s+trail$/, "");
   const labels = new Map<string, string>();
   if (reading.readable) {
     for (const line of reading.lines) {
-      const key = signLabelKey(line);
+      const key = labelKey(line);
       if (key && !labels.has(key)) labels.set(key, line);
     }
   }
   const entries = [...labels].map(([key, label]) => {
-    const arrows = new Set(reading.arrows?.filter((arrow) => signLabelKey(arrow.label) === key).map((arrow) => arrow.direction));
+    const arrows = new Set(reading.arrows?.filter((arrow) => labelKey(arrow.label) === key).map((arrow) => arrow.direction));
     return { label, direction: arrows.size === 1 ? [...arrows][0] : undefined };
   });
   return { entries, namesTrail: entries.some(({ label }) => normalizeName(label) === normalizeName(trailName)) };

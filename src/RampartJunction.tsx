@@ -6,9 +6,8 @@ import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { TopoOverlay } from "./OfflineTrailMap.tsx";
 import { isRampartSaved, saveRampart } from "./offline.ts";
 import { mapPoint } from "./map-projection.ts";
-import { PhotoPicker } from "./PhotoPicker.tsx";
 import {
-  matchRampartSign, rampartConditions, rampartGuide, rampartMap, rampartName, rampartPhoto, rampartPhotoSource,
+  matchRampartSign, rampartConditions, rampartGuide, rampartMap, rampartName, rampartPhoto, rampartPhotoSource, rampartSignLabelKey,
   rampartTrips, type RampartTrip,
 } from "./rampart-junction.ts";
 import { SampleSignFrame } from "./SampleSignFrame.tsx";
@@ -64,7 +63,7 @@ export function RampartJunction() {
   const [camera, setCamera] = useState(false);
   const [sampleLoading, setSampleLoading] = useState(false);
   const [trip, setTrip] = useState<RampartTrip>(rampartTrips[0]);
-  const [photo, setPhoto] = useState<{ file: File; sample: boolean; revision: number }>();
+  const [photo, setPhoto] = useState<File>();
   const [highlight, setHighlight] = useState<{ evidence: string; manual: boolean }>();
   const [manual, setManual] = useState(false);
   const [error, setError] = useState("");
@@ -83,15 +82,6 @@ export function RampartJunction() {
   function openCamera() {
     setPhoto(undefined);
     setCamera(true);
-    setError("");
-    toTop();
-  }
-
-  function openPhoto(file: File, sample = false) {
-    setPhoto((previous) => ({ file, sample, revision: (previous?.revision ?? 0) + 1 }));
-    setCamera(false);
-    setHighlight(undefined);
-    setManual(false);
     setError("");
     toTop();
   }
@@ -115,7 +105,10 @@ export function RampartJunction() {
     try {
       const response = await fetch(rampartPhoto);
       if (!response.ok) throw new Error();
-      openPhoto(new File([await response.blob()], "Rampart Ridge Junction.jpg", { type: "image/jpeg" }), true);
+      setPhoto(new File([await response.blob()], "Rampart Ridge Junction.jpg", { type: "image/jpeg" }));
+      setCamera(false);
+      setHighlight(undefined);
+      toTop();
     } catch {
       setError("The sample photo couldn’t load. Open this junction online to download it.");
     } finally {
@@ -131,7 +124,7 @@ export function RampartJunction() {
       if (trip.id === "longmire") {
         return "To confirm Longmire, look for “LONGMIRE 2.0” with a right arrow on the Wonderland Trail panel. Edit the reading to match the photo or choose a marked branch.";
       }
-      return `The reading didn’t confirm the branch for ${trip.name}. Check the labels and arrows or choose a marked branch.`;
+      return "To confirm Devil’s Dream Camp, look for “DEVIL’S DREAM CMP. 3.9” with a left arrow on the Wonderland Trail panel. Edit the reading to match the photo or choose a marked branch.";
     }
     setPhoto(undefined);
     toTop();
@@ -160,12 +153,18 @@ export function RampartJunction() {
             {error && <p className="error" role="alert">{error}</p>}
             <p className="fern-copy">This viewfinder uses an NPS sample photo to simulate taking a picture at the junction.</p>
           </section>
-        </div> : photo && !manual ? <TrailSignReader key={photo.revision} photo={photo.file} trailName={rampartName}
-          onPhoto={(file) => openPhoto(file)} onConfirm={confirm}
-          sample={photo.sample ? { src: rampartPhoto, alt: sampleAlt, credit: rampartPhotoSource, retake: openCamera } : undefined}
-          destination={trip.name}
-          back={() => { setPhoto(undefined); toTop(); }}
-          chooseBranch={() => { setManual(true); toTop(); }} /> : <>
+        </div> : photo && !manual ? <TrailSignReader photo={photo} trailName={rampartName}
+          sample={{
+            src: rampartPhoto,
+            alt: sampleAlt,
+            credit: rampartPhotoSource,
+            retake: openCamera,
+            destination: trip.name,
+            labelKey: rampartSignLabelKey,
+            onConfirm: confirm,
+            chooseBranch: () => { setManual(true); toTop(); },
+          }}
+          back={() => { setPhoto(undefined); toTop(); }} /> : <>
           <div className="intro">
             <a className="text-action back" href="/app"><ArrowLeft aria-hidden="true" /> Trail app</a>
             <h1>{rampartName}</h1>
@@ -198,10 +197,9 @@ export function RampartJunction() {
                 }}>Confirm branch to {trip.name}</button>
                   <button type="button" className="text-action" onClick={() => setManual(false)}>{photo ? "Back to photo" : "Cancel"}</button>
                 </> : <>
-                  <p className="muted">At the junction, photograph both sign panels so you can check the labels and arrows.</p>
+                  <p className="muted">Use the sample camera to practice reading the two sign panels at this junction.</p>
                   <MobileSignReadingNotice />
-                  <PhotoPicker onPhoto={openPhoto} cameraLabel="Take sign photo" disabled={sampleLoading} />
-                  <button type="button" className="secondary-action" onClick={openCamera}>
+                  <button type="button" className="primary-action" onClick={openCamera}>
                     <Camera aria-hidden="true" /> Open sample camera
                   </button>
                   <button type="button" className="text-action" onClick={() => setManual(true)}>Choose a marked branch</button>

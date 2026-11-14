@@ -26,16 +26,28 @@ function readError(reason: unknown) {
   return "Sign reading is unavailable right now. Try again in a moment.";
 }
 
-export function TrailSignReader({ photo, trailName, onPhoto, back, sample, destination, onConfirm, chooseBranch }: {
+type TrailSignReaderProps = {
   photo: File;
   trailName: string;
-  onPhoto: (file: File) => void;
   back: () => void;
-  sample?: { src: string; alt: string; credit: string; retake: () => void };
-  destination?: string;
-  onConfirm?: (entries: readonly SignEntry[]) => string | undefined;
-  chooseBranch?: () => void;
-}) {
+} & ({
+  onPhoto: (file: File) => void;
+  sample?: never;
+} | {
+  onPhoto?: never;
+  sample: {
+    src: string;
+    alt: string;
+    credit: string;
+    retake: () => void;
+    destination: string;
+    labelKey: (label: string) => string;
+    onConfirm: (entries: readonly SignEntry[]) => string | undefined;
+    chooseBranch: () => void;
+  };
+});
+
+export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: TrailSignReaderProps) {
   const [result, setResult] = useState<{ reading: SignReading; source?: string }>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,8 +88,8 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, desti
     }
   }
 
-  const sign = corrected ? describeSign(readingFromEntries(corrected), trailName) :
-    result && describeSign(result.reading, trailName);
+  const reading = corrected ? readingFromEntries(corrected) : result?.reading;
+  const sign = reading && describeSign(reading, trailName, sample?.labelKey);
   const entries = corrected ?? sign?.entries ?? [];
   const source = corrected ? "Reviewed by you" : result?.source;
 
@@ -87,7 +99,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, desti
         <button type="button" className="text-action back" onClick={back}><ArrowLeft aria-hidden="true" /> Back to map</button>
         <p className="eyebrow">{trailName}</p>
         <h1 ref={heading} tabIndex={-1}>{sample ? "Read the captured sign" : "Read a trail sign"}</h1>
-        <p className="muted">{destination ? `Destination: ${destination}` : "Keep the lettering and arrows in view."}</p>
+        <p className="muted">{sample ? `Destination: ${sample.destination}` : "Keep the lettering and arrows in view."}</p>
       </div>
       <div className="saved-trail-layout">
         <div className="trail-sheet sign-photo-panel">
@@ -128,7 +140,9 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, desti
                 {sign.namesTrail && <p className="muted">This sign names the trail on your downloaded map.</p>}
                 <p className="muted">Compare the labels and arrows with your photo.</p>
               </>
-            ) : <p className="muted">Retake the photo closer to the sign and include the full label.</p>}
+            ) : <p className="muted">{sample
+              ? "Check the sample photo and enter the labels and arrows you can see."
+              : "Retake the photo closer to the sign and include the full label."}</p>}
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}
@@ -140,14 +154,14 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, desti
             <ScanLine aria-hidden="true" /> {busy ? "Reading sign…" : error ? "Retry reading" : "Read sign"}
           </button>
         )}
-        {onConfirm && sign && entries.length > 0 && (
-          <button type="button" className="primary-action" onClick={() => setError(onConfirm(entries) ?? "")}>Use this reading</button>
+        {sample && sign && entries.length > 0 && (
+          <button type="button" className="primary-action" onClick={() => setError(sample.onConfirm(entries) ?? "")}>Use this reading</button>
         )}
         {!busy && <div className="sheet-links">
           <button type="button" className="text-action" onClick={() => setEditing(true)}>
             {entries.length ? "Edit labels and arrows" : "Enter sign text manually"}
           </button>
-          {chooseBranch && <button type="button" className="text-action" onClick={chooseBranch}>Choose a marked branch</button>}
+          {sample && <button type="button" className="text-action" onClick={sample.chooseBranch}>Choose a marked branch</button>}
         </div>}
         </>}
         <span className="screen-reader-only" role="status">{busy ? "Reading your sign photo." : sign ? "Sign reading finished." : ""}</span>

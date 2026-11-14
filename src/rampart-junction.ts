@@ -29,7 +29,6 @@ export const rampartTrips = [
     name: "Devil’s Dream Camp",
     via: "Wonderland Trail via Pyramid Creek",
     lines: [west],
-    aliases: ["pyramid creek camp", "pyramid crk camp", "devils dream camp", "devils dream cmp", "devils dream", "indian henrys"],
     direction: "left",
   },
   {
@@ -37,15 +36,27 @@ export const rampartTrips = [
     name: "Longmire",
     via: "Wonderland Trail · 2.0 mi on the sign",
     lines: [east],
-    aliases: ["longmire"],
     direction: "right",
   },
 ] as const;
 
 export type RampartTrip = (typeof rampartTrips)[number];
 
-function cleanLabel(text: string) {
-  return text.toLowerCase().replace(/[’'.]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const westSignRows = [
+  { key: "devils dream camp", miles: "3.9", names: ["devils dream camp", "devils dream cmp", "devils dream"] },
+  { key: "pyramid creek camp", miles: "1.7", names: ["pyramid creek camp", "pyramid crk camp", "pyramid creek", "pyramid crk"] },
+  { key: "indian henrys", miles: "5", names: ["indian henrys"] },
+];
+
+export function rampartSignLabelKey(label: string) {
+  const key = signLabelKey(label);
+  const normalized = key.replace(/[’'‘]/g, "").replace(/\.(?!\d)/g, "");
+  // These three destinations each appear once on the sample sign. A model
+  // may expand an abbreviation or omit mileage when repeating the arrow label.
+  // Preserve mileage on all other rows, including the two Longmire entries.
+  const row = westSignRows.find(({ miles, names }) =>
+    names.some((name) => normalized === name || normalized === `${name} ${miles}`));
+  return row?.key ?? key;
 }
 
 export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTrip) {
@@ -54,8 +65,9 @@ export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTri
     // The same place is listed twice on the two panels. Require the mileage
     // from the Wonderland panel when using Longmire as evidence.
     if (trip.id === "longmire") return signLabelKey(label) === "longmire 2";
-    const name = cleanLabel(label).replace(/\s+\d.*$/, "");
-    return trip.aliases.some((alias) => alias === name);
+    return westSignRows.some(({ key }) => key === rampartSignLabelKey(label));
   });
-  if (matching.length && matching.every(({ direction }) => direction === trip.direction)) return matching[0];
+  if (matching.length && matching.every(({ direction }) => direction === trip.direction)) {
+    return matching.find(({ label }) => rampartSignLabelKey(label) === "devils dream camp") ?? matching[0];
+  }
 }
