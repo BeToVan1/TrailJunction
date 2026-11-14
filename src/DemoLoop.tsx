@@ -3,6 +3,7 @@ import {
   ArrowLeft, ChevronRight, CloudDownload, CornerUpLeft, MapPin, ScanLine, Signpost, Wifi, WifiOff,
 } from "lucide-react";
 import { demoRoute } from "./demo-route.ts";
+import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { getSavedRoute, saveCheckpoint, saveRoute } from "./offline.ts";
 import { findRecovery } from "./route.ts";
@@ -108,6 +109,7 @@ export function DemoLoop() {
                     <h2>{nextBranch ?? current?.name ?? "Choose a starting point"}</h2>
                   </div>
                 </div>
+                <MobileSignReadingNotice />
                 <button type="button" className="primary-action" onClick={() => show("sign")} disabled={loading || downloading}>
                   <ScanLine aria-hidden="true" /> {nextBranch ? "Check another sign" : "Check a trail sign"}
                 </button>

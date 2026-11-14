@@ -3,6 +3,7 @@ import { ArrowRight, Camera, Check, WifiOff } from "lucide-react";
 import { fernForkPaths, fernForkSample, findFernForkPath, matchesFernForkSample } from "./fern-fork.ts";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { PublicHeader } from "./Landing.tsx";
+import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { normalizeSignLine } from "./route.ts";
 import type { SignArrow } from "./sign-reading.ts";
@@ -122,6 +123,7 @@ export function ForkDemo() {
         <ol className="fern-steps" aria-label="Walkthrough steps">
           {stepLabels.map((label, index) => <li key={label} aria-current={index === step ? "step" : undefined}>{index + 1}. {label}</li>)}
         </ol>
+        <MobileSignReadingNotice className="muted fern-mobile-notice" />
         <div className="map-layout">
           {step === 0 || step === 3 ? <TrailMap confirmedId="fern-fork" branch={activeBranch} description={mapLabel} /> :
             <figure className="fern-visual fern-photo">

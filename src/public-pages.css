@@ -242,6 +242,7 @@
 
 .fern-steps li { border-top: 2px solid var(--border); padding-top: 7px; color: var(--soft); font-size: .75rem; }
 .fern-steps [aria-current="step"] { border-color: var(--fern-route); color: var(--ink); font-weight: 780; }
+.fern-mobile-notice { margin-bottom: 16px; font-size: .86rem; }
 .fern-visual {
   position: relative;
   height: 296px;

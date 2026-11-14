@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ArrowUp, ScanLine } from "lucide-react";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
+import { isMobileDevice } from "./mobile-device.ts";
+import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { PhotoError } from "./photo.ts";
 import { describeSign, type SignReading } from "./sign-reading.ts";
@@ -105,7 +107,8 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}
-        {!sign && !error && <p className="muted">When you tap Read sign, Gemini may process the photo online if on-device AI is unavailable.</p>}
+        {!sign && !error && (isMobileDevice() ? <MobileSignReadingNotice /> :
+          <p className="muted">When you tap Read sign, Gemini may process the photo online if on-device AI is unavailable.</p>)}
         {!aiConfigured && <p className="muted">Sign reading requires a configured Firebase project.</p>}
         {(!sign || !sign.entries.length) && (
           <button type="button" className="primary-action" disabled={busy || !aiConfigured} onClick={() => void analyze()}>

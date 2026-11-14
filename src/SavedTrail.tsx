@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, BookOpen, CircleCheck, Signpost } from "lucide-react";
+import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { OfflineTrailMap } from "./OfflineTrailMap.tsx";
 import { PhotoPicker } from "./PhotoPicker.tsx";
@@ -47,6 +48,7 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
           <section className="trail-sheet trail-sign-tools" aria-labelledby="read-trail-sign-heading">
             <h2 id="read-trail-sign-heading"><Signpost aria-hidden="true" /> Read a trail sign</h2>
             <p className="muted">Include the destinations and their arrows in your photo.</p>
+            <MobileSignReadingNotice />
             <PhotoPicker onPhoto={usePhoto} cameraLabel="Take sign photo" />
             <OfflineAISetup online={online} />
           </section>

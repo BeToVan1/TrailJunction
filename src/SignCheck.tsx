@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Check, ScanLine } from "lucide-react";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
+import { isMobileDevice } from "./mobile-device.ts";
+import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { matchJunction, type JunctionMatch, type RoutePack } from "./route.ts";
 
@@ -75,9 +77,9 @@ export function SignCheck({
             <>
               <p className="eyebrow">{photo ? "Selected photo" : "Demo photo"}</p>
               <h2>{photo ? photo.name : sample.name}</h2>
-              <p className="muted">{aiConfigured
+              {aiConfigured && isMobileDevice() ? <MobileSignReadingNotice /> : <p className="muted">{aiConfigured
                 ? "If local AI is unavailable, your photo may be processed by Gemini in the cloud."
-                : "Live photo checks need a Firebase project. You can try the demo photos and sample results here."}</p>
+                : "Live photo checks need a Firebase project. You can try the demo photos and sample results here."}</p>}
             </>
           )}
           {result && (
