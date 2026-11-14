@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, CloudDownload, MapPin, ScanLine } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Camera, CloudDownload, MapPin } from "lucide-react";
 import { PublicHeader } from "./Landing.tsx";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
@@ -11,11 +11,14 @@ import {
   matchRampartSign, rampartConditions, rampartGuide, rampartMap, rampartName, rampartPhoto, rampartPhotoSource,
   rampartTrips, type RampartTrip,
 } from "./rampart-junction.ts";
+import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import type { SignEntry } from "./sign-reading.ts";
 import type { Coordinate } from "./trail-catalog.ts";
 import { TrailSignReader } from "./TrailSignReader.tsx";
 import { useOnline } from "./use-online.ts";
 import { nationalMap, usgsTrailsLayer } from "./usgs-trails.ts";
+
+const sampleAlt = "National Park Service photo of both sign panels at Rampart Ridge Junction.";
 
 function JunctionMap({ trip }: { trip?: RampartTrip }) {
   const { extent, size, lines, url, junction, pyramid } = rampartMap;
@@ -58,21 +61,35 @@ export function RampartJunction() {
   const online = useOnline();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [camera, setCamera] = useState(false);
   const [sampleLoading, setSampleLoading] = useState(false);
   const [trip, setTrip] = useState<RampartTrip>(rampartTrips[0]);
   const [photo, setPhoto] = useState<{ file: File; sample: boolean; revision: number }>();
   const [highlight, setHighlight] = useState<{ evidence: string; manual: boolean }>();
   const [manual, setManual] = useState(false);
   const [error, setError] = useState("");
+  const cameraHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     void isRampartSaved().then(setSaved).catch(() => setError("Couldn’t check the saved map in this browser."));
   }, []);
 
+  useEffect(() => {
+    if (camera) cameraHeading.current?.focus({ preventScroll: true });
+  }, [camera]);
+
   function toTop() { window.scrollTo(0, 0); }
+
+  function openCamera() {
+    setPhoto(undefined);
+    setCamera(true);
+    setError("");
+    toTop();
+  }
 
   function openPhoto(file: File, sample = false) {
     setPhoto((previous) => ({ file, sample, revision: (previous?.revision ?? 0) + 1 }));
+    setCamera(false);
     setHighlight(undefined);
     setManual(false);
     setError("");
@@ -111,6 +128,9 @@ export function RampartJunction() {
     if (evidence) {
       setHighlight({ evidence: evidence.label, manual: false });
     } else {
+      if (trip.id === "longmire") {
+        return "To confirm Longmire, look for “LONGMIRE 2.0” with a right arrow on the Wonderland Trail panel. Edit the reading to match the photo or choose a marked branch.";
+      }
       return `The reading didn’t confirm the branch for ${trip.name}. Check the labels and arrows or choose a marked branch.`;
     }
     setPhoto(undefined);
@@ -121,9 +141,29 @@ export function RampartJunction() {
     <div className="app">
       <PublicHeader label="Junction guide" />
       <main className="workspace">
-        {photo && !manual ? <TrailSignReader key={photo.revision} photo={photo.file} trailName={rampartName}
+        {camera ? <div className="map-layout junction-viewfinder">
+          <SampleSignFrame src={rampartPhoto} alt={sampleAlt} framing portrait />
+          <section className="fern-content" aria-labelledby="rampart-capture">
+            <p className="public-kicker">{rampartName} · Camera</p>
+            <h1 id="rampart-capture" ref={cameraHeading} tabIndex={-1}>Frame the whole sign.</h1>
+            <p className="fern-copy">Fit both sign panels in the frame so the app can read each destination, distance, and arrow.</p>
+            <div className="fern-actions">
+              <button type="button" className="public-button" disabled={sampleLoading} onClick={() => void useSample()}>
+                {sampleLoading ? "Capturing photo…" : "Take photo"} <Camera aria-hidden="true" />
+              </button>
+              <button type="button" className="public-button public-secondary" disabled={sampleLoading} onClick={() => {
+                setCamera(false);
+                setError("");
+                toTop();
+              }}>Back</button>
+            </div>
+            {error && <p className="error" role="alert">{error}</p>}
+            <p className="fern-copy">This viewfinder uses an NPS sample photo to simulate taking a picture at the junction.</p>
+          </section>
+        </div> : photo && !manual ? <TrailSignReader key={photo.revision} photo={photo.file} trailName={rampartName}
           onPhoto={(file) => openPhoto(file)} onConfirm={confirm}
-          photoCredit={photo.sample ? { label: "Sample photo by the National Park Service", href: rampartPhotoSource } : undefined}
+          sample={photo.sample ? { src: rampartPhoto, alt: sampleAlt, credit: rampartPhotoSource, retake: openCamera } : undefined}
+          destination={trip.name}
           back={() => { setPhoto(undefined); toTop(); }}
           chooseBranch={() => { setManual(true); toTop(); }} /> : <>
           <div className="intro">
@@ -161,8 +201,8 @@ export function RampartJunction() {
                   <p className="muted">At the junction, photograph both sign panels so you can check the labels and arrows.</p>
                   <MobileSignReadingNotice />
                   <PhotoPicker onPhoto={openPhoto} cameraLabel="Take sign photo" disabled={sampleLoading} />
-                  <button type="button" className="secondary-action" disabled={sampleLoading} onClick={() => void useSample()}>
-                    <ScanLine aria-hidden="true" /> {sampleLoading ? "Opening photo…" : "Read NPS sample photo"}
+                  <button type="button" className="secondary-action" onClick={openCamera}>
+                    <Camera aria-hidden="true" /> Open sample camera
                   </button>
                   <button type="button" className="text-action" onClick={() => setManual(true)}>Choose a marked branch</button>
                 </>}

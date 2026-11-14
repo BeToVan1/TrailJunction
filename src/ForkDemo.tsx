@@ -7,6 +7,7 @@ import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { rampartUrl } from "./rampart-junction.ts";
 import { normalizeSignLine } from "./route.ts";
+import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import type { SignArrow } from "./sign-reading.ts";
 import { TrailMap } from "./TrailMap.tsx";
 import { useOnline } from "./use-online.ts";
@@ -127,11 +128,8 @@ export function ForkDemo() {
         <MobileSignReadingNotice className="muted fern-mobile-notice" />
         <div className="map-layout">
           {step === 0 || step === 3 ? <TrailMap confirmedId="fern-fork" branch={activeBranch} description={mapLabel} /> :
-            <figure className="fern-visual fern-photo">
-              <img src={samplePhoto} alt="Wooden trail sign at Fern Fork. Trailhead points left and Cedar Spur points right." />
-              <figcaption>{step === 1 ? "Simulated viewfinder" : "Captured sample photo"}</figcaption>
-              {step === 1 && <div className="fern-viewfinder" aria-hidden="true"><span /><span /><span /><span /></div>}
-            </figure>}
+            <SampleSignFrame src={samplePhoto} framing={step === 1}
+              alt="Wooden trail sign at Fern Fork. Trailhead points left and Cedar Spur points right." />}
           <div className="fern-content">
             {step === 0 && <section>
               <p className="public-kicker">Fern Creek Trail · Sample hike</p>

@@ -1,3 +1,5 @@
+import { normalizeSignLine } from "./route.ts";
+
 export interface SignReading {
   readable: boolean;
   lines: string[];
@@ -53,20 +55,27 @@ export function parseSignReading(text: string): SignReading {
   }
   return reading;
 }
-import { normalizeSignLine } from "./route.ts";
-
+export function signLabelKey(label: string): string {
+  const text = normalizeSignLine(label);
+  // A distance distinguishes sign rows that name the same place. Normalize
+  // how the number is written without joining rows with different distances.
+  const mileage = text.match(/^(.+?)[\s:–—-]+\(?\s*(\d+(?:[.,]\s*\d+)?)\s*(?:mi\.?|miles?)?\s*\)?\.?$/u);
+  if (!mileage) return text;
+  const [, place, distance] = mileage;
+  return `${place.trim()} ${Number(distance.replace(",", ".").replace(/\s/g, ""))}`;
+}
 
 export function describeSign(reading: SignReading, trailName: string) {
   const normalizeName = (name: string) => normalizeSignLine(name).replace(/['’]/g, "").replace(/\s+trail$/, "");
   const labels = new Map<string, string>();
   if (reading.readable) {
     for (const line of reading.lines) {
-      const key = normalizeSignLine(line);
+      const key = signLabelKey(line);
       if (key && !labels.has(key)) labels.set(key, line);
     }
   }
   const entries = [...labels].map(([key, label]) => {
-    const arrows = new Set(reading.arrows?.filter((arrow) => normalizeSignLine(arrow.label) === key).map((arrow) => arrow.direction));
+    const arrows = new Set(reading.arrows?.filter((arrow) => signLabelKey(arrow.label) === key).map((arrow) => arrow.direction));
     return { label, direction: arrows.size === 1 ? [...arrows][0] : undefined };
   });
   return { entries, namesTrail: entries.some(({ label }) => normalizeName(label) === normalizeName(trailName)) };

@@ -1,7 +1,10 @@
-.public-page {
-  --paper: var(--surface);
+:is(.public-page, .junction-viewfinder) {
   --primary: light-dark(#20392b, #e4f1a8);
   --on-primary: light-dark(#f8f5e9, #182f24);
+}
+
+.public-page {
+  --paper: var(--surface);
   --chip: light-dark(#e8eddf, #394b3c);
   background: var(--paper);
   min-height: 100svh;
@@ -272,6 +275,16 @@
 .fern-viewfinder span:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
 .fern-viewfinder span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
 .fern-viewfinder span:nth-child(4) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.fern-photo.sample-sign-portrait { height: clamp(296px, 47svh, 510px); }
+.sample-sign-portrait img { object-fit: contain; padding: 10px; }
+.sample-sign-portrait .fern-viewfinder {
+  inset: 25px auto 25px 50%;
+  width: min(calc(100% - 28px), clamp(197px, 33svh, 340px));
+  transform: translateX(-50%);
+  filter: drop-shadow(0 1px 2px #102218);
+}
+.junction-viewfinder .fern-content { align-self: stretch; align-content: center; }
+.junction-viewfinder .fern-copy:last-child { margin: 12px 0 0; }
 .fern-content { min-width: 0; padding: clamp(13px, 2.4vw, 25px); border: 1px solid var(--border); border-radius: 14px; background: var(--sheet); }
 .fern-content .public-kicker { margin-bottom: 9px; }
 .fern-content h1 {
@@ -350,6 +363,7 @@ a.text-action svg { width: 18px; height: 18px; }
 
 @media (max-width: 560px) {
   .fern-visual { height: 225px; }
+  .sample-sign-portrait .fern-viewfinder { top: 36px; }
   .fern-steps { margin-bottom: 14px; }
   .fern-actions .public-button { flex: 1; }
 }

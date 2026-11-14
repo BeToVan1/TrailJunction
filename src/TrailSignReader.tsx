@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ArrowUp, ScanLine } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, Camera, ScanLine } from "lucide-react";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { isMobileDevice } from "./mobile-device.ts";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { PhotoError } from "./photo.ts";
+import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import { describeSign, readingFromEntries, type SignEntry, type SignReading } from "./sign-reading.ts";
 import { SignReviewEditor } from "./SignReviewEditor.tsx";
 
@@ -25,12 +26,13 @@ function readError(reason: unknown) {
   return "Sign reading is unavailable right now. Try again in a moment.";
 }
 
-export function TrailSignReader({ photo, trailName, onPhoto, back, photoCredit, onConfirm, chooseBranch }: {
+export function TrailSignReader({ photo, trailName, onPhoto, back, sample, destination, onConfirm, chooseBranch }: {
   photo: File;
   trailName: string;
   onPhoto: (file: File) => void;
   back: () => void;
-  photoCredit?: { label: string; href: string };
+  sample?: { src: string; alt: string; credit: string; retake: () => void };
+  destination?: string;
   onConfirm?: (entries: readonly SignEntry[]) => string | undefined;
   chooseBranch?: () => void;
 }) {
@@ -84,14 +86,21 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, photoCredit, 
       <div className="intro">
         <button type="button" className="text-action back" onClick={back}><ArrowLeft aria-hidden="true" /> Back to map</button>
         <p className="eyebrow">{trailName}</p>
-        <h1 ref={heading} tabIndex={-1}>Read a trail sign</h1>
-        <p className="muted">Keep the lettering and arrows in view.</p>
+        <h1 ref={heading} tabIndex={-1}>{sample ? "Read the captured sign" : "Read a trail sign"}</h1>
+        <p className="muted">{destination ? `Destination: ${destination}` : "Keep the lettering and arrows in view."}</p>
       </div>
       <div className="saved-trail-layout">
         <div className="trail-sheet sign-photo-panel">
-          <PhotoPreview photo={photo} alt={photoCredit ? "National Park Service photo of the Rampart Ridge Junction sign" : "Your trail sign photo"} />
-          {photoCredit && <a className="park-details" href={photoCredit.href} target="_blank" rel="noreferrer">{photoCredit.label}</a>}
-          <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy || editing} />
+          {sample ? <>
+            <SampleSignFrame src={sample.src} alt={sample.alt} portrait />
+            <a className="park-details" href={sample.credit} target="_blank" rel="noreferrer">Sample photo by the National Park Service</a>
+            <button type="button" className="secondary-action" disabled={busy || editing} onClick={sample.retake}>
+              <Camera aria-hidden="true" /> Retake photo
+            </button>
+          </> : <>
+            <PhotoPreview photo={photo} alt="Your trail sign photo" />
+            <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy || editing} />
+          </>}
         </div>
         <section className="trail-sheet result-sheet" aria-label="Sign reading">
         {editing ? <SignReviewEditor entries={entries} cancel={() => setEditing(false)} confirm={(reviewed) => {

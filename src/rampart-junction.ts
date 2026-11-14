@@ -1,6 +1,6 @@
-import geometry from "./rampart-geometry.json";
+import geometry from "./rampart-geometry.json" with { type: "json" };
 import type { Coordinate } from "./trail-catalog.ts";
-import type { SignEntry } from "./sign-reading.ts";
+import { signLabelKey, type SignEntry } from "./sign-reading.ts";
 
 export const rampartUrl = "/junction/rampart-ridge";
 export const rampartName = "Rampart Ridge Junction";
@@ -53,7 +53,7 @@ export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTri
     if (!direction) return false;
     // The same place is listed twice on the two panels. Require the mileage
     // from the Wonderland panel when using Longmire as evidence.
-    if (trip.id === "longmire") return /^longmire\s+2(?:\.0)?(?:\s*(?:mi|miles?))?\.?$/i.test(label.trim());
+    if (trip.id === "longmire") return signLabelKey(label) === "longmire 2";
     const name = cleanLabel(label).replace(/\s+\d.*$/, "");
     return trip.aliases.some((alias) => alias === name);
   });

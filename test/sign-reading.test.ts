@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
 import { findFernForkPath, matchesFernForkSample } from "../src/fern-fork.ts";
+import { matchRampartSign, rampartTrips } from "../src/rampart-junction.ts";
 
 test("trims visible labels and ignores blank model output", () => {
   assert.deepEqual(parseSignReading('{"readable":true,"lines":[" Cedar Spur "," "]}'), {
@@ -59,4 +60,25 @@ test("Fern Fork accepts the staged arrows and routes to places beyond the sign",
   reading.arrows![0].direction = "right";
   assert.equal(matchesFernForkSample(reading), false);
   assert.throws(() => parseSignReading('{"readable":true,"lines":["Trailhead"],"arrows":[{"label":"Trailhead","direction":"maybe"}]}'));
+});
+
+test("matches Longmire across formatting differences without mixing the two sign panels", () => {
+  const longmire = rampartTrips[1];
+  const right = { label: "Longmire 2.0", direction: "right" as const };
+  const left = { label: "Longmire (3.00 mi)", direction: "left" as const };
+  const reading = { readable: true, lines: ["LONGMIRE — 2.00 mi.", "LONGMIRE 3.0"], arrows: [right, left] };
+  const review = () => describeSign(reading, "Rampart Ridge Junction").entries;
+  assert.deepEqual(review(), [
+    { label: "LONGMIRE — 2.00 mi.", direction: "right" },
+    { label: "LONGMIRE 3.0", direction: "left" },
+  ]);
+  assert.equal(matchRampartSign(review(), longmire)?.label, "LONGMIRE — 2.00 mi.");
+  assert.equal(matchRampartSign([{ label: "LONGMIRE (2,0 MILES).", direction: "right" }], longmire)?.direction, "right");
+  for (const arrow of [left, { ...right, label: "Longmire" }, { ...right, label: "Longmire 2.1" }]) {
+    reading.arrows = [arrow];
+    assert.equal(matchRampartSign(review(), longmire), undefined);
+    assert.equal(matchRampartSign([arrow], longmire), undefined);
+  }
+  reading.arrows = [right, { label: right.label, direction: "left" }];
+  assert.equal(matchRampartSign(review(), longmire), undefined);
 });
