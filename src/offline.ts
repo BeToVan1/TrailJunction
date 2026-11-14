@@ -1,14 +1,7 @@
 import { get, set, update } from "idb-keyval";
 import { rampartBasemap, rampartPhoto } from "./rampart-junction.ts";
-import type { RoutePack } from "./route.ts";
 import type { TrailMapData } from "./trail-catalog.ts";
 
-interface SavedRoute {
-  pack: RoutePack;
-  confirmedJunctionId: string | null;
-}
-
-const savedRouteKey = "trail-junction/saved-route";
 const savedMapsKey = "trail-junction/saved-maps";
 const savedRampartKey = "trail-junction/rampart-junction-v1";
 
@@ -21,29 +14,6 @@ export async function saveRampart() {
   const files = await Promise.all([rampartBasemap, rampartPhoto].map((asset) => caches.match(asset, { ignoreSearch: true })));
   if (files.some((file) => !file?.ok)) throw new Error("The junction files aren’t cached yet.");
   await set(savedRampartKey, true);
-}
-
-export async function getSavedRoute(pack: RoutePack): Promise<SavedRoute | undefined> {
-  const saved = await get<SavedRoute>(savedRouteKey);
-  if (saved?.pack?.id !== pack.id || saved.pack.version > pack.version) return undefined;
-  if (saved.pack.version === pack.version) return saved;
-
-  // The demo map remains downloaded when its checkpoints change.
-  let migrated: SavedRoute | undefined;
-  await update<SavedRoute | undefined>(savedRouteKey, (latest) => {
-    if (latest?.pack?.id !== pack.id || latest.pack.version > pack.version) return latest;
-    const confirmedJunctionId = pack.junctions.some(({ id }) => id === latest.confirmedJunctionId)
-      ? latest.confirmedJunctionId : null;
-    migrated = { pack, confirmedJunctionId };
-    return migrated;
-  });
-  return migrated;
-}
-
-export async function saveRoute(pack: RoutePack, confirmedJunctionId: string | null) {
-  await prepareOfflineApp();
-  const saved: SavedRoute = { pack, confirmedJunctionId };
-  await set(savedRouteKey, saved);
 }
 
 export async function getSavedMaps() {
@@ -70,15 +40,6 @@ export async function prepareOfflineApp() {
     `${import.meta.env.BASE_URL}sw.js`,
   );
   await waitForActiveWorker(registration);
-}
-
-export async function saveCheckpoint(pack: RoutePack, confirmedJunctionId: string) {
-  await update<SavedRoute | undefined>(savedRouteKey, (saved) => {
-    if (saved?.pack?.id === pack.id && saved.pack.version === pack.version) {
-      return { ...saved, confirmedJunctionId };
-    }
-    return saved;
-  });
 }
 
 function waitForActiveWorker(registration: ServiceWorkerRegistration) {

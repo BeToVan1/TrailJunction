@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BookOpen, Compass, Download, Play, Signpost, Wifi, WifiOff } from "lucide-react";
 import { AccountJournalView } from "./AccountJournalView.tsx";
 import { journalAccountsEnabled } from "./firebase-app.ts";
+import { rampartUrl } from "./rampart-junction.ts";
 import { TrailJournal, type JournalTrail } from "./TrailJournal.tsx";
 import { TrailLibrary } from "./TrailLibrary.tsx";
 import type { Trail } from "./trail-catalog.ts";
@@ -57,7 +58,7 @@ export function App() {
           </nav>
           <div className="bar-tools">
             <span className="connection"><ConnectionIcon aria-hidden="true" /> {online ? "Online" : "Offline"}</span>
-            <a className="bar-demo" href="/demo"><Play aria-hidden="true" /> <span>Sign demo</span></a>
+            <a className="bar-demo" href={rampartUrl}><Play aria-hidden="true" /> <span>Sign demo</span></a>
           </div>
         </div>
       </header>

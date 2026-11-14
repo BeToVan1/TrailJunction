@@ -108,7 +108,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: Tra
       <div className="saved-trail-layout">
         <div className="trail-sheet sign-photo-panel">
           {sample ? <>
-            <SampleSignFrame src={sample.src} alt={sample.alt} portrait />
+            <SampleSignFrame src={sample.src} alt={sample.alt} />
             <a className="park-details" href={sample.credit} target="_blank" rel="noreferrer">Sample photo by the National Park Service</a>
             <button type="button" className="secondary-action" disabled={busy || editing} onClick={sample.retake}>
               <Camera aria-hidden="true" /> Retake photo

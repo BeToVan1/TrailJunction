@@ -227,37 +227,17 @@
 .landing-journal-preview figcaption { margin-top: 9px; color: var(--soft); font-size: .69rem; line-height: 1.35; }
 .landing-journal-preview a { color: inherit; text-underline-offset: 2px; }
 
-.fern-demo, .fern-terrain {
-  --fern-route: light-dark(#245b3d, #d8ee8b);
-  --fern-terrain: light-dark(#e5ebdb, #26372e);
-  --fern-contour: light-dark(#c3d1b9, #455b49);
-}
-
-.fern-body { max-width: var(--page-width); margin: auto; padding: 18px clamp(12px, 3vw, 30px) 28px; }
-.fern-steps {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  list-style: none;
-  margin: 0 0 19px;
-  padding: 0;
-}
-
-.fern-steps li { border-top: 2px solid var(--border); padding-top: 7px; color: var(--soft); font-size: .75rem; }
-.fern-steps [aria-current="step"] { border-color: var(--fern-route); color: var(--ink); font-weight: 780; }
-.fern-mobile-notice { margin-bottom: 16px; font-size: .86rem; }
-.fern-visual {
+.sample-sign-frame {
   position: relative;
-  height: 296px;
+  height: clamp(296px, 47svh, 510px);
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 13px;
-  background: var(--fern-terrain);
+  background: #142920;
 }
 
-.fern-photo { background: #142920; }
-.fern-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.fern-photo figcaption {
+.sample-sign-frame img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+.sample-sign-frame figcaption {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -269,77 +249,39 @@
   font-weight: 690;
 }
 
-.fern-viewfinder { position: absolute; inset: 15% 8% 14%; pointer-events: none; }
-.fern-viewfinder span { position: absolute; width: 18px; height: 18px; border: solid #f5f4e9; }
-.fern-viewfinder span:nth-child(1) { top: 0; left: 0; border-width: 2px 0 0 2px; }
-.fern-viewfinder span:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
-.fern-viewfinder span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
-.fern-viewfinder span:nth-child(4) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
-.fern-photo.sample-sign-portrait { height: clamp(296px, 47svh, 510px); }
-.sample-sign-portrait img { object-fit: contain; padding: 10px; }
-.sample-sign-portrait .fern-viewfinder {
+.sample-sign-guides {
+  position: absolute;
+  pointer-events: none;
   inset: 25px auto 25px 50%;
   width: min(calc(100% - 28px), clamp(197px, 33svh, 340px));
   transform: translateX(-50%);
   filter: drop-shadow(0 1px 2px #102218);
 }
-.junction-viewfinder .fern-content { align-self: stretch; align-content: center; }
-.junction-viewfinder .fern-copy:last-child { margin: 12px 0 0; }
-.fern-content { min-width: 0; padding: clamp(13px, 2.4vw, 25px); border: 1px solid var(--border); border-radius: 14px; background: var(--sheet); }
-.fern-content .public-kicker { margin-bottom: 9px; }
-.fern-content h1 {
+.sample-sign-guides span { position: absolute; width: 18px; height: 18px; border: solid #f5f4e9; }
+.sample-sign-guides span:nth-child(1) { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.sample-sign-guides span:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.sample-sign-guides span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.sample-sign-guides span:nth-child(4) { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.junction-camera-panel {
+  min-width: 0;
+  align-self: stretch;
+  align-content: center;
+  padding: clamp(13px, 2.4vw, 25px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--sheet);
+}
+.junction-camera-panel .public-kicker { margin-bottom: 9px; }
+.junction-camera-panel h1 {
   margin-bottom: 12px;
   font: 400 clamp(2.19rem, 5.3vw, 3.25rem)/.99 Georgia, serif;
   letter-spacing: -.055em;
 }
 
-.fern-content h1:focus { outline: none; }
-.fern-copy { max-width: 36ch; margin-bottom: 16px; color: var(--soft); font-size: .94rem; line-height: 1.45; }
-.fern-chips, .fern-actions, .fern-picks { display: flex; flex-wrap: wrap; gap: 7px; }
-.fern-chips { margin-bottom: 14px; }
-.fern-chips span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 8px;
-  border-radius: 5px;
-  background: var(--chip);
-  font-size: .75rem;
-  font-weight: 650;
-}
-
-.fern-chips svg { width: 13px; height: 13px; }
-.fern-content label { display: block; margin-bottom: 5px; font-size: .81rem; font-weight: 730; }
-.fern-content input {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 11px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--sheet);
-  color: var(--ink);
-  font-size: 1rem;
-}
-
-.fern-content input:focus-visible { outline: 2px solid var(--fern-route); outline-offset: 2px; }
-.fern-places, .fern-error { margin-top: 8px; color: var(--soft); font-size: .78rem; }
-.fern-error { color: var(--return); }
-.fern-picks { margin: 2px 0 9px; }
-.fern-picks button {
-  min-height: 44px;
-  padding: 0 5px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: .81rem;
-  font-weight: 730;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.fern-trace { margin-bottom: 13px; padding: 9px 10px; border-radius: 6px; background: var(--chip); font-size: .81rem; }
-.fern-footer { display: flex; flex-wrap: wrap; align-items: start; gap: 0 18px; margin-top: 18px; border-top: 1px solid var(--border); }
-.fern-footer .device-setup { padding: 0; }
+.junction-camera-panel h1:focus { outline: none; }
+.junction-camera-copy { max-width: 36ch; margin-bottom: 16px; color: var(--soft); font-size: .94rem; line-height: 1.45; }
+.junction-camera-copy:last-child { margin: 12px 0 0; }
+.junction-camera-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 a.text-action { text-decoration: none; }
 a.text-action svg { width: 18px; height: 18px; }
 
@@ -362,8 +304,6 @@ a.text-action svg { width: 18px; height: 18px; }
 }
 
 @media (max-width: 560px) {
-  .fern-visual { height: 225px; }
-  .sample-sign-portrait .fern-viewfinder { top: 36px; }
-  .fern-steps { margin-bottom: 14px; }
-  .fern-actions .public-button { flex: 1; }
+  .sample-sign-guides { top: 36px; }
+  .junction-camera-actions .public-button { flex: 1; }
 }

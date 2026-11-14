@@ -10,6 +10,10 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/demo", "destination": "/junction/rampart-ridge", "type": 301 },
+      { "source": "/demo/loop", "destination": "/junction/rampart-ridge", "type": 301 }
+    ],
     "rewrites": [{ "source": "**", "destination": "/index.html" }],
     "headers": [
       {

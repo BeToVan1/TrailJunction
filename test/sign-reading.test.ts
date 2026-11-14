@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
-import { findFernForkPath, matchesFernForkSample } from "../src/fern-fork.ts";
 import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips, verifyRampartSampleArrows } from "../src/rampart-junction.ts";
 
 test("trims visible labels and ignores blank model output", () => {
@@ -23,6 +22,7 @@ test("rejects an unexpected response instead of letting it reach navigation", ()
   for (const value of ["no", "null", '{"readable":true,"lines":[7]}', '{"lines":["Cedar Spur"]}']) {
     assert.throws(() => parseSignReading(value));
   }
+  assert.throws(() => parseSignReading('{"readable":true,"lines":["Trailhead"],"arrows":[{"label":"Trailhead","direction":"maybe"}]}'));
 });
 
 test("only shows unambiguous arrows attached to visible sign text", () => {
@@ -45,21 +45,6 @@ test("only shows unambiguous arrows attached to visible sign text", () => {
     ],
   });
   assert.equal(describeSign(reading, "Pa’rus Connector").namesTrail, false);
-});
-
-test("Fern Fork accepts the staged arrows and routes to places beyond the sign", () => {
-  const reading = parseSignReading(JSON.stringify({
-    readable: true,
-    lines: ["TRAILHEAD", "CEDAR SPUR"],
-    arrows: [{ label: " Trailhead ", direction: "left" }, { label: "Cedar Spur", direction: "right" }],
-  }));
-  assert.equal(matchesFernForkSample(reading), true);
-  assert.deepEqual(findFernForkPath("  rocky   POINT "), ["Fern Fork", "Trailhead", "Rocky Point"]);
-  assert.deepEqual(findFernForkPath("Sloan Lake"), ["Fern Fork", "Cedar Spur", "Sloan Lake"]);
-  assert.equal(findFernForkPath("Visitor Center"), undefined);
-  reading.arrows![0].direction = "right";
-  assert.equal(matchesFernForkSample(reading), false);
-  assert.throws(() => parseSignReading('{"readable":true,"lines":["Trailhead"],"arrows":[{"label":"Trailhead","direction":"maybe"}]}'));
 });
 
 test("matches Longmire across formatting differences without mixing the two sign panels", () => {

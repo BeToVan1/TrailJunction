@@ -1,5 +1,3 @@
-import { normalizeSignLine } from "./route.ts";
-
 export interface SignReading {
   readable: boolean;
   lines: string[];
@@ -55,6 +53,14 @@ export function parseSignReading(text: string): SignReading {
   }
   return reading;
 }
+function normalizeSignLine(line: string): string {
+  return line
+    .normalize("NFKC")
+    .toLocaleLowerCase("en-US")
+    .replace(/^[\s←→↑↓]+|[\s←→↑↓]+$/gu, "")
+    .replace(/\s+/gu, " ");
+}
+
 export function signLabelKey(label: string): string {
   const text = normalizeSignLine(label);
   // A distance distinguishes sign rows that name the same place. Normalize

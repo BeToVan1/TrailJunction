@@ -6,13 +6,11 @@ Trail search uses the [USGS National Digital Trails layer](https://carto.nationa
 
 On any saved trail, choose **Choose photo**, or use **Take sign photo** on a phone or tablet, then select **Read sign**. The result shows readable labels and their visible arrows. The saved map provides context, but it does not identify your junction or plot a route from the photo. Captured sign photos are held for the current reading; downloaded maps remain in **Saved**.
 
-**Rampart Ridge junction guide** uses a real sign at the Wonderland Trail junction in Mount Rainier National Park. Download the junction for offline use, pick Longmire or Devil’s Dream Camp, and read your sign photo or the NPS sample. Review the labels and arrows before applying the reading, or select the marked branch on the map. Route geometry comes from the [USGS National Digital Trails layer](https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/37), with branch connections documented in the [NPS Rampart Ridge guide](https://www.nps.gov/mora/planyourvisit/rampart-ridge-trail.htm) and [Indian Henry’s trail guide](https://www.nps.gov/mora/planyourvisit/indian-henrys-hunting-ground.htm). The [cropped NPS sign photo](https://npgallery.nps.gov/AssetDetail/cb80ba2c-e675-4fde-aef5-2c8989aab960) is public domain.
+**Try sign demo** opens the Rampart Ridge Junction guide in Mount Rainier National Park. Pick Longmire or Devil’s Dream Camp, open the sample camera, and read the NPS sign photo. Review the labels and arrows before applying the reading to highlight your route, or choose a marked branch on the map. Download the junction to use its map and sample photo offline. Route geometry comes from the [USGS National Digital Trails layer](https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/37), with branch connections documented in the [NPS Rampart Ridge guide](https://www.nps.gov/mora/planyourvisit/rampart-ridge-trail.htm) and [Indian Henry’s trail guide](https://www.nps.gov/mora/planyourvisit/indian-henrys-hunting-ground.htm). The [cropped NPS sign photo](https://npgallery.nps.gov/AssetDetail/cb80ba2c-e675-4fde-aef5-2c8989aab960) is public domain.
 
 Open **Journal → Log a hike**, or choose **Log this hike** from a saved map to fill in the trail name and area. Record the date, add notes, and use the photo book to take or choose photos and write captions. Turn one page on mobile or a two-page spread on desktop. Hikes and photos work offline after the app is cached. Sign in with Google or a verified email address to sync them across devices. **Copy hikes from this device** adds existing device entries to the account journal. **Ask Gemini about this photo** sends the selected image to Firebase AI Logic when you’re online and saves the suggested nature note with that photo for offline viewing.
 
-**Try sign demo** opens a walkthrough at Fern Fork on the fictional Fern Creek Trail. Take a simulated photo of the sign, then enter **Rocky Point** or **Sloan Lake**. The app combines the sign's arrows with the downloaded demo map to show a route via **Trailhead** or **Cedar Spur**. **Open full demo map** shows the same fork and supports photo uploads, junction matching, and navigation back to Fern Fork.
-
-The initial catalog includes [Lower Yosemite Fall Trail](https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm), [Cook’s Meadow Loop](https://www.nps.gov/yose/planyourvisit/cooksmeadowtrail.htm), and [Pa’rus Trail](https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm). The Yosemite downloads use the NPS maps from the park’s trail pages. The Pa’rus map overlays the nine features named Pa’rus Trail from the [Zion trail layer](https://services7.arcgis.com/2hYXmwteFLemN5bW/ArcGIS/rest/services/Zion_NPS_MAP_MC_WFL1/FeatureServer/23) on a [USGS Topo basemap](https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer). Map services and data available from U.S. Geological Survey, National Geospatial Program. The real trail maps are for offline reference. Sign guidance is available on the fictional demo where the sign and branch connections are mapped.
+The initial catalog includes [Lower Yosemite Fall Trail](https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm), [Cook’s Meadow Loop](https://www.nps.gov/yose/planyourvisit/cooksmeadowtrail.htm), and [Pa’rus Trail](https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm). The Yosemite downloads use the NPS maps from the park’s trail pages. The Pa’rus map overlays the nine features named Pa’rus Trail from the [Zion trail layer](https://services7.arcgis.com/2hYXmwteFLemN5bW/ArcGIS/rest/services/Zion_NPS_MAP_MC_WFL1/FeatureServer/23) on a [USGS Topo basemap](https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer). Map services and data available from U.S. Geological Survey, National Geospatial Program.
 
 ## Run the app
 
@@ -23,9 +21,9 @@ npm ci
 npm run dev
 ```
 
-Without Firebase configuration, the demo uses a saved reading labeled **Sample result** and runs the route matching logic. Fern Fork also uses the saved reading if AI fails, times out, or returns arrows that do not match the staged sign.
+Without Firebase configuration, you can enter sign text manually from the captured sample or choose a marked branch.
 
-To verify offline reopening, run `npm run build` and `npm run preview`. Search for a park, download a trail, and wait for **Saved offline**. Disconnect, reload the app, and open the map under **Saved**. The full demo map has its own **Save for offline use** action, which also keeps the last confirmed demo checkpoint.
+To verify offline reopening, run `npm run build` and `npm run preview`. Download a trail or use **Download junction for offline use** from the demo. Disconnect, reload the app, and reopen the map under **Saved**.
 
 ## Connect Firebase AI Logic
 
@@ -35,9 +33,9 @@ To verify offline reopening, run `npm run build` and `npm run preview`. Search f
 4. For localhost in the Vite dev server, set `VITE_FIREBASE_APP_CHECK_DEBUG=true` and register the browser's debug token in your Firebase console. Follow the [Firebase debug provider guide](https://firebase.google.com/docs/app-check/web/debug-provider). Keep the debug token out of the repository.
 5. On compatible desktop Chrome, follow the [Web hybrid setup](https://firebase.google.com/docs/ai-logic/hybrid/web/get-started), select **Prepare offline AI**, and let Gemini Nano finish downloading. For the hosted build, keep App Check enabled and use the production provider.
 
-The Firebase AI Logic Web SDK uses `PREFER_ON_DEVICE` to read sign text and arrows from a photo. The SDK can use cloud Gemini when the local model is unavailable and the device is online. The result shows the inference source reported by Firebase. In the full demo map, the app checks the returned labels against known junctions and asks for confirmation before moving the map pin. Routes come from the saved trail connections.
+The Firebase AI Logic Web SDK uses `PREFER_ON_DEVICE` to read sign text and arrows from a photo. The SDK can use cloud Gemini when the local model is unavailable and the device is online. The result shows the inference source reported by Firebase. In the demo, Trail Junction matches the reviewed sign labels and arrows to a marked route from Rampart Ridge Junction.
 
-Use a compatible desktop Chrome setup to test offline AI. An iPhone can supply the demo photos and can open the responsive web app. The standard iPhone 15 does not run this Web SDK's on-device model.
+Use a compatible desktop Chrome setup to test offline AI. You can try the demo and read your own photos on saved trails from an iPhone with an internet connection.
 
 ## Verify and deploy
 

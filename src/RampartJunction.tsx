@@ -145,12 +145,12 @@ export function RampartJunction() {
       <PublicHeader label="Junction guide" />
       <main className="workspace">
         {camera ? <div className="map-layout junction-viewfinder">
-          <SampleSignFrame src={rampartPhoto} alt={sampleAlt} framing portrait />
-          <section className="fern-content" aria-labelledby="rampart-capture">
+          <SampleSignFrame src={rampartPhoto} alt={sampleAlt} framing />
+          <section className="junction-camera-panel" aria-labelledby="rampart-capture">
             <p className="public-kicker">{rampartName} · Camera</p>
             <h1 id="rampart-capture" ref={cameraHeading} tabIndex={-1}>Frame the whole sign.</h1>
-            <p className="fern-copy">Fit both sign panels in the frame so the app can read each destination, distance, and arrow.</p>
-            <div className="fern-actions">
+            <p className="junction-camera-copy">Fit both sign panels in the frame so the app can read each destination, distance, and arrow.</p>
+            <div className="junction-camera-actions">
               <button type="button" className="public-button" disabled={sampleLoading} onClick={() => void useSample()}>
                 {sampleLoading ? "Capturing photo…" : "Take photo"} <Camera aria-hidden="true" />
               </button>
@@ -161,7 +161,7 @@ export function RampartJunction() {
               }}>Back</button>
             </div>
             {error && <p className="error" role="alert">{error}</p>}
-            <p className="fern-copy">This viewfinder uses an NPS sample photo to simulate taking a picture at the junction.</p>
+            <p className="junction-camera-copy">This viewfinder uses an NPS sample photo to simulate taking a picture at the junction.</p>
           </section>
         </div> : photo && !manual ? <TrailSignReader photo={photo} trailName={rampartName}
           sample={{
