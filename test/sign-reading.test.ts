@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
 import { findFernForkPath, matchesFernForkSample } from "../src/fern-fork.ts";
-import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips } from "../src/rampart-junction.ts";
+import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips, verifyRampartSampleArrows } from "../src/rampart-junction.ts";
 
 test("trims visible labels and ignores blank model output", () => {
   assert.deepEqual(parseSignReading('{"readable":true,"lines":[" Cedar Spur "," "]}'), {
@@ -101,4 +101,22 @@ test("pairs the abbreviated Devil’s Dream sign with its full arrow label and p
   assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 3.9", direction: "right" }], rampartTrips[0]), undefined);
   assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 1.7", direction: "left" }], rampartTrips[0]), undefined);
   assert.equal(matchRampartSign([{ label: "Devil’s Dream Camp 3.9" }], rampartTrips[0]), undefined);
+});
+
+test("checks each recognized Longmire arrow against the sample photo", () => {
+  const reading = parseSignReading(JSON.stringify({
+    readable: true,
+    lines: ["LONGMIRE 2.0", "LONGMIRE (3.00 mi)", "LONGMIRE", "VIEWPOINT 1.2"],
+    arrows: [
+      { label: "LONGMIRE 2.0", direction: "right" },
+      { label: "LONGMIRE 3.0", direction: "right" },
+      { label: "VIEWPOINT 1.2", direction: "left" },
+    ],
+  }));
+  const observed = describeSign(reading, rampartName, rampartSignLabelKey).entries;
+  const verified = verifyRampartSampleArrows(observed);
+  assert.equal(observed[1].direction, "right");
+  assert.deepEqual(verified.map(({ direction }) => direction), ["right", "left", undefined, "left"]);
+  assert.equal(matchRampartSign(verified, rampartTrips[1])?.label, "LONGMIRE 2.0");
+  assert.equal(matchRampartSign(verified.slice(1), rampartTrips[1]), undefined);
 });

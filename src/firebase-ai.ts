@@ -19,7 +19,8 @@ const prompt = [
   "Do not infer a location, route, or missing letters. Keep arrow symbols out of lines.",
   "Return JSON with readable (boolean), lines (up to eight strings), and arrows (up to eight objects with label and direction).",
   "Include an arrow only when a complete label clearly belongs to a visible left, right, or straight-ahead arrow. Set direction to left, right, or straight. Use an empty arrows array otherwise.",
-  "Copy the full matching entry from lines into each arrow's label, including its distance. Keep separate rows for destinations that appear on more than one panel.",
+  "Read each row on each panel separately. Determine direction from the arrowhead on the same row, looking for arrows on either side of the text. If the same destination appears twice, read both arrows independently.",
+  "Copy the full matching entry from lines into each arrow's label, including its distance.",
   "If no complete sign label is clear, return {\"readable\":false,\"lines\":[]}.",
 ].join(" ");
 

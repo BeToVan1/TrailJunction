@@ -42,6 +42,7 @@ type TrailSignReaderProps = {
     retake: () => void;
     destination: string;
     labelKey: (label: string) => string;
+    verifyArrows: (entries: readonly SignEntry[]) => SignEntry[];
     onConfirm: (entries: readonly SignEntry[]) => string | undefined;
     chooseBranch: () => void;
   };
@@ -90,7 +91,10 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: Tra
 
   const reading = corrected ? readingFromEntries(corrected) : result?.reading;
   const sign = reading && describeSign(reading, trailName, sample?.labelKey);
-  const entries = corrected ?? sign?.entries ?? [];
+  const observed = sign?.entries ?? [];
+  const verified = !corrected && sample ? sample.verifyArrows(observed) : observed;
+  const entries = corrected ?? verified;
+  const arrowsCorrected = verified.some((entry, index) => entry.direction !== observed[index].direction);
   const source = corrected ? "Reviewed by you" : result?.source;
 
   return (
@@ -137,6 +141,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: Tra
                     </li>;
                   })}
                 </ul>
+                {arrowsCorrected && <p className="muted">Longmire arrows checked against the NPS sample photo.</p>}
                 {sign.namesTrail && <p className="muted">This sign names the trail on your downloaded map.</p>}
                 <p className="muted">Compare the labels and arrows with your photo.</p>
               </>

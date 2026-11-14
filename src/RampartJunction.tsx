@@ -8,7 +8,7 @@ import { isRampartSaved, saveRampart } from "./offline.ts";
 import { mapPoint } from "./map-projection.ts";
 import {
   matchRampartSign, rampartConditions, rampartGuide, rampartMap, rampartName, rampartPhoto, rampartPhotoSource, rampartSignLabelKey,
-  rampartTrips, type RampartTrip,
+  rampartTrips, verifyRampartSampleArrows, type RampartTrip,
 } from "./rampart-junction.ts";
 import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import type { SignEntry } from "./sign-reading.ts";
@@ -161,6 +161,7 @@ export function RampartJunction() {
             retake: openCamera,
             destination: trip.name,
             labelKey: rampartSignLabelKey,
+            verifyArrows: verifyRampartSampleArrows,
             onConfirm: confirm,
             chooseBranch: () => { setManual(true); toTop(); },
           }}

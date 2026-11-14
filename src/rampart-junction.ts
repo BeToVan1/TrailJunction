@@ -59,6 +59,20 @@ export function rampartSignLabelKey(label: string) {
   return row?.key ?? key;
 }
 
+const sampleLongmireArrows = new Map<string, NonNullable<SignEntry["direction"]>>([
+  ["longmire 2", "right"],
+  ["longmire 3", "left"],
+]);
+
+// These arrows were checked against the bundled NPS photo. Apply them only
+// to rows the model identified in that photo, using the mileage to tell them apart.
+export function verifyRampartSampleArrows(entries: readonly SignEntry[]) {
+  return entries.map((entry) => {
+    const direction = sampleLongmireArrows.get(signLabelKey(entry.label));
+    return direction && direction !== entry.direction ? { ...entry, direction } : entry;
+  });
+}
+
 export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTrip) {
   const matching = entries.filter(({ label, direction }) => {
     if (!direction) return false;
