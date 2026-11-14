@@ -5,7 +5,8 @@ import { isMobileDevice } from "./mobile-device.ts";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
 import { PhotoError } from "./photo.ts";
-import { describeSign, type SignReading } from "./sign-reading.ts";
+import { describeSign, readingFromEntries, type SignEntry, type SignReading } from "./sign-reading.ts";
+import { SignReviewEditor } from "./SignReviewEditor.tsx";
 
 const arrows = {
   left: { Icon: ArrowLeft, title: "Left" },
@@ -24,15 +25,20 @@ function readError(reason: unknown) {
   return "Sign reading is unavailable right now. Try again in a moment.";
 }
 
-export function TrailSignReader({ photo, trailName, onPhoto, back }: {
+export function TrailSignReader({ photo, trailName, onPhoto, back, photoCredit, onConfirm, chooseBranch }: {
   photo: File;
   trailName: string;
   onPhoto: (file: File) => void;
   back: () => void;
+  photoCredit?: { label: string; href: string };
+  onConfirm?: (entries: readonly SignEntry[]) => string | undefined;
+  chooseBranch?: () => void;
 }) {
   const [result, setResult] = useState<{ reading: SignReading; source?: string }>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [corrected, setCorrected] = useState<SignEntry[]>();
   const active = useRef<AbortController>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -48,6 +54,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
     setBusy(true);
     setError("");
     setResult(undefined);
+    setCorrected(undefined);
     // Bound the entire attempt, including model initialization and photo decoding.
     const timer = window.setTimeout(() => controller.abort(new DOMException("Sign reading timed out.", "TimeoutError")), 35000);
     const deadline = new Promise<never>((_, reject) => {
@@ -67,7 +74,10 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
     }
   }
 
-  const sign = result && describeSign(result.reading, trailName);
+  const sign = corrected ? describeSign(readingFromEntries(corrected), trailName) :
+    result && describeSign(result.reading, trailName);
+  const entries = corrected ?? sign?.entries ?? [];
+  const source = corrected ? "Reviewed by you" : result?.source;
 
   return (
     <div className="trail-library trail-sign-reader">
@@ -79,29 +89,35 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
       </div>
       <div className="saved-trail-layout">
         <div className="trail-sheet sign-photo-panel">
-          <PhotoPreview photo={photo} alt="Your trail sign photo" />
-          <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy} />
+          <PhotoPreview photo={photo} alt={photoCredit ? "National Park Service photo of the Rampart Ridge Junction sign" : "Your trail sign photo"} />
+          {photoCredit && <a className="park-details" href={photoCredit.href} target="_blank" rel="noreferrer">{photoCredit.label}</a>}
+          <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy || editing} />
         </div>
         <section className="trail-sheet result-sheet" aria-label="Sign reading">
+        {editing ? <SignReviewEditor entries={entries} cancel={() => setEditing(false)} confirm={(reviewed) => {
+          setCorrected(reviewed);
+          setEditing(false);
+          setError("");
+        }} /> : <>
         {sign && (
           <div aria-live="polite">
             <div className="reading-heading">
               <h2>{sign.entries.length ? "What the sign says" : "No clear sign text"}</h2>
-              {result?.source && <span className="source">{result.source}</span>}
+              {source && <span className="source">{source}</span>}
             </div>
             {sign.entries.length ? (
               <>
                 <ul className="sign-lines">
-                  {sign.entries.map(({ label, direction }) => {
+                  {entries.map(({ label, direction }, index) => {
                     const arrow = direction ? arrows[direction] : undefined;
-                    return <li key={label}>
+                    return <li key={index}>
                       <span>{label}</span>
                       {arrow && <span className="sign-direction"><arrow.Icon aria-hidden="true" /> {arrow.title}</span>}
                     </li>;
                   })}
                 </ul>
                 {sign.namesTrail && <p className="muted">This sign names the trail on your downloaded map.</p>}
-                <p className="muted">Directions describe the arrows in the photo. Check the sign and your map before choosing a path.</p>
+                <p className="muted">Compare the labels and arrows with your photo.</p>
               </>
             ) : <p className="muted">Retake the photo closer to the sign and include the full label.</p>}
           </div>
@@ -115,6 +131,16 @@ export function TrailSignReader({ photo, trailName, onPhoto, back }: {
             <ScanLine aria-hidden="true" /> {busy ? "Reading sign…" : error ? "Retry reading" : "Read sign"}
           </button>
         )}
+        {onConfirm && sign && entries.length > 0 && (
+          <button type="button" className="primary-action" onClick={() => setError(onConfirm(entries) ?? "")}>Use this reading</button>
+        )}
+        {!busy && <div className="sheet-links">
+          <button type="button" className="text-action" onClick={() => setEditing(true)}>
+            {entries.length ? "Edit labels and arrows" : "Enter sign text manually"}
+          </button>
+          {chooseBranch && <button type="button" className="text-action" onClick={chooseBranch}>Choose a marked branch</button>}
+        </div>}
+        </>}
         <span className="screen-reader-only" role="status">{busy ? "Reading your sign photo." : sign ? "Sign reading finished." : ""}</span>
         </section>
       </div>

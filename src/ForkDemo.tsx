@@ -5,6 +5,7 @@ import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { PublicHeader } from "./Landing.tsx";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
+import { rampartUrl } from "./rampart-junction.ts";
 import { normalizeSignLine } from "./route.ts";
 import type { SignArrow } from "./sign-reading.ts";
 import { TrailMap } from "./TrailMap.tsx";
@@ -191,6 +192,7 @@ export function ForkDemo() {
         </div>
         <footer className="fern-footer">
           <a className="text-action" href="/demo/loop">Open full demo map</a>
+          <a className="text-action" href={rampartUrl}>Try a real trail junction</a>
           <OfflineAISetup online={online} />
         </footer>
       </main>

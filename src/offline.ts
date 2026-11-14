@@ -1,4 +1,5 @@
 import { get, set, update } from "idb-keyval";
+import { rampartBasemap, rampartPhoto } from "./rampart-junction.ts";
 import type { RoutePack } from "./route.ts";
 import type { TrailMapData } from "./trail-catalog.ts";
 
@@ -9,6 +10,18 @@ interface SavedRoute {
 
 const savedRouteKey = "trail-junction/saved-route";
 const savedMapsKey = "trail-junction/saved-maps";
+const savedRampartKey = "trail-junction/rampart-junction-v1";
+
+export async function isRampartSaved() {
+  return (await get<boolean>(savedRampartKey)) === true;
+}
+
+export async function saveRampart() {
+  await prepareOfflineApp();
+  const files = await Promise.all([rampartBasemap, rampartPhoto].map((asset) => caches.match(asset, { ignoreSearch: true })));
+  if (files.some((file) => !file?.ok)) throw new Error("The junction files aren’t cached yet.");
+  await set(savedRampartKey, true);
+}
 
 export async function getSavedRoute(pack: RoutePack): Promise<SavedRoute | undefined> {
   const saved = await get<SavedRoute>(savedRouteKey);

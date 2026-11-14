@@ -11,6 +11,20 @@ export interface SignArrow {
   direction: (typeof signDirections)[number];
 }
 
+export interface SignEntry {
+  label: string;
+  direction?: SignArrow["direction"];
+}
+
+export function readingFromEntries(entries: readonly SignEntry[]): SignReading {
+  const visible = entries.map(({ label, direction }) => ({ label: label.trim(), direction })).filter(({ label }) => label);
+  return {
+    readable: visible.length > 0,
+    lines: visible.map(({ label }) => label),
+    arrows: visible.flatMap(({ label, direction }) => direction ? [{ label, direction }] : []),
+  };
+}
+
 function isSignArrow(value: unknown): value is SignArrow {
   return !!value && typeof value === "object" && "label" in value && "direction" in value &&
     typeof value.label === "string" && value.label.length <= 100 && value.label.trim() !== "" &&

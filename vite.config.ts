@@ -22,7 +22,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,webp,woff2,webmanifest}", "trails/parus-topo.jpg", "trails/lower-yosemite-fall.jpg"],
+        globPatterns: ["**/*.{js,css,html,png,webp,woff2,webmanifest}", "trails/parus-topo.jpg", "trails/lower-yosemite-fall.jpg", "**/rampart-junction.jpg"],
         navigateFallback: "index.html",
         navigateFallbackDenylist: [/^\/__\//],
         cleanupOutdatedCaches: true,

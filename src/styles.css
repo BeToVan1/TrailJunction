@@ -502,6 +502,23 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .sign-direction svg { width: 17px; height: 17px; }
 .sign-lines ~ .muted + .muted { margin-top: 5px; }
 .result-sheet h2 { margin: 2px 0 5px; }
+.sign-review-form { display: grid; gap: 10px; }
+.sign-review-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(94px, .62fr) 44px; gap: 6px; align-items: end; }
+.sign-review-row label { display: grid; gap: 4px; min-width: 0; font-size: .78rem; font-weight: 700; }
+.sign-review-row :is(input, select), .junction-destination select {
+  width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: .9rem;
+}
+.sign-review-row button { justify-content: center; }
+.sign-review-row button svg { width: 17px; height: 17px; }
+.junction-destination { display: block; }
+.junction-library-link { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.rampart-map .park-route-line { stroke-width: 8; }
+.rampart-map .park-route-halo { stroke-width: 15; }
+.rampart-map .park-zion-map text { font-size: 33px; }
+.rampart-highlight { fill: none; stroke: var(--path); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.junction-result { border-left: 3px solid var(--path); padding: 9px 11px; background: var(--surface); border-radius: 5px; }
+.junction-result p { margin-top: 4px; font-size: .87rem; }
 .result-sheet .error { margin: 8px 0 0; }
 .observed { margin-bottom: 4px; overflow-wrap: anywhere; }
 .reading-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 3px 8px; }

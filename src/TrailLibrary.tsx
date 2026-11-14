@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { preconnect } from "react-dom";
 import { ChevronRight, CircleCheck, CloudDownload, Map, Search } from "lucide-react";
-import { getSavedMaps, saveTrailMap } from "./offline.ts";
+import { getSavedMaps, isRampartSaved, saveTrailMap } from "./offline.ts";
 import { matchParkQuery, parkForLines } from "./nps-parks.ts";
+import { rampartUrl } from "./rampart-junction.ts";
 import { SavedTrail } from "./SavedTrail.tsx";
 import { TrailCover } from "./TrailCover.tsx";
 import { TrailDetails } from "./TrailDetails.tsx";
@@ -45,6 +46,7 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
 }) {
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState<Record<string, TrailMapData>>({});
+  const [rampartSaved, setRampartSaved] = useState(false);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,6 +64,9 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
 
   useEffect(() => {
     let active = true;
+    void isRampartSaved().then((isSaved) => {
+      if (active) setRampartSaved(isSaved);
+    }).catch(() => {});
     getSavedMaps().then((maps) => {
       if (active) setSaved(maps);
     }).catch(() => {
@@ -203,6 +208,10 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
           </form>
         )}
       </section>
+      {(view === "search" || rampartSaved) && <p className="junction-library-link">
+        <a className="text-action" href={rampartUrl}>Rampart Ridge junction guide</a>
+        {rampartSaved && <span className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</span>}
+      </p>}
       <div className="catalog-heading">
         <h2>{view === "saved" ? "Downloaded maps" : searchQuery ? "Search results" : "Featured trails"}</h2>
         <p className="muted" aria-live="polite">
