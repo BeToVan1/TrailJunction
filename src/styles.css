@@ -276,6 +276,8 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-yellow { background: #ffda46; }
 .park-orange { background: #ec943e; }
 .park-blue { background: #12649a; }
+.park-green { background: #28583c; }
+.park-legend .park-place-key { width: 10px; height: 10px; margin-inline: 3px; border-radius: 50%; background: #873817; }
 .park-elevation {
   display: flex;
   flex-wrap: wrap;
@@ -291,7 +293,9 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .park-route-halo, .park-route-line, .park-north-arrow { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .park-route-halo { stroke: #fff; stroke-width: 19; }
 .park-route-line { stroke: #12649a; stroke-width: 11; }
+.park-route-matched { stroke: #28583c; stroke-width: 13; }
 .park-route-end { fill: #12649a; stroke: #fff; stroke-width: 5; }
+.park-place-matched { fill: #873817; stroke-width: 6; }
 .park-north-arrow { stroke: #172b35; stroke-width: 5; }
 .park-map a, .park-details { color: var(--ink); text-underline-offset: 3px; }
 .park-details { justify-self: start; font-size: .88rem; font-weight: 700; }
@@ -492,6 +496,9 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 }
 .sign-direction svg { width: 17px; height: 17px; }
 .sign-lines ~ .muted + .muted { margin-top: 5px; }
+.saved-sign-matches { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--surface); }
+.saved-sign-matches h3 { margin: 0; font-size: 1rem; }
+.saved-sign-matches button { justify-self: start; }
 .result-sheet h2 { margin: 2px 0 5px; }
 .sign-review-form { display: grid; gap: 10px; }
 .sign-review-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(94px, .62fr) 44px; gap: 6px; align-items: end; }

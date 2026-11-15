@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ArrowUp, Camera, ScanLine } from "lucide-react";
 import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { isMobileDevice } from "./mobile-device.ts";
@@ -32,9 +32,11 @@ type TrailSignReaderProps = {
   back: () => void;
 } & ({
   onPhoto: (file: File) => void;
+  mapReview?: (entries: readonly SignEntry[]) => ReactNode;
   sample?: never;
 } | {
   onPhoto?: never;
+  mapReview?: never;
   sample: {
     src: string;
     alt: string;
@@ -48,7 +50,7 @@ type TrailSignReaderProps = {
   };
 });
 
-export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: TrailSignReaderProps) {
+export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapReview }: TrailSignReaderProps) {
   const [result, setResult] = useState<{ reading: SignReading; source?: string }>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -142,7 +144,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: Tra
                   })}
                 </ul>
                 {arrowsCorrected && <p className="muted">Longmire arrows checked against the NPS sample photo.</p>}
-                {sign.namesTrail && <p className="muted">This sign names the trail on your downloaded map.</p>}
+                {sign.namesTrail && !mapReview && <p className="muted">This sign names the trail on your downloaded map.</p>}
                 <p className="muted">Compare the labels and arrows with your photo.</p>
               </>
             ) : <p className="muted">{sample
@@ -159,6 +161,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample }: Tra
             <ScanLine aria-hidden="true" /> {busy ? "Reading sign…" : error ? "Retry reading" : "Read sign"}
           </button>
         )}
+        {mapReview && entries.length > 0 && mapReview(entries)}
         {sample && sign && entries.length > 0 && (
           <button type="button" className="primary-action" onClick={() => setError(sample.onConfirm(entries) ?? "")}>Use this reading</button>
         )}

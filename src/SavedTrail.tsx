@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, CircleCheck, Map, Signpost } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, CircleCheck, Map, MapPin, Signpost } from "lucide-react";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
 import { OfflineTrailMap } from "./OfflineTrailMap.tsx";
 import { PhotoPicker } from "./PhotoPicker.tsx";
+import { matchSavedSignToMap, type SavedSignMapMatch } from "./saved-sign-map.ts";
 import { TrailSignReader } from "./TrailSignReader.tsx";
 import type { Trail, TrailMapData } from "./trail-catalog.ts";
 
@@ -18,16 +19,41 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
   logHike: () => void;
 }) {
   const [capture, setCapture] = useState<{ file: File; revision: number }>();
+  const [mapMatch, setMapMatch] = useState<SavedSignMapMatch>();
 
   function usePhoto(file: File) {
+    setMapMatch(undefined);
     setCapture((previous) => ({ file, revision: (previous?.revision ?? 0) + 1 }));
+    window.scrollTo(0, 0);
+  }
+
+  function showMap(match?: SavedSignMapMatch) {
+    setMapMatch(match);
+    setCapture(undefined);
     window.scrollTo(0, 0);
   }
 
   if (capture) {
     return (
       <TrailSignReader key={capture.revision} photo={capture.file} trailName={trail.name}
-        onPhoto={usePhoto} back={() => { setCapture(undefined); window.scrollTo(0, 0); }} />
+        onPhoto={usePhoto} back={() => showMap()} mapReview={(entries) => {
+          const matches = matchSavedSignToMap(entries, trail);
+          return (
+            <section className="saved-sign-matches" aria-label="Saved map matches">
+              {matches.length > 0 ? <>
+                <h3>On your saved map</h3>
+                <p className="muted">Check the sign, then choose what to show. The sign alone can’t confirm where you’re standing.</p>
+                {matches.map((match) => <button key={match.name} type="button" className="primary-action" onClick={() => showMap(match)}>
+                  <MapPin aria-hidden="true" /> Show {match.name} on map
+                </button>)}
+              </> : <>
+                <h3>No match on this map</h3>
+                <p className="muted">The reading doesn’t match {trail.name} or a known place on its saved map. Check that you opened the right trail.</p>
+                <button type="button" className="secondary-action" onClick={() => showMap()}>View saved map</button>
+              </>}
+            </section>
+          );
+        }} />
     );
   }
 
@@ -41,7 +67,7 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
     : legacyDistance.endsWith(" mapped") ? legacyDistance.replace(/ mapped$/, "") : undefined;
   const mapGuide = map.format === "image"
     ? "Follow the yellow route on the park map."
-    : "The blue line shows the trail segments included in this download.";
+    : `The ${mapMatch?.kind === "trail" ? "green" : "blue"} line shows the trail segments included in this download.`;
   const stats = [
     { label: featured ? "Distance" : "Mapped distance", value: featured?.distance ?? mappedDistance },
     { label: "Elevation gain", value: featured?.elevationGain },
@@ -63,8 +89,18 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
         <h1>{trail.name}</h1>
       </div>
       <div className="saved-trail-layout">
-        <OfflineTrailMap trail={trail} map={map} />
+        <OfflineTrailMap trail={trail} map={map} match={mapMatch} />
         <div className="saved-trail-tools">
+          {mapMatch && <section className="trail-sheet saved-map-guide" aria-label="Sign match">
+            <div className="saved-tool-heading">
+              <span className="saved-tool-icon"><MapPin aria-hidden="true" /></span>
+              <div role="status">
+                <h2>{mapMatch.name}</h2>
+                <p className="muted">Matched “{mapMatch.label}” on the sign.</p>
+              </div>
+            </div>
+            <button type="button" className="text-action saved-map-source" onClick={() => setMapMatch(undefined)}>Clear sign highlight</button>
+          </section>}
           <section className="trail-sheet saved-map-guide" aria-labelledby="saved-map-guide-title">
             <div className="saved-tool-heading">
               <span className="saved-tool-icon"><Map aria-hidden="true" /></span>

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { mapPoint } from "./map-projection.ts";
+import { parusMapPlaces, type SavedSignMapMatch } from "./saved-sign-map.ts";
 import { zionDataSource, type Coordinate, type MapExtent, type Trail, type TrailMapData } from "./trail-catalog.ts";
 import { nationalMap, usgsTrailsLayer } from "./usgs-trails.ts";
 
@@ -36,13 +37,14 @@ const parusBasemap = {
   north: 4470098.206076228,
 };
 
-export function TopoOverlay({ lines, extent, width, height, url, label, children }: {
+export function TopoOverlay({ lines, extent, width, height, url, label, highlighted = false, children }: {
   lines: Coordinate[][];
   extent: MapExtent;
   width: number;
   height: number;
   url?: string;
   label: string;
+  highlighted?: boolean;
   children?: ReactNode;
 }) {
   const paths = lines.map((line) => line.map((point) => mapPoint(point, extent, width, height).join(",")).join(" "));
@@ -50,50 +52,60 @@ export function TopoOverlay({ lines, extent, width, height, url, label, children
     <svg className="park-zion-map" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>
       {url && <image href={url} width={width} height={height} />}
       {paths.map((points, index) => <polyline className="park-route-halo" key={index} points={points} />)}
-      {paths.map((points, index) => <polyline className="park-route-line" key={index} points={points} />)}
+      {paths.map((points, index) => <polyline className={highlighted ? "park-route-line park-route-matched" : "park-route-line"}
+        key={index} points={points} />)}
       {children}
     </svg>
   );
 }
 
-function ParusMap({ lines }: { lines: Coordinate[][] }) {
+function ParusMap({ lines, match }: { lines: Coordinate[][]; match?: SavedSignMapMatch }) {
   const { width, height, url } = parusBasemap;
-  const [trailheadX, trailheadY] = mapPoint([-112.986755, 37.201825], parusBasemap, width, height);
-  const [junctionX, junctionY] = mapPoint([-112.973749, 37.218756], parusBasemap, width, height);
+  const label = "Zion Canyon topographic map of the Pa’rus Trail between the trailhead near the Visitor Center and Canyon Junction.";
 
   return (
     <TopoOverlay lines={lines} extent={parusBasemap} width={width} height={height} url={url}
-      label="Zion Canyon topographic map. The blue Pa’rus Trail follows the Virgin River from the trailhead near the Visitor Center to Canyon Junction.">
-      <circle className="park-route-end" cx={trailheadX} cy={trailheadY} r="13" />
-      <circle className="park-route-end" cx={junctionX} cy={junctionY} r="13" />
-      <text x={trailheadX + 24} y={trailheadY + 39}>Pa’rus Trailhead</text>
-      <text x={junctionX - 24} y={junctionY - 16} textAnchor="end">Canyon Junction</text>
+      highlighted={match?.kind === "trail"} label={match ? `${label} ${match.name} is highlighted.` : label}>
+      {parusMapPlaces.map(({ id, name, location }) => {
+        const [x, y] = mapPoint(location, parusBasemap, width, height);
+        const north = id === "canyon-junction";
+        const selected = match?.kind === "place" && match.id === id;
+        const offset = selected ? 31 : 24;
+        return <g key={id}>
+          <circle className={selected ? "park-route-end park-place-matched" : "park-route-end"}
+            cx={x} cy={y} r={selected ? 24 : 13} />
+          {selected && <circle cx={x} cy={y} r="7" fill="white" />}
+          <text x={north ? x - offset : x + offset} y={north ? y - 16 : y + 39}
+            textAnchor={north ? "end" : undefined}>{name}</text>
+        </g>;
+      })}
       <text x="785" y="57" textAnchor="middle">N</text>
       <path d="M785 118V74m-13 15 13-15 13 15" className="park-north-arrow" />
     </TopoOverlay>
   );
 }
 
-function UsgsTopoMap({ map }: { map: Extract<TrailMapData, { format: "usgs-topo" }> }) {
+function UsgsTopoMap({ map, highlighted }: { map: Extract<TrailMapData, { format: "usgs-topo" }>; highlighted: boolean }) {
   const url = useMapImage(map.image);
   if (!url) return null;
   return (
     <TopoOverlay lines={map.trail.lines} extent={map.extent} width={map.size} height={map.size} url={url}
-      label={`USGS topographic map. Follow the blue line for ${map.trail.name}.`}>
+      highlighted={highlighted} label={`USGS topographic map. ${map.trail.name} is shown in ${highlighted ? "green" : "blue"}.`}>
       <text x={map.size - 55} y="57" textAnchor="middle">N</text>
       <path d={`M${map.size - 55} 118V74m-13 15 13-15 13 15`} className="park-north-arrow" />
     </TopoOverlay>
   );
 }
 
-export function OfflineTrailMap({ trail, map }: { trail: Trail; map: TrailMapData }) {
+export function OfflineTrailMap({ trail, map, match }: { trail: Trail; map: TrailMapData; match?: SavedSignMapMatch }) {
   const nearbyTrail = trail.id === "lower-yosemite-fall" ? "Cook’s Meadow Loop" : "Lower Yosemite Fall Trail";
+  const highlighted = match?.kind === "trail";
   return (
     <figure className="map-frame park-map">
       {map.format === "image" ? (
         <>
           <ul className="park-legend" aria-label="Map key">
-            <li><i className="park-yellow" aria-hidden="true" /><span><strong>Follow yellow</strong> for {trail.name}</span></li>
+            <li><i className="park-yellow" aria-hidden="true" /><span><strong>Follow yellow</strong> for {trail.name}{highlighted && " · Matched on sign"}</span></li>
             <li><i className="park-orange" aria-hidden="true" /><span>Orange shows {nearbyTrail}</span></li>
           </ul>
           <ParkMap image={map.image} trail={trail} />
@@ -101,11 +113,14 @@ export function OfflineTrailMap({ trail, map }: { trail: Trail; map: TrailMapDat
       ) : (
         <>
           <ul className="park-legend" aria-label="Map key">
-            <li><i className="park-blue" aria-hidden="true" /><span>
-              <strong>{trail.name}</strong>{map.format === "linework" && " · Visitor Center to Canyon Junction"}
+            <li><i className={highlighted ? "park-green" : "park-blue"} aria-hidden="true" /><span>
+              <strong>{trail.name}</strong>{highlighted ? " · Matched on sign" : map.format === "linework" && " · Visitor Center to Canyon Junction"}
             </span></li>
+            {match?.kind === "place" && <li><i className="park-place-key" aria-hidden="true" /><span>
+              <strong>{match.name}</strong> · Matched on sign
+            </span></li>}
           </ul>
-          {map.format === "usgs-topo" ? <UsgsTopoMap map={map} /> : <ParusMap lines={map.lines} />}
+          {map.format === "usgs-topo" ? <UsgsTopoMap map={map} highlighted={highlighted} /> : <ParusMap lines={map.lines} match={match} />}
         </>
       )}
       <figcaption className="map-key">
