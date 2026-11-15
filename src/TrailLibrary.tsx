@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { preconnect } from "react-dom";
-import { ChevronRight, CircleCheck, CloudDownload, Map, Search } from "lucide-react";
+import { ChevronRight, CircleCheck, CloudDownload, Map as MapIcon, Search } from "lucide-react";
 import { getSavedMaps, isRampartSaved, saveTrailMap } from "./offline.ts";
 import { matchParkQuery, parkForLines } from "./nps-parks.ts";
-import { rampartUrl } from "./rampart-junction.ts";
+import { rampartName, rampartUrl } from "./rampart-junction.ts";
 import { SavedTrail } from "./SavedTrail.tsx";
 import { TrailCover } from "./TrailCover.tsx";
 import { TrailDetails } from "./TrailDetails.tsx";
 import { warmTrailSearchIndex } from "./trail-search-index.ts";
+import { recommendationAreas, recommendedTrails, type HikeReference, type TrailReference } from "./trail-recommendations.ts";
 import { sortTrailMatches } from "./trail-search-ranking.ts";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
-import { cachedUsgsTrails, downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms, usgsTrailsLayer } from "./usgs-trails.ts";
+import { cachedUsgsTrails, downloadUsgsTrail, nearbyUsgsTrails, searchUsgsTrails, usgsSearchTerms, usgsTrailsLayer } from "./usgs-trails.ts";
 
 type LibraryView = "search" | "saved";
 type NationalSearch = { query: string; trails: UsgsTrail[]; limited: boolean; failed: boolean };
 
 const featuredTrailIds = new Set(["lower-yosemite-fall", "parus", "scout-junction"]);
 const featuredTrails = trails.filter(({ id }) => featuredTrailIds.has(id));
+const noHikes: readonly HikeReference[] = [];
 
 const featuredStates: Record<(typeof trails)[number]["id"], string> = {
   "lower-yosemite-fall": "California",
@@ -40,7 +42,7 @@ function savedSearchTrail(trail: UsgsTrail) {
   return park ? { ...trail, park: park.name, parkCode: park.code } : trail;
 }
 
-export function TrailLibrary({ view, online, opened, setOpened, detail, setDetail, logTrail }: {
+export function TrailLibrary({ view, online, opened, setOpened, detail, setDetail, logTrail, exploring, hikes = noHikes }: {
   view: LibraryView;
   online: boolean;
   opened: Trail | undefined;
@@ -48,6 +50,8 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
   detail: Trail | undefined;
   setDetail: (trail: Trail | undefined) => void;
   logTrail: (trail: Trail) => void;
+  exploring: boolean;
+  hikes?: readonly HikeReference[];
 }) {
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState<Record<string, TrailMapData>>({});
@@ -58,14 +62,47 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
   const [announcement, setAnnouncement] = useState("");
   const [national, setNational] = useState<NationalSearch>();
   const [retry, setRetry] = useState(0);
+  const [recommendationCandidates, setRecommendationCandidates] = useState<ReadonlyMap<string, readonly Trail[]>>(new Map());
   const startPendingSearch = useRef<() => void>(undefined);
   const listReturn = useRef<{ id: string; scroll: number; restore: boolean }>(undefined);
-  const list = useRef<HTMLUListElement>(null);
+  const catalog = useRef<HTMLDivElement>(null);
   const searchQuery = query.trim();
+  const showFeatured = view === "search" && !searchQuery;
   const canSearch = view === "search" && usgsSearchTerms(searchQuery).join("").length >= 3;
   const localDownloads = useMemo(() => Object.values(saved)
     .flatMap((map) => map.format === "usgs-topo" ? [savedSearchTrail(map.trail)] : [])
     .sort((a, b) => a.name.localeCompare(b.name) || a.park.localeCompare(b.park)), [saved]);
+  const savedTrails = useMemo(() => [...trails.filter((trail) => saved[trail.id]), ...localDownloads], [saved, localDownloads]);
+  const areas = useMemo(() => {
+    const history: TrailReference[] = [...savedTrails];
+    if (rampartSaved) history.push({ name: rampartName, park: "Mount Rainier National Park" });
+    return recommendationAreas(history, hikes, trails);
+  }, [savedTrails, rampartSaved, hikes]);
+
+  useEffect(() => {
+    if (!exploring || !showFeatured || !online || opened || detail || !areas.length) return;
+    const controller = new AbortController();
+    // Wait until Explore is settled so a search the user starts immediately
+    // is not competing with background recommendations.
+    const timer = window.setTimeout(() => {
+      void Promise.allSettled(areas.map(async (area) => {
+        const matches = "park" in area
+          ? (await searchUsgsTrails(area.park, controller.signal)).trails
+          : await nearbyUsgsTrails(area.center, controller.signal);
+        return matches.filter((trail) => !duplicatesFeatured(trail));
+      })).then((results) => {
+        if (controller.signal.aborted) return;
+        setRecommendationCandidates((previous) => new Map(results.map((result, index) => {
+          const key = areas[index].key;
+          return [key, result.status === "fulfilled" ? result.value : previous.get(key) ?? []];
+        })));
+      });
+    }, 350);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [exploring, showFeatured, online, opened, detail, areas]);
 
   useEffect(() => {
     let active = true;
@@ -117,7 +154,7 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
     if (!previous || detail || opened) return;
     listReturn.current = undefined;
     if (!previous.restore) return;
-    const buttons = list.current?.querySelectorAll<HTMLButtonElement>("[data-trail-details]");
+    const buttons = catalog.current?.querySelectorAll<HTMLButtonElement>("[data-trail-details]");
     const button = [...(buttons ?? [])].find((target) => target.dataset.trailDetails === previous.id);
     button?.focus({ preventScroll: true });
     window.scrollTo(0, previous.scroll);
@@ -182,12 +219,58 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
     normalizeTrailName(`${trail.name} ${trail.park}`).includes(term)));
   const nationalIds = new Set(nationalMatches.map(({ id }) => id));
   const matches = [...searchTrails(localQuery), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
-  const showFeatured = view === "search" && !searchQuery;
   const shownTrails = view === "saved"
-    ? [...trails.filter((trail) => saved[trail.id]), ...localDownloads]
+    ? savedTrails
     : showFeatured ? featuredTrails : sortTrailMatches(matches, place?.trailName ?? searchQuery);
+  const recommendations = showFeatured ? recommendedTrails({
+    areas, candidates: recommendationCandidates, catalog: trails, saved: savedTrails, hikes, featuredIds: featuredTrailIds,
+  }) : [];
+  function renderTrail(trail: Trail) {
+    return (
+      <li key={trail.id} className="catalog-trail">
+        <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} online={online} />
+        <div className="catalog-card-content">
+          <div className="catalog-card-copy">
+            <h3>
+              <button type="button" className="catalog-details-target" data-trail-details={trail.id}
+                aria-label={`View details for ${trail.name}, ${trail.park}`}
+                onClick={() => {
+                  listReturn.current = { id: trail.id, scroll: window.scrollY, restore: false };
+                  setError("");
+                  setDetail(trail);
+                  window.scrollTo(0, 0);
+                }}>
+                {trail.name}<ChevronRight aria-hidden="true" />
+              </button>
+            </h3>
+            <p className="muted">{trail.park}</p>
+            <p className="muted catalog-detail">{trail.details}</p>
+          </div>
+          <div className="catalog-card-action">
+            {saved[trail.id] ? (
+              <>
+                <p className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</p>
+                <button type="button" className="secondary-action" aria-label={`Open map for ${trail.name}`} onClick={() => open(trail)}>
+                  <MapIcon aria-hidden="true" /> Open map
+                </button>
+              </>
+            ) : (
+              <button
+                type="button" className="primary-action" aria-label={`Download ${trail.name}`}
+                disabled={loading || !online || pending.has(trail.id)}
+                onClick={() => void download(trail)}
+              >
+                <CloudDownload aria-hidden="true" /> {pending.has(trail.id) ? "Saving…" : "Download"}
+              </button>
+            )}
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   return (
-    <div className="trail-library trail-catalog">
+    <div className="trail-library trail-catalog" ref={catalog}>
       <section className="catalog-banner" data-view={view}>
         <div className="intro">
           <h1>{view === "search" ? "Find a trail" : "Saved trails"}</h1>
@@ -243,49 +326,27 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <p className="screen-reader-only" role="status">{announcement}</p>
-      <ul className={showFeatured ? "catalog-results catalog-featured" : "catalog-results"} ref={list}>
-        {shownTrails.map((trail) => (
-          <li key={trail.id} className="catalog-trail">
-            <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} online={online} />
-            <div className="catalog-card-content">
-              <div className="catalog-card-copy">
-                <h3>
-                  <button type="button" className="catalog-details-target" data-trail-details={trail.id}
-                    aria-label={`View details for ${trail.name}, ${trail.park}`}
-                    onClick={() => {
-                      listReturn.current = { id: trail.id, scroll: window.scrollY, restore: false };
-                      setError("");
-                      setDetail(trail);
-                      window.scrollTo(0, 0);
-                    }}>
-                    {trail.name}<ChevronRight aria-hidden="true" />
-                  </button>
-                </h3>
-                <p className="muted">{trail.park}</p>
-                <p className="muted catalog-detail">{trail.details}</p>
-              </div>
-              <div className="catalog-card-action">
-                {saved[trail.id] ? (
-                  <>
-                    <p className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</p>
-                    <button type="button" className="secondary-action" aria-label={`Open map for ${trail.name}`} onClick={() => open(trail)}>
-                      <Map aria-hidden="true" /> Open map
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button" className="primary-action" aria-label={`Download ${trail.name}`}
-                    disabled={loading || !online || pending.has(trail.id)}
-                    onClick={() => void download(trail)}
-                  >
-                    <CloudDownload aria-hidden="true" /> {pending.has(trail.id) ? "Saving…" : "Download"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </li>
-        ))}
+      <ul className={showFeatured ? "catalog-results catalog-featured" : "catalog-results"}>
+        {shownTrails.map(renderTrail)}
       </ul>
+      {showFeatured && (
+        <section className="catalog-recommendations" aria-labelledby="recommended-trails-title">
+          <div className="catalog-heading">
+            <h2 id="recommended-trails-title">Recommended trails</h2>
+            {recommendations.length > 0 && <p className="muted">Based on your saved trails and logged hikes</p>}
+          </div>
+          {recommendations.length > 0
+            ? <ul className={recommendations.length === 3 ? "catalog-results catalog-balanced" : "catalog-results"}>
+              {recommendations.map(renderTrail)}
+            </ul>
+            : <p className="muted" role="status">
+              {!areas.length ? "Save a trail map or log a hike in a national park to get suggestions here."
+                : !online ? "Connect to find more trails near your saved maps and hikes."
+                : areas.some(({ key }) => !recommendationCandidates.has(key)) ? "Finding trails near your saved maps and hikes…"
+                : "No other trails found near your saved maps and hikes."}
+            </p>}
+        </section>
+      )}
     </div>
   );
 }

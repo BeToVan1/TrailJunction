@@ -11,6 +11,14 @@ export const usgsTrailsLayer = "https://carto.nationalmap.gov/arcgis/rest/servic
 export const usgsTopoService = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer";
 export const nationalMap = "https://www.usgs.gov/programs/national-geospatial-program/national-map";
 const searchLimit = 120;
+const hikingWhere = "trailtype = 'Terra Trail' AND (hikerpedestrian IS NULL OR UPPER(hikerpedestrian) NOT IN ('N', 'NO'))";
+const geometryFields = {
+  outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles,trailsurface,trailnumber,hikerpedestrian,bicycle",
+  resultRecordCount: String(searchLimit),
+  geometryPrecision: "5",
+  maxAllowableOffset: "0.00002",
+  cacheHint: "true",
+};
 
 interface Segment {
   id: number;
@@ -206,13 +214,6 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
     inSR: "4326",
     spatialRel: "esriSpatialRelIntersects",
   } : {};
-  const geometryFields = {
-    outFields: "objectid,name,namealternate,maplabel,sourceoriginator,permanentidentifier,lengthmiles,trailsurface,trailnumber,hikerpedestrian,bicycle",
-    resultRecordCount: String(searchLimit),
-    geometryPrecision: "5",
-    maxAllowableOffset: "0.00002",
-    cacheHint: "true",
-  };
   const ids = await indexedTrailIds(terms, searchLimit, signal, place?.park.code);
   let data: FeatureResponse | undefined;
   if (ids) {
@@ -236,7 +237,7 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
     data = await queryFeatures({
       ...geometryFields,
       ...spatial,
-      where: `trailtype = 'Terra Trail' AND (hikerpedestrian IS NULL OR UPPER(hikerpedestrian) NOT IN ('N', 'NO')) AND (${nameMatches})`,
+      where: `${hikingWhere} AND (${nameMatches})`,
     }, AbortSignal.any([signal, AbortSignal.timeout(12000)]));
   }
   signal.throwIfAborted();
@@ -260,6 +261,32 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
   }
   searchCache.set(searchKey(query), { result, expires: Date.now() + cacheLifetime });
   return result;
+}
+
+export async function nearbyUsgsTrails(center: Coordinate, signal: AbortSignal) {
+  const [longitude, latitude] = center;
+  const latitudeSpan = .12;
+  const longitudeSpan = latitudeSpan / Math.max(.15, Math.cos(latitude * Math.PI / 180));
+  const bounds = [Math.max(-180, longitude - longitudeSpan), Math.max(-90, latitude - latitudeSpan),
+    Math.min(180, longitude + longitudeSpan), Math.min(90, latitude + latitudeSpan)];
+  const data = await queryFeatures({
+    ...geometryFields,
+    geometry: bounds.map((value) => value.toFixed(4)).join(","),
+    geometryType: "esriGeometryEnvelope",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    where: `${hikingWhere} AND name IS NOT NULL`,
+  }, AbortSignal.any([signal, AbortSignal.timeout(6000)]));
+  signal.throwIfAborted();
+  return groupSegments(parseSegments(data)).flatMap((group) => {
+    const described = describeGroup(group);
+    if (!described) return [];
+    let distance = Infinity;
+    for (const line of described.trail.lines) {
+      for (const point of line) distance = Math.min(distance, distanceMeters(center, point));
+    }
+    return distance <= 15000 ? [{ trail: described.trail, distance }] : [];
+  }).sort((a, b) => a.distance - b.distance).map(({ trail }) => trail);
 }
 
 export function usgsTopoImage(extent: UsgsMapData["extent"], size: number) {

@@ -156,6 +156,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .catalog-field input:focus { outline: none; }
 .catalog-field .catalog-submit { flex: none; min-height: 38px; margin-inline-end: -6px; padding-inline: 10px; border-radius: 7px; }
 .catalog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 5px 12px; padding-block: 4px 1px; }
+.catalog-recommendations { display: grid; gap: 10px; margin-top: 9px; padding-top: 13px; border-top: 1px solid var(--border); }
 .catalog-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .catalog-trail {
   position: relative;
@@ -569,7 +570,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   .section-nav button { min-height: 46px; flex-direction: column; gap: 3px; font-size: .75rem; }
   .app .workspace { padding-bottom: calc(77px + env(safe-area-inset-bottom)); }
   .catalog-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-  .catalog-featured > .catalog-trail:first-child { grid-column: 1 / -1; }
+  :is(.catalog-featured, .catalog-balanced) > .catalog-trail:first-child { grid-column: 1 / -1; }
   .catalog-cover-placeholder, .catalog-cover-image { height: clamp(91px, 28vw, 170px); }
   .catalog-card-content { padding: 9px; }
   .catalog-card-action > button { width: 100%; min-height: 44px; }

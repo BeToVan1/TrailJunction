@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getTrailFirebaseApp } from "./firebase-app.ts";
-import { createAccountJournal, deviceJournal, type AccountJournal } from "./journal.ts";
-import { JournalAccountPanel, useJournalAccount } from "./JournalAccount.tsx";
+import { useCallback, useEffect, useState } from "react";
+import { deviceJournal, type AccountJournal } from "./journal.ts";
+import { JournalAccountPanel, type useJournalAccount } from "./JournalAccount.tsx";
 import { syncJournal } from "./journal-sync.ts";
 import { TrailJournal, type JournalTrail } from "./TrailJournal.tsx";
 
-export function AccountJournalView({ online, trail }: { online: boolean; trail?: JournalTrail }) {
-  const account = useJournalAccount();
+export function AccountJournalView({ online, trail, account, journal }: {
+  online: boolean;
+  trail?: JournalTrail;
+  account: ReturnType<typeof useJournalAccount>;
+  journal?: AccountJournal;
+}) {
   const uid = account.verified ? account.user?.uid : undefined;
-  const journal = useMemo(() => uid ? createAccountJournal(getTrailFirebaseApp().options.projectId!, uid) : undefined, [uid]);
 
   if (!uid || !journal) {
     return <TrailJournal online={online} trail={trail} accountLoading={account.user === undefined}

@@ -23,7 +23,7 @@ function message(error: unknown) {
   }
 }
 
-export function useJournalAccount() {
+export function useJournalAccount(enabled = true) {
   const [user, setUser] = useState<User | null>();
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +31,7 @@ export function useJournalAccount() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return;
     const unsubscribe = onIdTokenChanged(auth(), (next) => {
       setUser(next);
       setVerified(Boolean(next?.emailVerified));
@@ -39,7 +40,7 @@ export function useJournalAccount() {
       void getRedirectResult(auth()).catch((reason) => setError(message(reason)));
     }
     return unsubscribe;
-  }, []);
+  }, [enabled]);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);

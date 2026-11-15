@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Compass, Download, Play, Signpost, Wifi, WifiOff } from "lucide-react";
 import { AccountJournalView } from "./AccountJournalView.tsx";
-import { journalAccountsEnabled } from "./firebase-app.ts";
+import { getTrailFirebaseApp, journalAccountsEnabled } from "./firebase-app.ts";
+import { createAccountJournal, deviceJournal } from "./journal.ts";
+import { useJournalAccount } from "./JournalAccount.tsx";
 import { rampartUrl } from "./rampart-junction.ts";
 import { TrailJournal, type JournalTrail } from "./TrailJournal.tsx";
 import { TrailLibrary } from "./TrailLibrary.tsx";
@@ -16,8 +18,29 @@ export function App() {
   const [opened, setOpened] = useState<Trail>();
   const [detail, setDetail] = useState<Trail>();
   const [journalTrail, setJournalTrail] = useState<JournalTrail>();
+  const [hikeHistory, setHikeHistory] = useState<{ accountId?: string; hikes: JournalTrail[] }>();
+  const account = useJournalAccount(journalAccountsEnabled);
+  const accountId = account.verified ? account.user?.uid : undefined;
+  const journal = useMemo(() =>
+    accountId ? createAccountJournal(getTrailFirebaseApp().options.projectId!, accountId) : undefined, [accountId]);
+  const recentHikes = hikeHistory && hikeHistory.accountId === accountId ? hikeHistory.hikes : undefined;
   const online = useOnline();
   const ConnectionIcon = online ? Wifi : WifiOff;
+
+  useEffect(() => {
+    if (view !== "search") return;
+    let active = true;
+    async function loadHistory() {
+      const sources = journal ? [deviceJournal, journal] : [deviceJournal];
+      const results = await Promise.allSettled(sources.map((store) => store.getHikes()));
+      const hikes = results.flatMap((result) => result.status === "fulfilled" ? result.value : [])
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map(({ trail, location }) => ({ trail, location }));
+      if (active) setHikeHistory({ accountId, hikes });
+    }
+    void loadHistory();
+    return () => { active = false; };
+  }, [view, accountId, journal]);
 
   function show(next: typeof view) {
     if (next === "journal" && view === "journal") return;
@@ -65,10 +88,10 @@ export function App() {
       <main className="workspace">
         <div hidden={view === "journal"}>
           <TrailLibrary view={libraryView} online={online} opened={opened} setOpened={setOpened}
-            detail={detail} setDetail={setDetail} logTrail={logTrail} />
+            detail={detail} setDetail={setDetail} logTrail={logTrail} exploring={view === "search"} hikes={recentHikes} />
         </div>
         {view === "journal" && (journalAccountsEnabled
-          ? <AccountJournalView online={online} trail={journalTrail} />
+          ? <AccountJournalView online={online} trail={journalTrail} account={account} journal={journal} />
           : <TrailJournal online={online} trail={journalTrail} />)}
       </main>
     </div>
