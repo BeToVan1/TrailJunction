@@ -425,16 +425,52 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 .saved-trail-layout { display: grid; gap: 12px; align-items: start; min-width: 0; }
 .saved-trail-layout .park-map { max-width: none; min-width: 0; }
 .saved-trail-tools { display: grid; gap: 12px; min-width: 0; }
-.saved-trail-tools .trail-sign-tools { gap: 9px; }
+.saved-map-guide {
+  background: light-dark(#edf1e4, #293b2e);
+  gap: 10px;
+}
+.saved-tool-heading {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.saved-tool-heading p { margin-top: 4px; }
+.saved-tool-heading h2 { font-size: 1.14rem; }
+.saved-tool-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--land-west);
+  color: var(--path);
+}
+.saved-tool-icon svg { width: 18px; height: 18px; }
+.saved-map-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  padding-top: 10px;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+.saved-map-stats dt { color: var(--soft); font-size: .76rem; }
+.saved-map-stats dd { margin: 2px 0 0; font-size: .92rem; font-weight: 750; overflow-wrap: anywhere; }
+.saved-map-source { justify-self: start; }
+.saved-map-source svg, .saved-field-tools .secondary-action svg { width: 16px; height: 16px; }
+.saved-field-tools { padding-block: 0; gap: 0; }
+.saved-field-tools section { display: grid; justify-items: start; gap: 10px; padding-block: 14px; }
+.saved-field-tools section + section { border-top: 1px solid var(--border); }
+.saved-sign-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.saved-sign-actions .device-setup { padding-inline: 0; }
 .trail-sign-tools h2 { display: flex; align-items: center; gap: 7px; }
 .trail-sign-tools h2 svg { width: 19px; height: 19px; flex: none; color: var(--path); }
-.saved-trail-details .park-elevation { margin: 0; }
 .sign-photo-panel { min-width: 0; }
 .sign-photo-panel .photo-frame { background: var(--surface); border-radius: 9px; overflow: hidden; }
 .sign-photo-panel .photo-controls { margin-top: 1px; }
 .photo-error { margin: 0; }
 .trail-sign-reader h1:focus { outline: none; }
-.trail-log-action { justify-self: start; }
 .sign-lines { display: grid; margin: 5px 0 9px; padding: 0; list-style: none; }
 .sign-lines li {
   display: flex;
@@ -497,10 +533,14 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 
 @media (min-width: 760px) {
   .saved-trail-layout { grid-template-columns: minmax(0, 1.55fr) minmax(260px, 1fr); gap: 18px; }
+  .saved-trail > .saved-trail-layout { grid-template-columns: minmax(0, 1.4fr) minmax(290px, 1fr); }
+  .saved-trail .saved-field-tools { padding-block: 0; }
+  .saved-field-tools section { padding-block: 16px; }
   .saved-trail-layout .park-map { background: var(--map-paper); }
   .saved-trail-layout :is(.park-map-art, .park-zion-map) { max-width: 100%; margin-inline: auto; }
   .saved-trail-layout .park-map-art { width: min(100%, 645px); }
   .saved-trail-layout .park-zion-map { max-height: 555px; width: auto; }
+  .saved-trail > .saved-trail-layout .park-zion-map { max-height: 500px; }
 }
 
 @media (max-width: 699px) {
