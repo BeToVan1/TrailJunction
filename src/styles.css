@@ -569,6 +569,7 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   .section-nav button { min-height: 46px; flex-direction: column; gap: 3px; font-size: .75rem; }
   .app .workspace { padding-bottom: calc(77px + env(safe-area-inset-bottom)); }
   .catalog-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .catalog-featured > .catalog-trail:first-child { grid-column: 1 / -1; }
   .catalog-cover-placeholder, .catalog-cover-image { height: clamp(91px, 28vw, 170px); }
   .catalog-card-content { padding: 9px; }
   .catalog-card-action > button { width: 100%; min-height: 44px; }

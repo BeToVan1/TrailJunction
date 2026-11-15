@@ -17,6 +17,9 @@ import { cachedUsgsTrails, downloadUsgsTrail, searchUsgsTrails, usgsSearchTerms,
 type LibraryView = "search" | "saved";
 type NationalSearch = { query: string; trails: UsgsTrail[]; limited: boolean; failed: boolean };
 
+const featuredTrailIds = new Set(["lower-yosemite-fall", "parus", "scout-junction"]);
+const featuredTrails = trails.filter(({ id }) => featuredTrailIds.has(id));
+
 const featuredStates: Record<(typeof trails)[number]["id"], string> = {
   "lower-yosemite-fall": "California",
   "cooks-meadow": "California",
@@ -179,9 +182,10 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
     normalizeTrailName(`${trail.name} ${trail.park}`).includes(term)));
   const nationalIds = new Set(nationalMatches.map(({ id }) => id));
   const matches = [...searchTrails(localQuery), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
+  const showFeatured = view === "search" && !searchQuery;
   const shownTrails = view === "saved"
     ? [...trails.filter((trail) => saved[trail.id]), ...localDownloads]
-    : searchQuery ? sortTrailMatches(matches, place?.trailName ?? searchQuery) : matches;
+    : showFeatured ? featuredTrails : sortTrailMatches(matches, place?.trailName ?? searchQuery);
   return (
     <div className="trail-library trail-catalog">
       <section className="catalog-banner" data-view={view}>
@@ -211,9 +215,9 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
           </form>
         )}
       </section>
-      {(view === "search" || rampartSaved) && <p className="junction-library-link">
+      {view === "saved" && rampartSaved && <p className="junction-library-link">
         <a className="text-action" href={rampartUrl}>Rampart Ridge junction guide</a>
-        {rampartSaved && <span className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</span>}
+        <span className="catalog-ready"><CircleCheck aria-hidden="true" /> Saved offline</span>
       </p>}
       <div className="catalog-heading">
         <h2>{view === "saved" ? "Downloaded maps" : searchQuery ? "Search results" : "Featured trails"}</h2>
@@ -239,7 +243,7 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <p className="screen-reader-only" role="status">{announcement}</p>
-      <ul className="catalog-results" ref={list}>
+      <ul className={showFeatured ? "catalog-results catalog-featured" : "catalog-results"} ref={list}>
         {shownTrails.map((trail) => (
           <li key={trail.id} className="catalog-trail">
             <TrailCover key={trail.format === "usgs-topo" ? trail.parkCode : trail.id} trail={trail} online={online} />
