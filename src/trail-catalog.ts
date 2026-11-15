@@ -44,6 +44,21 @@ export const trails = [
     format: "linework",
     info: "https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm",
   },
+  {
+    id: "scout-junction",
+    name: "Scout Lookout Junction",
+    park: "Zion National Park",
+    details: "West Rim Trail and Angels Landing fork",
+    distance: "0.5 mi to Angels Landing",
+    elevationGain: "Varies by branch",
+    routeType: "Junction",
+    difficulty: "Strenuous",
+    duration: "Varies by branch",
+    description: "The West Rim Trail continues past Scout Lookout while a separate spur leads to Angels Landing. This map covers the junction and nearby trail sections.",
+    access: "Scout Lookout is reached via the West Rim Trail from The Grotto. Continuing to Angels Landing requires a permit.",
+    format: "linework",
+    info: "https://www.nps.gov/thingstodo/hike-to-scout-lookout.htm",
+  },
 ] as const;
 
 export type FeaturedTrail = (typeof trails)[number];

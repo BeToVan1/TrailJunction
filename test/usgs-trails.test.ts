@@ -4,6 +4,7 @@ import { mapPoint, squareTrailExtent } from "../src/map-projection.ts";
 import type { Coordinate } from "../src/trail-catalog.ts";
 import { matchParkQuery } from "../src/nps-parks.ts";
 import { cachedUsgsTrails, searchUsgsTrails } from "../src/usgs-trails.ts";
+import { sortTrailMatches } from "../src/trail-search-ranking.ts";
 
 test("joins connected same-name USGS segments and separates distant trails", async (context) => {
   function feature(id: number, start: Coordinate, end: Coordinate) {
@@ -60,4 +61,16 @@ test("scopes a park search, filters out nearby trails, and reuses an equivalent 
   assert.deepEqual(cachedUsgsTrails("RIDGE, Zion National Park")?.trails, trails);
   await searchUsgsTrails("RIDGE, Zion National Park", new AbortController().signal);
   assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("puts exact matches first and breaks equal matches with featured trails in the right park", () => {
+  const zion = "Zion National Park";
+  const results = [
+    { name: "Canyon Overlook Connector", park: zion },
+    { name: "Canyon Overlook Trail", park: "California" },
+    { name: "Canyon Overlook Trail", park: zion },
+    { name: "Canyon Overlook", park: "Arizona" },
+  ];
+  assert.deepEqual(sortTrailMatches(results, "canyon overlook"), [results[3], results[2], results[1], results[0]]);
+  assert.deepEqual(sortTrailMatches(results.slice(0, 3), ""), [results[2], results[0], results[1]]);
 });

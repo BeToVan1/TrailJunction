@@ -1,3 +1,5 @@
+import { trailNameRank } from "./trail-search-ranking.ts";
+
 type NameRow = [name: string, ...ids: number[]];
 type Manifest = { version: string; created: number; grams: Record<string, [shard: string, count: number]> };
 
@@ -66,7 +68,8 @@ export async function indexedTrailIds(terms: string[], limit: number, signal: Ab
     if (!Array.isArray(rows)) return;
 
     const inPark = parkIds ? new Set(parkIds) : undefined;
-    const candidates = new Set<number>();
+    const candidates = new Map<number, number>();
+    const query = terms.join(" ");
     for (const [name, ...ids] of rows) {
       let offset = 0;
       if (!terms.every((word) => {
@@ -74,12 +77,15 @@ export async function indexedTrailIds(terms: string[], limit: number, signal: Ab
         offset = match + word.length;
         return match >= 0;
       })) continue;
+      const rank = trailNameRank(name, query);
       for (const id of ids) {
         if (inPark && !inPark.has(id)) continue;
-        candidates.add(id);
+        if (rank < (candidates.get(id) ?? Infinity)) candidates.set(id, rank);
       }
     }
-    return [...candidates].sort((a, b) => a - b).slice(0, limit);
+    return [...candidates]
+      .sort(([idA, rankA], [idB, rankB]) => rankA - rankB || idA - idB)
+      .slice(0, limit).map(([id]) => id);
   } catch {
     signal.throwIfAborted();
     return;

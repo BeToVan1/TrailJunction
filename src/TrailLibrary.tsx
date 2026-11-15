@@ -8,6 +8,7 @@ import { SavedTrail } from "./SavedTrail.tsx";
 import { TrailCover } from "./TrailCover.tsx";
 import { TrailDetails } from "./TrailDetails.tsx";
 import { warmTrailSearchIndex } from "./trail-search-index.ts";
+import { sortTrailMatches } from "./trail-search-ranking.ts";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
@@ -20,13 +21,14 @@ const featuredStates: Record<(typeof trails)[number]["id"], string> = {
   "lower-yosemite-fall": "California",
   "cooks-meadow": "California",
   parus: "Utah",
+  "scout-junction": "Utah",
 };
 
 function duplicatesFeatured(trail: UsgsTrail) {
   const name = (label: string) => normalizeTrailName(label).replace(/ trail$/, "");
   return trails.some((featured) =>
     name(featured.name) === name(trail.name) && (trail.park === featuredStates[featured.id]
-      || trail.parkCode === (featured.id === "parus" ? "zion" : "yose")));
+      || trail.parkCode === (featured.park === "Zion National Park" ? "zion" : "yose")));
 }
 
 function savedSearchTrail(trail: UsgsTrail) {
@@ -176,9 +178,10 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
   const localMatches = localDownloads.filter((trail) => normalizeTrailName(localQuery).split(/\s+/).every((term) =>
     normalizeTrailName(`${trail.name} ${trail.park}`).includes(term)));
   const nationalIds = new Set(nationalMatches.map(({ id }) => id));
+  const matches = [...searchTrails(localQuery), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
   const shownTrails = view === "saved"
     ? [...trails.filter((trail) => saved[trail.id]), ...localDownloads]
-    : [...searchTrails(localQuery), ...localMatches.filter((trail) => !nationalIds.has(trail.id)), ...nationalMatches];
+    : searchQuery ? sortTrailMatches(matches, place?.trailName ?? searchQuery) : matches;
   return (
     <div className="trail-library trail-catalog">
       <section className="catalog-banner" data-view={view}>

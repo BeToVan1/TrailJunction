@@ -12,6 +12,10 @@ Open **Journal → Log a hike**, or choose **Log this hike** from a saved map to
 
 The initial catalog includes [Lower Yosemite Fall Trail](https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm), [Cook’s Meadow Loop](https://www.nps.gov/yose/planyourvisit/cooksmeadowtrail.htm), and [Pa’rus Trail](https://www.nps.gov/thingstodo/hike-pa-rus-trail.htm). The Yosemite downloads use the NPS maps from the park’s trail pages. The Pa’rus map overlays the nine features named Pa’rus Trail from the [Zion trail layer](https://services7.arcgis.com/2hYXmwteFLemN5bW/ArcGIS/rest/services/Zion_NPS_MAP_MC_WFL1/FeatureServer/23) on a [USGS Topo basemap](https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer). Map services and data available from U.S. Geological Survey, National Geospatial Program.
 
+Search ranks close trail-name matches first. Among equally relevant results, selected trails from official Zion and Yosemite park guides rank first, followed by alphabetical order. This is a curated tie-breaker.
+
+To test a real fork on a saved map, download **Scout Lookout Junction, Zion** and read the [Scout Lookout sign photo](https://images.squarespace-cdn.com/content/v1/5fb02f697f71d5494d18ccfc/a3e3feb9-b7c9-4d24-842b-d2001f27b2fd/Scout%2BLookout%2BSign%2Bat%2BAngels%2BLanding.jpg). The West Rim and Angels Landing options highlight separate USGS trail segments starting at the sign. [NPS junction reference](https://www.nps.gov/thingstodo/hike-to-scout-lookout.htm).
+
 ## Run the app
 
 Requires Node.js 24.12 or later.

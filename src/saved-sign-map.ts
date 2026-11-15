@@ -16,10 +16,20 @@ export const parusMapPlaces = [
   },
 ] as const;
 
+// Scout Lookout linework is ordered as the approach, West Rim, then Angels Landing.
+export const scoutBranches = [
+  { id: "west-rim", name: "West Rim Trail", index: 1, direction: "straight", aliases: ["West Rim Trail", "West Rim"] },
+  { id: "angels-landing", name: "Angels Landing", index: 2, direction: "right", aliases: ["Angels Landing", "Angels Landing Trail"] },
+] as const;
+
 export type SavedSignMapMatch = {
   name: string;
   label: string;
-} & ({ kind: "trail" } | { kind: "place"; id: (typeof parusMapPlaces)[number]["id"] });
+} & (
+  { kind: "trail" } |
+  { kind: "place"; id: (typeof parusMapPlaces)[number]["id"] } |
+  { kind: "branch"; id: (typeof scoutBranches)[number]["id"] }
+);
 
 function nameKey(label: string) {
   return normalizeTrailName(label.normalize("NFKC"))
@@ -35,11 +45,23 @@ function signDestinationNames(label: string) {
 }
 
 export function matchSavedSignToMap(entries: readonly SignEntry[], trail: Trail): SavedSignMapMatch[] {
-  const candidates = entries.map(({ label }) => ({ label, names: signDestinationNames(label) }));
-  const findLabel = (names: readonly string[]) => {
+  const candidates = entries.map(({ label, direction }) => ({ label, direction, names: signDestinationNames(label) }));
+  const findEntries = (names: readonly string[]) => {
     const keys = names.map(nameKey);
-    return candidates.find(({ names: observed }) => observed.some((key) => keys.includes(key)))?.label;
+    return candidates.filter(({ names: observed }) => observed.some((key) => keys.includes(key)));
   };
+  const findLabel = (names: readonly string[]) => findEntries(names)[0]?.label;
+
+  if (trail.id === "scout-junction") {
+    if (!findLabel(["Scout Lookout"])) return [];
+    return scoutBranches.flatMap(({ id, name, aliases, direction }) => {
+      const rows = findEntries(aliases).filter((row) => row.direction);
+      return rows.length && rows.every((row) => row.direction === direction)
+        ? [{ kind: "branch", id, name, label: rows[0].label }]
+        : [];
+    });
+  }
+
   const matches: SavedSignMapMatch[] = [];
   const trailLabel = findLabel(trail.id === "parus" ? [trail.name, "Pa’rus"] : [trail.name]);
   if (trailLabel) matches.push({ kind: "trail", label: trailLabel, name: trail.name });

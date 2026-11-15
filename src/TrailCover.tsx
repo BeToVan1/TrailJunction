@@ -13,6 +13,7 @@ const featured: Record<string, Photo> = {
   "cooks-meadow": { url: meadowPhoto, source: "https://www.nps.gov/yose/planyourvisit/fall.htm", credit: "NPS" },
   "lower-yosemite-fall": { url: `${base}trails/falls-cover.webp`, source: "https://www.nps.gov/yose/planyourvisit/lowerfalltrail.htm", credit: "NPS" },
   parus: zionPhoto,
+  "scout-junction": zionPhoto,
 };
 
 export function TrailCover({ trail, online }: { trail: Trail; online: boolean }) {

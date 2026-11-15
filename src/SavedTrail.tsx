@@ -20,9 +20,11 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
 }) {
   const [capture, setCapture] = useState<{ file: File; revision: number }>();
   const [mapMatch, setMapMatch] = useState<SavedSignMapMatch>();
+  const [branchChoices, setBranchChoices] = useState<SavedSignMapMatch[]>([]);
 
   function usePhoto(file: File) {
     setMapMatch(undefined);
+    setBranchChoices([]);
     setCapture((previous) => ({ file, revision: (previous?.revision ?? 0) + 1 }));
     window.scrollTo(0, 0);
   }
@@ -42,13 +44,20 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
             <section className="saved-sign-matches" aria-label="Saved map matches">
               {matches.length > 0 ? <>
                 <h3>On your saved map</h3>
-                <p className="muted">Check the sign, then choose what to show. The sign alone can’t confirm where you’re standing.</p>
-                {matches.map((match) => <button key={match.name} type="button" className="primary-action" onClick={() => showMap(match)}>
+                <p className="muted">{trail.id === "scout-junction"
+                  ? "Check the arrows and choose a branch to highlight from Scout Lookout."
+                  : "Check the sign, then choose what to show. The sign alone can’t confirm where you’re standing."}</p>
+                {matches.map((match) => <button key={match.name} type="button" className="primary-action" onClick={() => {
+                  if (match.kind === "branch") setBranchChoices(matches);
+                  showMap(match);
+                }}>
                   <MapPin aria-hidden="true" /> Show {match.name} on map
                 </button>)}
               </> : <>
                 <h3>No match on this map</h3>
-                <p className="muted">The reading doesn’t match {trail.name} or a known place on its saved map. Check that you opened the right trail.</p>
+                <p className="muted">{trail.id === "scout-junction"
+                  ? "Include the Scout Lookout heading and the destination arrows. You can correct the reading to match the photo."
+                  : `The reading doesn’t match ${trail.name} or a known place on its saved map. Check that you opened the right trail.`}</p>
                 <button type="button" className="secondary-action" onClick={() => showMap()}>View saved map</button>
               </>}
             </section>
@@ -65,7 +74,9 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
   const mappedDistance = mappedMiles && Number.isFinite(mappedMiles) && mappedMiles > 0
     ? (mappedMiles < .01 ? "<0.01 mi" : `${milesFormat.format(mappedMiles)} mi`)
     : legacyDistance.endsWith(" mapped") ? legacyDistance.replace(/ mapped$/, "") : undefined;
-  const mapGuide = map.format === "image"
+  const mapGuide = trail.id === "scout-junction"
+    ? "The pin marks the sign at Scout Lookout. Read it to highlight either branch."
+    : map.format === "image"
     ? "Follow the yellow route on the park map."
     : `The ${mapMatch?.kind === "trail" ? "green" : "blue"} line shows the trail segments included in this download.`;
   const stats = [
@@ -99,7 +110,16 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
                 <p className="muted">Matched “{mapMatch.label}” on the sign.</p>
               </div>
             </div>
-            <button type="button" className="text-action saved-map-source" onClick={() => setMapMatch(undefined)}>Clear sign highlight</button>
+            {branchChoices.filter((branch) => branch.name !== mapMatch.name).map((branch) => (
+              <button key={branch.name} type="button" className="secondary-action saved-map-source" onClick={() => {
+                setMapMatch(branch);
+                window.scrollTo(0, 0);
+              }}>Show {branch.name} branch</button>
+            ))}
+            <button type="button" className="text-action saved-map-source" onClick={() => {
+              setMapMatch(undefined);
+              setBranchChoices([]);
+            }}>Clear sign highlight</button>
           </section>}
           <section className="trail-sheet saved-map-guide" aria-labelledby="saved-map-guide-title">
             <div className="saved-tool-heading">

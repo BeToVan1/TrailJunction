@@ -39,3 +39,14 @@ test("matches named USGS trail geometry without removing numerals from a trail n
   assert.equal(matchSavedSignToMap([{ label: "ROUTE 309 15.3 MI." }], trail)[0]?.kind, "trail");
   assert.deepEqual(matchSavedSignToMap([{ label: "Route 89" }, { label: "Route 309 Alternate" }], trail), []);
 });
+
+test("Scout Lookout requires the junction heading and the arrow for each separate branch", () => {
+  const scout = trails[3];
+  const heading = { label: "SCOUT LOOKOUT" };
+  const west = { label: "WEST RIM TRAIL", direction: "straight" as const };
+  const angels = { label: "ANGELS LANDING 0.5", direction: "right" as const };
+  assert.deepEqual(matchSavedSignToMap([heading, west, angels], scout).map(match => match.kind === "branch" && match.id),
+    ["west-rim", "angels-landing"]);
+  assert.deepEqual(matchSavedSignToMap([west, angels], scout), []);
+  assert.deepEqual(matchSavedSignToMap([heading, { ...angels, direction: "left" }], scout), []);
+});

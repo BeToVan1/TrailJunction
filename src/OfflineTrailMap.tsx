@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { mapPoint } from "./map-projection.ts";
-import { parusMapPlaces, type SavedSignMapMatch } from "./saved-sign-map.ts";
+import { mapPoint, squareTrailExtent } from "./map-projection.ts";
+import { parusMapPlaces, scoutBranches, type SavedSignMapMatch } from "./saved-sign-map.ts";
 import { zionDataSource, type Coordinate, type MapExtent, type Trail, type TrailMapData } from "./trail-catalog.ts";
 import { nationalMap, usgsTrailsLayer } from "./usgs-trails.ts";
 
@@ -97,9 +97,35 @@ function UsgsTopoMap({ map, highlighted }: { map: Extract<TrailMapData, { format
   );
 }
 
+function ScoutJunctionMap({ lines, match }: { lines: Coordinate[][]; match?: SavedSignMapMatch }) {
+  const size = 1000;
+  const extent = squareTrailExtent(lines);
+  const junction = lines[0].at(-1)!;
+  const [x, y] = mapPoint(junction, extent, size, size);
+  const branch = match?.kind === "branch" && scoutBranches.find(({ id }) => id === match.id);
+  const highlight = branch && lines[branch.index];
+
+  return <TopoOverlay lines={lines} extent={extent} width={size} height={size}
+    url={`${import.meta.env.BASE_URL}trails/scout-junction.jpg`}
+    label={branch ? `Map with the ${branch.name} branch highlighted from Scout Lookout.` : "Map of the West Rim Trail and Angels Landing fork at Scout Lookout."}>
+    {highlight && <polyline className="rampart-highlight"
+      points={highlight.map((point) => mapPoint(point, extent, size, size).join(",")).join(" ")} />}
+    {scoutBranches.map(({ id, index, name }) => {
+      const end = lines[index]?.at(-1);
+      if (!end) return null;
+      const [endX, endY] = mapPoint(end, extent, size, size);
+      return <text key={id} x={endX} y={endY - 25} textAnchor="middle">{name}</text>;
+    })}
+    <circle className="park-route-end park-place-matched" cx={x} cy={y} r="20" />
+    <circle cx={x} cy={y} r="6" fill="white" />
+    <text x={x + 32} y={y - 20}>Scout Lookout</text>
+  </TopoOverlay>;
+}
+
 export function OfflineTrailMap({ trail, map, match }: { trail: Trail; map: TrailMapData; match?: SavedSignMapMatch }) {
   const nearbyTrail = trail.id === "lower-yosemite-fall" ? "Cook’s Meadow Loop" : "Lower Yosemite Fall Trail";
   const highlighted = match?.kind === "trail";
+  const scout = map.format === "linework" && map.id === "scout-junction";
   return (
     <figure className="map-frame park-map">
       {map.format === "image" ? (
@@ -114,23 +140,25 @@ export function OfflineTrailMap({ trail, map, match }: { trail: Trail; map: Trai
         <>
           <ul className="park-legend" aria-label="Map key">
             <li><i className={highlighted ? "park-green" : "park-blue"} aria-hidden="true" /><span>
-              <strong>{trail.name}</strong>{highlighted ? " · Matched on sign" : map.format === "linework" && " · Visitor Center to Canyon Junction"}
+              <strong>{trail.name}</strong>{highlighted ? " · Matched on sign" : map.format === "linework" && !scout && " · Visitor Center to Canyon Junction"}
             </span></li>
+            {match?.kind === "branch" && <li><i className="park-green" aria-hidden="true" /><span><strong>{match.name}</strong> · Branch from Scout Lookout</span></li>}
             {match?.kind === "place" && <li><i className="park-place-key" aria-hidden="true" /><span>
               <strong>{match.name}</strong> · Matched on sign
             </span></li>}
           </ul>
-          {map.format === "usgs-topo" ? <UsgsTopoMap map={map} highlighted={highlighted} /> : <ParusMap lines={map.lines} match={match} />}
+          {map.format === "usgs-topo" ? <UsgsTopoMap map={map} highlighted={highlighted} />
+            : scout ? <ScoutJunctionMap lines={map.lines} match={match} /> : <ParusMap lines={map.lines} match={match} />}
         </>
       )}
       <figcaption className="map-key">
-        {map.format !== "usgs-topo" && (
+        {map.format !== "usgs-topo" && !scout && (
           <a href={map.format === "image" ? trail.info : zionDataSource} target="_blank" rel="noreferrer">
             {map.format === "image" ? "National Park Service" : "Trail data: National Park Service"}
           </a>
         )}
         {map.format !== "image" && (
-          <a href={map.format === "usgs-topo" ? usgsTrailsLayer : nationalMap} target="_blank" rel="noreferrer">
+          <a href={map.format === "usgs-topo" || scout ? usgsTrailsLayer : nationalMap} target="_blank" rel="noreferrer">
             Map services and data available from U.S. Geological Survey, National Geospatial Program.
           </a>
         )}

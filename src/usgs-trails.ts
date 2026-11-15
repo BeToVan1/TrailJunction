@@ -5,6 +5,7 @@ import {
 } from "./trail-catalog.ts";
 import { stateForPoint } from "./us-state.ts";
 import { indexedTrailIds } from "./trail-search-index.ts";
+import { sortTrailMatches } from "./trail-search-ranking.ts";
 
 export const usgsTrailsLayer = "https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/37";
 export const usgsTopoService = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer";
@@ -249,14 +250,9 @@ export async function searchUsgsTrails(query: string, signal: AbortSignal): Prom
     const key = nameAndPlace(trail);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  const searchName = normalizeTrailName(place?.trailName ?? query);
-  const rank = (trail: UsgsTrail) => {
-    const name = normalizeTrailName(trail.name);
-    return name === searchName ? 0 : name.startsWith(searchName) ? 1 : 2;
-  };
-  const trails = matches.map(({ trail, point }) => counts.get(nameAndPlace(trail)) === 1
+  const grouped = matches.map(({ trail, point }) => counts.get(nameAndPlace(trail)) === 1
     ? trail : { ...trail, park: `${trail.park} · ${coordinateLabel(point)}` });
-  trails.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name) || a.park.localeCompare(b.park));
+  const trails = sortTrailMatches(grouped, place?.trailName ?? query);
   const result = { trails, limited: Boolean(data.exceededTransferLimit || data.features!.length >= searchLimit) };
   if (searchCache.size >= cacheSize) {
     const oldest = searchCache.keys().next();
