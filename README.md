@@ -1,30 +1,12 @@
 # Trail Junction
 
-Trail Junction is a mobile-first web app for #BuildHybridAI 2026. Find a U.S. trail, download its map before you lose service, read signs along the way, and keep a photo journal of your hikes.
+Trail Junction helps hikers plan before they lose service, make sense of unfamiliar junctions, and remember what they saw along the way. The mobile-first web app was built for #BuildHybridAI 2026.
 
-[Homepage](https://trail-junction.web.app/) · [Open trail app](https://trail-junction.web.app/app) · [Try the Rampart Ridge sign demo](https://trail-junction.web.app/junction/rampart-ridge) · [Apache 2.0 license](LICENSE)
+Search U.S. trails, preview routes, and download maps for offline use. Explore recommends trails based on saved maps and logged hikes. At a junction, photograph a sign, review its destinations and arrows, and highlight a matching place or branch on the saved map. The Rampart Ridge demo walks through that flow with a real National Park Service sign. The photo journal keeps hike notes, photos, and captions together and can sync across devices when you sign in.
 
-## Explore and save trails
+Firebase AI Logic reads sign photos using Gemini Nano on compatible desktop Chrome once the model is downloaded. It falls back to cloud Gemini when the local model is unavailable and the device is online. On phones and tablets, AI sign reading requires internet access. Downloaded maps and manual sign entry work offline. The journal also uses cloud Gemini to suggest identifications and write short nature notes for photos of plants, fungi, and wildlife.
 
-- **Search by trail name, national park, or both.** Try `Zion` or `Angels Landing, Zion`. Results rank by name match, with routes from official Zion and Yosemite guides used to break ties before alphabetical ordering. Coverage depends on the USGS trail dataset.
-- **Open a trail card for details.** See a route preview and mapped distance. The bundled trail guides also include elevation gain, route type, difficulty, typical time, and access information. USGS results show reported surface, uses, and source agency when available. Mapped distance covers the displayed segments, so the full hike may be longer.
-- **Download before you go.** Select **Download** on a trail card or **Download offline map** on its details page. Reopen the map from **Saved**, even without service. Downloads stay in the browser on the device that saved them.
-- **Find your next hike.** Explore starts with Lower Yosemite Fall Trail, Pa’rus Trail, and Scout Lookout Junction. Below them, **Recommended trails** suggests up to three other trails based on your saved maps and journal entries that match a known park or trail. It skips trails you’ve already saved or logged and the trails shown in Featured. To try it, download Pa’rus Trail or log a hike with Yosemite as the park, then return to Explore.
-
-## Read trail signs
-
-**Try the guided demo.** Open [Rampart Ridge Junction](https://trail-junction.web.app/junction/rampart-ridge) in Mount Rainier National Park. Choose Longmire or Devil’s Dream Camp, then select **Open sample camera → Take photo → Read sign**. The simulated camera uses a real NPS sign photo. Check or edit the labels and arrows, then select **Use this reading** to highlight the matching route from the junction. You can also choose a marked branch manually. Select **Download junction for offline use** to save the map and sample photo.
-
-**Use your own photo.** Open a downloaded map under **Saved** and select **Choose photo** or **Take sign photo** on mobile. After **Read sign**, review the text and arrows and use **On your saved map** to highlight a match. A regular trail map can highlight the named trail, and the Pa’rus map can mark Pa’rus Trailhead or Canyon Junction. To test two distinct branches, download **Scout Lookout Junction** in Zion and use the [Scout Lookout sign photo](https://images.squarespace-cdn.com/content/v1/5fb02f697f71d5494d18ccfc/a3e3feb9-b7c9-4d24-842b-d2001f27b2fd/Scout%2BLookout%2BSign%2Bat%2BAngels%2BLanding.jpg). Include the Scout Lookout heading and both arrows to compare the West Rim Trail and Angels Landing branches. If a sign names places outside the saved map, the app returns the reading and explains that it found no match. The photo alone cannot confirm your position.
-
-**Offline AI.** Firebase AI Logic prefers Gemini Nano on compatible desktop Chrome. While connected, select **Prepare offline AI** and wait for **Offline AI ready on this device** before trying to read a sign offline. When the local model is unavailable and you’re online, the app can use cloud Gemini. The reading shows **On-device** or **Cloud** when Firebase reports the source. On phones and tablets, including iPhones, AI sign reading requires internet access. Downloaded maps and manual sign entry still work offline.
-
-## Keep a trail journal
-
-- Open **Journal** to log a hike, or choose **Log this hike** from a saved map to fill in the trail name and area. Add a date, notes, and photos.
-- Turn the photo book pages with the arrows or by dragging a page corner. The layout shows one page on phones and a two-page spread on wider screens. Open a photo to enlarge or crop it, and add or edit its caption from the page.
-- Choose **Ask Gemini about this photo** online to send the selected photo to Firebase AI Logic for a possible plant, fungus, or wildlife identification and a short nature note. The saved note stays with the photo for offline viewing.
-- Journal entries and photos are saved on the device. On the hosted app, sign in with Google or a verified email and password to sync your account journal across devices. Use **Copy hikes from this device** to add existing entries to your account. Once the app is cached, you can open and edit locally saved hikes offline. Account changes sync when you reconnect and open **Journal**.
+[Visit Trail Junction](https://trail-junction.web.app/)
 
 ## Run locally
 
@@ -53,7 +35,7 @@ While online, download a trail or select **Download junction for offline use**. 
 3. For cloud calls on the localhost dev server, set `VITE_FIREBASE_APP_CHECK_DEBUG=true` and register the browser’s debug token in Firebase. Follow the [Firebase debug provider guide](https://firebase.google.com/docs/app-check/web/debug-provider) and keep the token out of Git. Use the production App Check provider for Hosting.
 4. To test on-device inference, follow the [Firebase Web hybrid setup](https://firebase.google.com/docs/ai-logic/hybrid/web/get-started) for desktop Chrome and prepare the model while connected.
 
-Sign reading uses `PREFER_ON_DEVICE` online and `ONLY_ON_DEVICE` offline. Journal nature notes use `ONLY_IN_CLOUD`. The default cloud model is `gemini-3.5-flash-lite`, configurable through `VITE_FIREBASE_CLOUD_MODEL`.
+The default cloud model is `gemini-3.5-flash-lite`, configurable through `VITE_FIREBASE_CLOUD_MODEL`.
 
 ### Enable journal accounts
 
