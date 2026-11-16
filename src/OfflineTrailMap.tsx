@@ -59,6 +59,13 @@ export function TopoOverlay({ lines, extent, width, height, url, label, highligh
   );
 }
 
+export function JunctionRoute({ points }: { points: string }) {
+  return <g className="junction-route">
+    <polyline className="park-route-halo" points={points} pathLength={1} />
+    <polyline className="rampart-highlight" points={points} pathLength={1} />
+  </g>;
+}
+
 function ParusMap({ lines, match }: { lines: Coordinate[][]; match?: SavedSignMapMatch }) {
   const { width, height, url } = parusBasemap;
   const label = "Zion Canyon topographic map of the Pa’rus Trail between the trailhead near the Visitor Center and Canyon Junction.";
@@ -108,7 +115,7 @@ function ScoutJunctionMap({ lines, match }: { lines: Coordinate[][]; match?: Sav
   return <TopoOverlay lines={lines} extent={extent} width={size} height={size}
     url={`${import.meta.env.BASE_URL}trails/scout-junction.jpg`}
     label={branch ? `Map with the ${branch.name} branch highlighted from Scout Lookout.` : "Map of the West Rim Trail and Angels Landing fork at Scout Lookout."}>
-    {highlight && <polyline className="rampart-highlight"
+    {highlight && <JunctionRoute key={branch.id}
       points={highlight.map((point) => mapPoint(point, extent, size, size).join(",")).join(" ")} />}
     {scoutBranches.map(({ id, index, name }) => {
       const end = lines[index]?.at(-1);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Clock, CloudDownload, Map, MapPin, Mountain, Route, Ruler, Signal } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CircleCheck, Clock, CloudDownload, Map, MapPin, Mountain, Route, Ruler, Signal } from "lucide-react";
 import { squareTrailExtent } from "./map-projection.ts";
 import { OfflineTrailMap, TopoOverlay } from "./OfflineTrailMap.tsx";
 import { TrailCover } from "./TrailCover.tsx";
@@ -55,7 +55,7 @@ export function TrailDetails({ trail, saved, online, saving, ready, backLabel, e
             {saved ? (
               <>
                 <button type="button" className="primary-action" onClick={openMap}><Map aria-hidden="true" /> Open offline map</button>
-                <span className="catalog-ready" role="status">Saved on this device</span>
+                <span className="catalog-ready" role="status"><CircleCheck aria-hidden="true" /> Saved on this device</span>
               </>
             ) : (
               <button type="button" className="primary-action" onClick={download} disabled={!online || !ready || saving}>

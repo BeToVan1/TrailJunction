@@ -23,6 +23,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   const captionInput = useRef<HTMLInputElement>(null);
   const captionTitle = useId();
   const photoDialog = useRef<HTMLDialogElement>(null);
+  const photoOrigin = useRef<DOMRect>(undefined);
   const cropDialog = useRef<HTMLDialogElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const noteDialog = useRef<HTMLDialogElement>(null);
@@ -31,6 +32,26 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
   const displayedPhoto = photo.crop?.image ?? photo.image;
 
   useEffect(() => () => request.current?.abort(), []);
+
+  function animateEnlargedPhoto(image: HTMLImageElement) {
+    const origin = photoOrigin.current;
+    photoOrigin.current = undefined;
+    if (!origin || !photoDialog.current?.open || !image.animate ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const target = image.getBoundingClientRect();
+    if (!origin.width || !origin.height || !target.width || !target.height || !image.naturalHeight) return;
+    // Both images use object-fit: contain, so compare the fitted photo rather than its frame.
+    const ratio = image.naturalWidth / image.naturalHeight;
+    const fittedWidth = ({ width, height }: DOMRect) => Math.min(width, height * ratio);
+    const scale = Math.min(1, fittedWidth(origin) / fittedWidth(target));
+    const x = origin.left + origin.width / 2 - (target.left + target.width / 2);
+    const y = origin.top + origin.height / 2 - (target.top + target.height / 2);
+    image.animate([
+      { transform: `translate(${x}px, ${y}px) scale(${scale})`, opacity: .75 },
+      { transform: "none", opacity: 1 },
+    ], { duration: 340, easing: "cubic-bezier(.22,.78,.24,1)" });
+  }
 
   function editCaption() {
     setCaption(photo.caption);
@@ -94,8 +115,11 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
       {preparePreview && (
         <figure className="journal-print">
           <button type="button" className="journal-enlarge-photo" aria-label={`View larger: ${photoLabel}`}
-            aria-haspopup="dialog" onClick={() => {
-              photoDialog.current?.showModal();
+            aria-haspopup="dialog" onClick={(event) => {
+              const dialog = photoDialog.current;
+              if (!dialog || dialog.open) return;
+              photoOrigin.current = event.currentTarget.querySelector("img")?.getBoundingClientRect();
+              dialog.showModal();
               setViewerOpen(true);
             }}>
             <PhotoPreview photo={displayedPhoto} alt={photoLabel} />
@@ -125,7 +149,10 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
         </form>
       </dialog>
       <dialog ref={photoDialog} className="journal-photo-viewer" aria-label={`Enlarged photo ${number}`}
-        onClose={() => setViewerOpen(false)}
+        onClose={() => {
+          photoOrigin.current = undefined;
+          setViewerOpen(false);
+        }}
         onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
         <figure className="journal-viewer-content">
           <div className="journal-viewer-toolbar">
@@ -135,7 +162,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
               <Crop aria-hidden="true" /> Crop photo
             </button>
           </div>
-          {viewerOpen && <PhotoPreview photo={displayedPhoto} alt={photoLabel} />}
+          {viewerOpen && <PhotoPreview photo={displayedPhoto} alt={photoLabel} onImageLoad={animateEnlargedPhoto} />}
           {photo.caption && <figcaption>{photo.caption}</figcaption>}
         </figure>
       </dialog>

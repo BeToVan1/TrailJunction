@@ -44,11 +44,12 @@ export function PhotoPicker({ onPhoto, cameraLabel = "Take photo", primaryCamera
   );
 }
 
-export function PhotoPreview({ photo, alt, fallback, compact = false }: {
+export function PhotoPreview({ photo, alt, fallback, compact = false, onImageLoad }: {
   photo?: Blob | null;
   alt: string;
   fallback?: string;
   compact?: boolean;
+  onImageLoad?: (image: HTMLImageElement) => void;
 }) {
   const [preview, setPreview] = useState<{ photo: Blob; src?: string }>();
   const [failedSrc, setFailedSrc] = useState<string>();
@@ -69,7 +70,8 @@ export function PhotoPreview({ photo, alt, fallback, compact = false }: {
   return (
     <span className="photo-frame">
       {src && !broken
-        ? <img key={src} src={src} alt={alt} onError={() => setFailedSrc(src)} />
+        ? <img key={src} src={src} alt={alt} onLoad={onImageLoad ? (event) => onImageLoad(event.currentTarget) : undefined}
+          onError={() => setFailedSrc(src)} />
         : !compact && <span className="photo-placeholder">{broken ? "Photo preview unavailable" : "Preparing photo…"}</span>}
     </span>
   );

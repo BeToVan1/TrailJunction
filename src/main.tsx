@@ -7,6 +7,7 @@ import { rampartName, rampartUrl } from "./rampart-junction.ts";
 import "./styles.css";
 import "./journal.css";
 import "./public-pages.css";
+import "./motion.css";
 
 let path = window.location.pathname.replace(/\/+$/, "");
 if (path === "/demo" || path === "/demo/loop") {

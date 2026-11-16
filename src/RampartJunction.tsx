@@ -3,7 +3,7 @@ import { ArrowLeft, Camera, CloudDownload, MapPin } from "lucide-react";
 import { PublicHeader } from "./Landing.tsx";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
-import { TopoOverlay } from "./OfflineTrailMap.tsx";
+import { JunctionRoute, TopoOverlay } from "./OfflineTrailMap.tsx";
 import { isRampartSaved, saveRampart } from "./offline.ts";
 import { mapPoint } from "./map-projection.ts";
 import {
@@ -34,10 +34,9 @@ function JunctionMap({ trip }: { trip?: RampartTrip }) {
   return (
     <figure className="map-frame park-map rampart-map">
       <TopoOverlay extent={extent} width={size} height={size} url={url} lines={lines} label={mapLabel}>
-        {trip?.lines.map((line) => {
+        {trip?.lines.map((line, index) => {
           const points = line.map((point) => mapPoint(point, extent, size, size).join(",")).join(" ");
-          return <g key={trip.id}><polyline className="park-route-halo" points={points} />
-            <polyline className="rampart-highlight" points={points} /></g>;
+          return <JunctionRoute key={`${trip.id}-${index}`} points={points} />;
         })}
         {marks.map(({ location, label, dx, dy }) => {
           const [x, y] = mapPoint(location, extent, size, size);

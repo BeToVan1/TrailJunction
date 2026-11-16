@@ -109,16 +109,16 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
       </div>
       <div className="saved-trail-layout">
         <div className="trail-sheet sign-photo-panel">
+          <div className="sign-capture" data-reading={busy ? "" : undefined} data-sample={sample ? "" : undefined}>
+            {sample ? <SampleSignFrame src={sample.src} alt={sample.alt} /> :
+              <PhotoPreview photo={photo} alt="Your trail sign photo" />}
+          </div>
           {sample ? <>
-            <SampleSignFrame src={sample.src} alt={sample.alt} />
             <a className="park-details" href={sample.credit} target="_blank" rel="noreferrer">Sample photo by the National Park Service</a>
             <button type="button" className="secondary-action" disabled={busy || editing} onClick={sample.retake}>
               <Camera aria-hidden="true" /> Retake photo
             </button>
-          </> : <>
-            <PhotoPreview photo={photo} alt="Your trail sign photo" />
-            <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy || editing} />
-          </>}
+          </> : <PhotoPicker onPhoto={onPhoto} cameraLabel="Retake photo" primaryCamera={false} disabled={busy || editing} />}
         </div>
         <section className="trail-sheet result-sheet" aria-label="Sign reading">
         {editing ? <SignReviewEditor entries={entries} cancel={() => setEditing(false)} confirm={(reviewed) => {
@@ -127,7 +127,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
           setError("");
         }} /> : <>
         {sign && (
-          <div aria-live="polite">
+          <div className="sign-reading-result" aria-live="polite">
             <div className="reading-heading">
               <h2>{sign.entries.length ? "What the sign says" : "No clear sign text"}</h2>
               {source && <span className="source">{source}</span>}

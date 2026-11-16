@@ -1,0 +1,90 @@
+@media (prefers-reduced-motion: no-preference) {
+  .catalog-featured .catalog-trail,
+  .catalog-recommendations .catalog-trail {
+    animation: content-arrive 320ms cubic-bezier(.22,.78,.24,1) backwards;
+  }
+  .catalog-featured .catalog-trail:nth-child(2),
+  .catalog-recommendations .catalog-trail:nth-child(2) { animation-delay: 45ms; }
+  .catalog-featured .catalog-trail:nth-child(3),
+  .catalog-recommendations .catalog-trail:nth-child(3) { animation-delay: 90ms; }
+
+  .catalog-trail .catalog-cover-image { overflow: hidden; }
+  .catalog-trail .catalog-cover img,
+  .catalog-trail .catalog-details-target svg {
+    transition: transform 280ms cubic-bezier(.22,.78,.24,1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .catalog-trail:has(.catalog-details-target:hover) .catalog-cover img { transform: scale(1.05); }
+    .catalog-details-target:hover svg { transform: translateX(2px); }
+  }
+  .trail-details-hero .catalog-cover-image { overflow: hidden; }
+  .trail-details-hero .catalog-cover img:not([hidden]) { animation: trail-photo-reveal 360ms cubic-bezier(.22,.78,.24,1); }
+  .trail-details-heading,
+  .junction-camera-panel,
+  .sign-reading-result,
+  .junction-result {
+    animation: content-arrive 240ms cubic-bezier(.22,.78,.24,1);
+  }
+  :is(.catalog-card-action, .trail-details-action) .catalog-ready svg {
+    animation: download-check 260ms cubic-bezier(.22,1.25,.46,1);
+  }
+
+  .sign-capture {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 9px;
+  }
+  .sign-capture[data-sample]::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: #f8f6e9;
+    pointer-events: none;
+    animation: camera-exposure 210ms ease-out both;
+  }
+  .sign-capture[data-reading]::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0 0 auto;
+    height: 19%;
+    border-bottom: 2px solid #dceeaa;
+    background: linear-gradient(transparent, #dceeaa46);
+    opacity: 0;
+    pointer-events: none;
+    animation: scan-sign 610ms ease-out;
+  }
+  .junction-route polyline {
+    stroke-dasharray: 1 1;
+    animation: trace-route 760ms cubic-bezier(.33,.63,.35,1) both;
+  }
+}
+
+@keyframes content-arrive {
+  from { opacity: .25; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes trail-photo-reveal {
+  from { opacity: .65; transform: scale(1.06); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes download-check {
+  from { opacity: .3; transform: scale(.6); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes camera-exposure {
+  from { opacity: .24; }
+  to { opacity: 0; }
+}
+@keyframes scan-sign {
+  0% { opacity: 0; transform: translateY(-100%); }
+  14% { opacity: 1; }
+  82% { opacity: .9; }
+  100% { opacity: 0; transform: translateY(530%); }
+}
+@keyframes trace-route {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
