@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { ArrowLeft, ArrowUpRight, CircleCheck, Clock, CloudDownload, Map, MapPin, Mountain, Route, Ruler, Signal } from "lucide-react";
 import { squareTrailExtent } from "./map-projection.ts";
 import { OfflineTrailMap, TopoOverlay } from "./OfflineTrailMap.tsx";
@@ -8,7 +8,8 @@ import { usgsTopoImage } from "./usgs-trails.ts";
 
 const milesFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
-export function TrailDetails({ trail, saved, online, saving, ready, backLabel, error, back, openMap, download }: {
+export function TrailDetails({ pageRef, trail, saved, online, saving, ready, backLabel, error, back, openMap, download }: {
+  pageRef?: Ref<HTMLElement>;
   trail: Trail;
   saved?: TrailMapData;
   online: boolean;
@@ -42,7 +43,7 @@ export function TrailDetails({ trail, saved, online, saving, ready, backLabel, e
   ];
 
   return (
-    <article className="trail-library trail-details">
+    <article className="trail-library trail-details" ref={pageRef}>
       <button type="button" className="text-action back trail-details-back" onClick={back}>
         <ArrowLeft aria-hidden="true" /> {backLabel}
       </button>

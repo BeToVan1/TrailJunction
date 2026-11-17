@@ -3,7 +3,7 @@ import { ArrowLeft, Camera, CloudDownload, MapPin } from "lucide-react";
 import { PublicHeader } from "./Landing.tsx";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { OfflineAISetup } from "./OfflineAISetup.tsx";
-import { JunctionRoute, TopoOverlay } from "./OfflineTrailMap.tsx";
+import { DestinationRing, JunctionRoute, TopoOverlay } from "./OfflineTrailMap.tsx";
 import { isRampartSaved, saveRampart } from "./offline.ts";
 import { mapPoint } from "./map-projection.ts";
 import {
@@ -40,8 +40,10 @@ function JunctionMap({ trip }: { trip?: RampartTrip }) {
         })}
         {marks.map(({ location, label, dx, dy }) => {
           const [x, y] = mapPoint(location, extent, size, size);
+          const selected = trip?.name === label;
           return <g key={label}>
-            <circle className="park-route-end" cx={x} cy={y} r="10" />
+            <circle className={selected ? "park-route-end park-destination" : "park-route-end"} cx={x} cy={y} r={selected ? 14 : 10} />
+            {selected && <DestinationRing x={x} y={y} radius={18} />}
             <text x={x + dx} y={y + dy}>{label}</text>
           </g>;
         })}
@@ -180,7 +182,11 @@ export function RampartJunction() {
             <h1>{rampartName}</h1>
             <p className="muted">Mount Rainier National Park · Wonderland Trail</p>
           </div>
-          <div className="map-layout">
+          <div className="map-layout junction-map-layout" data-match={highlight ? "" : undefined}>
+            {highlight && <div className="junction-result map-match" role="status">
+              <strong>{trip.name} · {trip.via}</strong>
+              <p>{highlight.manual ? "Branch selected on the map." : `Matched “${highlight.evidence}” on the sign.`}</p>
+            </div>}
             <JunctionMap trip={highlight || manual ? trip : undefined} />
             <div className="map-actions">
               <section className="trail-sheet trail-sign-tools" aria-labelledby="rampart-destination">
@@ -194,10 +200,6 @@ export function RampartJunction() {
                     {rampartTrips.map(({ id, name }) => <option value={id} key={id}>{name}</option>)}
                   </select>
                 </label>
-                {highlight && <div className="junction-result" role="status">
-                  <strong>{trip.via}</strong>
-                  <p>{highlight.manual ? "Branch selected on the map." : `Matched “${highlight.evidence}” on the sign.`}</p>
-                </div>}
                 {manual ? <>
                   <p className="muted">The map highlights {trip.via}. Check it against the sign before confirming.</p>
                   <button type="button" className="secondary-action" onClick={() => {

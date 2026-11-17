@@ -579,3 +579,31 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
 @media (max-width: 360px) {
   .bar-demo span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
+
+@media (min-width: 700px) {
+  .catalog-featured { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
+  .catalog-featured :is(.catalog-cover-placeholder, .catalog-cover-image) { height: clamp(160px, 19vw, 226px); }
+}
+@media (max-width: 699px) {
+  .catalog-featured > :first-child :is(.catalog-cover-placeholder, .catalog-cover-image) { height: clamp(133px, 36vw, 220px); }
+}
+.catalog-featured > :first-child h3 { font-size: clamp(1.15rem, 2vw, 1.4rem); }
+
+.park-destination { fill: #28583c; }
+.map-destination-ring { fill: none; stroke: #28583c; stroke-width: 6px; opacity: 0; pointer-events: none; }
+.map-match { grid-area: match; }
+:is(.saved-trail-layout, .junction-map-layout)[data-match] { grid-template-areas: "match" "map" "tools"; }
+:is(.saved-trail-layout, .junction-map-layout)[data-match] > .park-map { grid-area: map; }
+:is(.saved-trail-layout, .junction-map-layout)[data-match] > :is(.saved-trail-tools, .map-actions) { grid-area: tools; }
+.saved-trail-layout > .map-match {
+  padding: 10px 12px;
+  background: var(--land-west);
+  border-inline-start: 3px solid var(--path);
+}
+.junction-map-layout > .map-match { background: var(--land-west); }
+@media (min-width: 640px) {
+  .junction-map-layout[data-match] { grid-template-areas: "map match" "map tools"; grid-template-rows: auto 1fr; }
+}
+@media (min-width: 760px) {
+  .saved-trail-layout[data-match] { grid-template-areas: "map match" "map tools"; grid-template-rows: auto 1fr; }
+}

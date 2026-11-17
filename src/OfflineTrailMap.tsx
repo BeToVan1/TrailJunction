@@ -66,6 +66,10 @@ export function JunctionRoute({ points }: { points: string }) {
   </g>;
 }
 
+export function DestinationRing({ x, y, radius }: { x: number; y: number; radius: number }) {
+  return <circle className="map-destination-ring" cx={x} cy={y} r={radius} aria-hidden="true" />;
+}
+
 function ParusMap({ lines, match }: { lines: Coordinate[][]; match?: SavedSignMapMatch }) {
   const { width, height, url } = parusBasemap;
   const label = "Zion Canyon topographic map of the Pa’rus Trail between the trailhead near the Visitor Center and Canyon Junction.";
@@ -81,7 +85,8 @@ function ParusMap({ lines, match }: { lines: Coordinate[][]; match?: SavedSignMa
         return <g key={id}>
           <circle className={selected ? "park-route-end park-place-matched" : "park-route-end"}
             cx={x} cy={y} r={selected ? 24 : 13} />
-          {selected && <circle cx={x} cy={y} r="7" fill="white" />}
+          {selected && <><circle cx={x} cy={y} r="7" fill="white" />
+            <DestinationRing x={x} y={y} radius={27} /></>}
           <text x={north ? x - offset : x + offset} y={north ? y - 16 : y + 39}
             textAnchor={north ? "end" : undefined}>{name}</text>
         </g>;
@@ -121,7 +126,12 @@ function ScoutJunctionMap({ lines, match }: { lines: Coordinate[][]; match?: Sav
       const end = lines[index]?.at(-1);
       if (!end) return null;
       const [endX, endY] = mapPoint(end, extent, size, size);
-      return <text key={id} x={endX} y={endY - 25} textAnchor="middle">{name}</text>;
+      const selected = branch && branch.id === id;
+      return <g key={id}>
+        {selected && <><circle className="park-route-end park-destination" cx={endX} cy={endY} r="13" />
+          <DestinationRing x={endX} y={endY} radius={16} /></>}
+        <text x={endX} y={endY - 25} textAnchor="middle">{name}</text>
+      </g>;
     })}
     <circle className="park-route-end park-place-matched" cx={x} cy={y} r="20" />
     <circle cx={x} cy={y} r="6" fill="white" />

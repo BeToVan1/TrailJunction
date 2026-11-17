@@ -99,28 +99,28 @@ export function SavedTrail({ trail, map, online, backLabel, back, logHike }: {
         </div>
         <h1>{trail.name}</h1>
       </div>
-      <div className="saved-trail-layout">
+      <div className="saved-trail-layout" data-match={mapMatch ? "" : undefined}>
+        {mapMatch && <section className="trail-sheet saved-map-guide map-match" aria-label="Sign match">
+          <div className="saved-tool-heading">
+            <span className="saved-tool-icon"><MapPin aria-hidden="true" /></span>
+            <div role="status">
+              <h2>{mapMatch.name}</h2>
+              <p className="muted">Matched “{mapMatch.label}” on the sign.</p>
+            </div>
+          </div>
+          {branchChoices.filter((branch) => branch.name !== mapMatch.name).map((branch) => (
+            <button key={branch.name} type="button" className="secondary-action saved-map-source" onClick={() => {
+              setMapMatch(branch);
+              window.scrollTo(0, 0);
+            }}>Show {branch.name} branch</button>
+          ))}
+          <button type="button" className="text-action saved-map-source" onClick={() => {
+            setMapMatch(undefined);
+            setBranchChoices([]);
+          }}>Clear sign highlight</button>
+        </section>}
         <OfflineTrailMap trail={trail} map={map} match={mapMatch} />
         <div className="saved-trail-tools">
-          {mapMatch && <section className="trail-sheet saved-map-guide" aria-label="Sign match">
-            <div className="saved-tool-heading">
-              <span className="saved-tool-icon"><MapPin aria-hidden="true" /></span>
-              <div role="status">
-                <h2>{mapMatch.name}</h2>
-                <p className="muted">Matched “{mapMatch.label}” on the sign.</p>
-              </div>
-            </div>
-            {branchChoices.filter((branch) => branch.name !== mapMatch.name).map((branch) => (
-              <button key={branch.name} type="button" className="secondary-action saved-map-source" onClick={() => {
-                setMapMatch(branch);
-                window.scrollTo(0, 0);
-              }}>Show {branch.name} branch</button>
-            ))}
-            <button type="button" className="text-action saved-map-source" onClick={() => {
-              setMapMatch(undefined);
-              setBranchChoices([]);
-            }}>Clear sign highlight</button>
-          </section>}
           <section className="trail-sheet saved-map-guide" aria-labelledby="saved-map-guide-title">
             <div className="saved-tool-heading">
               <span className="saved-tool-icon"><Map aria-hidden="true" /></span>

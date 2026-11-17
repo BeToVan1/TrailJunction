@@ -1,7 +1,9 @@
 import { ArrowUpRight, BookOpen, Map, Play, Signpost } from "lucide-react";
 import meadowPhoto from "./journal-meadow.webp";
 import squirrelPhoto from "./journal-squirrel.webp";
+import { LandingSignStory } from "./LandingSignStory.tsx";
 import { rampartUrl } from "./rampart-junction.ts";
+import { nationalMap } from "./usgs-trails.ts";
 
 export function PublicHeader({ label }: { label?: string }) {
   return (
@@ -30,22 +32,15 @@ export function Landing() {
               <a className="public-button landing-demo-link" href={rampartUrl}><Play aria-hidden="true" /> Try sign demo</a>
             </div>
           </div>
-          <a className="landing-photo-credit" href="https://www.nps.gov/yose/planyourvisit/fall.htm">Yosemite National Park · NPS photo</a>
+          <a className="landing-photo-credit" href={nationalMap}>Rampart Ridge Junction · USGS Topo</a>
         </section>
+        <LandingSignStory />
         <div className="landing-paths">
           <a href="/app">
             <span className="landing-icon"><Map aria-hidden="true" /></span>
             <div>
               <h2>Find and save real trails</h2>
               <p>Search U.S. trails and download a topographic map to open offline.</p>
-            </div>
-            <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
-          </a>
-          <a href={rampartUrl}>
-            <span className="landing-icon"><Signpost aria-hidden="true" /></span>
-            <div>
-              <h2>See how sign reading works</h2>
-              <p>Read a real sign from Mount Rainier and see which branch leads to your destination.</p>
             </div>
             <ArrowUpRight className="landing-path-arrow" aria-hidden="true" />
           </a>

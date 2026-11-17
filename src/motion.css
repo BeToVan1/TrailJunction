@@ -60,6 +60,16 @@
     stroke-dasharray: 1 1;
     animation: trace-route 760ms cubic-bezier(.33,.63,.35,1) both;
   }
+  .map-destination-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: destination-ring 420ms ease-out;
+  }
+  .park-zion-map:has(.junction-route) .map-destination-ring { animation-delay: 730ms; }
+  .journal-opening-cover {
+    display: grid;
+    animation: open-journal-cover 430ms cubic-bezier(.36,.72,.18,1) both;
+  }
 }
 
 @keyframes content-arrive {
@@ -87,4 +97,20 @@
 @keyframes trace-route {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: 0; }
+}
+@keyframes destination-ring {
+  from { opacity: .85; transform: scale(.8); }
+  to { opacity: 0; transform: scale(2.1); }
+}
+@keyframes open-journal-cover {
+  0% { transform: perspective(1050px) rotateY(0); opacity: 1; }
+  66% { opacity: 1; }
+  100% { transform: perspective(1050px) rotateY(-92deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.trail-cover-moving :is(.catalog-trail, .trail-details-hero .catalog-cover img, .trail-details-heading) { animation: none; }
+  html.trail-cover-moving .catalog-trail .catalog-cover img { transform: none; }
+  :root::view-transition-group(trail-cover) { animation-duration: 340ms; animation-timing-function: cubic-bezier(.22,.78,.24,1); }
+  :root::view-transition-old(root), :root::view-transition-new(root) { animation-duration: 170ms; }
 }

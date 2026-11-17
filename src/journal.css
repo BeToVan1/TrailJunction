@@ -77,12 +77,16 @@
   min-width: 0;
   padding: 0;
   text-align: start;
+  border-inline-start: 6px solid var(--forest);
+  border-radius: 5px 13px 13px 5px;
+  background: var(--album-cover);
+  color: var(--album-cover-text);
+  box-shadow: 3px 3px 0 var(--border);
 }
 .journal-hike-card:hover { border-color: var(--path); }
 .journal-hike-featured { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-rows: auto; }
 .journal-hike-cover, .journal-album-art { height: clamp(100px, 19vw, 170px); }
 .journal-hike-cover { display: grid; min-width: 0; background: var(--land-west); }
-.journal-hike-cover[data-pair="true"] { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 3px; background: var(--sheet); }
 .journal-hike-cover .photo-frame { display: grid; place-items: center; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: var(--land-west); }
 .journal-hike-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .journal-hike-cover .photo-placeholder { padding: 4px; text-align: center; }
@@ -104,6 +108,25 @@
 .journal-hike-location, .journal-hike-open { display: flex; align-items: center; gap: 6px; }
 .journal-hike-location svg, .journal-hike-open svg { width: 16px; height: 16px; }
 .journal-hike-open { margin-top: 4px; color: var(--path); font-size: .86rem; font-weight: 750; }
+.journal-hike-card :is(.eyebrow, .muted) { color: var(--album-cover-text); }
+.journal-hike-card :is(.journal-cover-count, .journal-hike-open) { color: var(--album-gilt); }
+.journal-opening-cover {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border-radius: 6px 13px 13px 6px;
+  border-inline-start: 7px solid var(--forest);
+  background: var(--album-cover);
+  color: var(--album-cover-text);
+  transform-origin: left center;
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+.journal-opening-cover img { width: 100%; height: 100%; object-fit: cover; overflow: hidden; }
+.journal-opening-cover > span { grid-row: 2; padding: 12px 16px; font: 400 clamp(1.2rem, 4vw, 2rem)/1.16 var(--album-serif); overflow-wrap: anywhere; }
+.journal-opening-cover small { display: block; margin-top: 3px; color: var(--album-gilt); font: 650 .8rem/1.4 "DM Sans Variable", system-ui, sans-serif; }
 
 @media (max-width: 680px) {
   .journal-empty, .journal-hike-featured { grid-template-columns: minmax(0, 1fr); }

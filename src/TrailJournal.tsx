@@ -45,6 +45,7 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [openingCover, setOpeningCover] = useState<{ src?: string }>();
   const pendingTurn = useRef<ReturnType<typeof capturePageTurn>>(undefined);
   const drag = useRef<{
     pointerId: number;
@@ -114,7 +115,13 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
     setView(next);
     setError("");
     setStatus("");
+    setOpeningCover(undefined);
     window.scrollTo(0, 0);
+  }
+
+  function openAlbum(entry: Hike, cover?: string) {
+    open({ page: "hike", id: entry.id });
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) setOpeningCover({ src: cover });
   }
 
   function remember(next: Hike) {
@@ -370,6 +377,11 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
                 ))}
                 {firstPhoto > 0 && (["top", "bottom"] as const).map((corner) => cornerHandle(false, corner))}
                 {endPhoto < photoCount && (["top", "bottom"] as const).map((corner) => cornerHandle(true, corner))}
+                {openingCover && <div className="journal-opening-cover" aria-hidden="true"
+                  onAnimationEnd={() => setOpeningCover(undefined)}>
+                  {openingCover.src && <img src={openingCover.src} alt="" />}
+                  <span>{hike.trail}<small>{hike.location || hikeDate(hike.date)}</small></span>
+                </div>}
               </div>
               {photoCount > 0 && (
                 <nav className="journal-pagination" aria-label="Photo book pages">
@@ -421,14 +433,14 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
               ) : (
                 <>
                   <h2>Latest hike</h2>
-                  <JournalHikeCard entry={orderedHikes[0]} featured onOpen={() => open({ page: "hike", id: orderedHikes[0].id })} />
+                  <JournalHikeCard entry={orderedHikes[0]} featured onOpen={(src) => openAlbum(orderedHikes[0], src)} />
                   {orderedHikes.length > 1 && (
                     <>
                       <h2>Earlier hikes</h2>
                       <ul className="journal-hikes">
                         {orderedHikes.slice(1).map((entry) => (
                           <li key={entry.id}>
-                            <JournalHikeCard entry={entry} onOpen={() => open({ page: "hike", id: entry.id })} />
+                            <JournalHikeCard entry={entry} onOpen={(src) => openAlbum(entry, src)} />
                           </li>
                         ))}
                       </ul>
@@ -447,14 +459,15 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
 function JournalHikeCard({ entry, featured = false, onOpen }: {
   entry: Hike;
   featured?: boolean;
-  onOpen: () => void;
+  onOpen: (photo?: string) => void;
 }) {
-  const covers = entry.photos.slice(0, featured ? 2 : 1);
+  const cover = entry.photos[0];
   return (
-    <button type="button" className={featured ? "journal-hike-card journal-hike-featured" : "journal-hike-card"} onClick={onOpen}>
-      {covers.length > 0 ? (
-        <span className="journal-hike-cover" data-pair={covers.length === 2}>
-          {covers.map((photo) => <PhotoPreview key={photo.id} photo={photo.crop?.image ?? photo.image} alt="" />)}
+    <button type="button" className={featured ? "journal-hike-card journal-hike-featured" : "journal-hike-card"}
+      onClick={(event) => onOpen(event.currentTarget.querySelector("img")?.currentSrc)}>
+      {cover ? (
+        <span className="journal-hike-cover">
+          <PhotoPreview photo={cover.crop?.image ?? cover.image} alt="" />
         </span>
       ) : <span className="journal-album-art" aria-hidden="true"><BookOpen /></span>}
       <span className="journal-hike-summary">

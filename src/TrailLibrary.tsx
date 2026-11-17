@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { preconnect } from "react-dom";
 import { ChevronRight, CircleCheck, CloudDownload, Map as MapIcon, Search } from "lucide-react";
 import { getSavedMaps, isRampartSaved, saveTrailMap } from "./offline.ts";
@@ -10,6 +10,7 @@ import { TrailDetails } from "./TrailDetails.tsx";
 import { warmTrailSearchIndex } from "./trail-search-index.ts";
 import { recommendationAreas, recommendedTrails, type HikeReference, type TrailReference } from "./trail-recommendations.ts";
 import { sortTrailMatches } from "./trail-search-ranking.ts";
+import { transitionTrailCover } from "./trail-cover-transition.ts";
 import {
   downloadTrailMap, normalizeTrailName, searchTrails, trails, type Trail, type TrailMapData, type UsgsTrail,
 } from "./trail-catalog.ts";
@@ -66,6 +67,7 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
   const startPendingSearch = useRef<() => void>(undefined);
   const listReturn = useRef<{ id: string; scroll: number; restore: boolean }>(undefined);
   const catalog = useRef<HTMLDivElement>(null);
+  const detailPage = useRef<HTMLElement>(null);
   const searchQuery = query.trim();
   const showFeatured = view === "search" && !searchQuery;
   const canSearch = view === "search" && usgsSearchTerms(searchQuery).join("").length >= 3;
@@ -149,14 +151,17 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
     };
   }, [canSearch, online, searchQuery, retry]);
 
-  useEffect(() => {
+  function detailButton(id: string) {
+    return [...(catalog.current?.querySelectorAll<HTMLButtonElement>("[data-trail-details]") ?? [])]
+      .find((button) => button.dataset.trailDetails === id);
+  }
+
+  useLayoutEffect(() => {
     const previous = listReturn.current;
     if (!previous || detail || opened) return;
     listReturn.current = undefined;
     if (!previous.restore) return;
-    const buttons = catalog.current?.querySelectorAll<HTMLButtonElement>("[data-trail-details]");
-    const button = [...(buttons ?? [])].find((target) => target.dataset.trailDetails === previous.id);
-    button?.focus({ preventScroll: true });
+    detailButton(previous.id)?.focus({ preventScroll: true });
     window.scrollTo(0, previous.scroll);
   }, [detail, opened]);
 
@@ -199,12 +204,14 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
   }
 
   if (detail) {
-    return <TrailDetails key={detail.id} trail={detail} saved={saved[detail.id]} online={online}
+    return <TrailDetails key={detail.id} pageRef={detailPage} trail={detail} saved={saved[detail.id]} online={online}
       saving={pending.has(detail.id)} ready={!loading} backLabel={view === "saved" ? "Saved trails" : "Back to trails"}
       error={error} back={() => {
-        if (listReturn.current) listReturn.current.restore = true;
-        setError("");
-        setDetail(undefined);
+        transitionTrailCover(detailPage.current?.querySelector<HTMLElement>(".catalog-cover-image"), () => {
+          if (listReturn.current) listReturn.current.restore = true;
+          setError("");
+          setDetail(undefined);
+        }, () => detailButton(detail.id)?.closest(".catalog-trail")?.querySelector<HTMLElement>(".catalog-cover-image"));
       }}
       openMap={() => open(detail)} download={() => void download(detail)} />;
   }
@@ -234,17 +241,22 @@ export function TrailLibrary({ view, online, opened, setOpened, detail, setDetai
             <h3>
               <button type="button" className="catalog-details-target" data-trail-details={trail.id}
                 aria-label={`View details for ${trail.name}, ${trail.park}`}
-                onClick={() => {
-                  listReturn.current = { id: trail.id, scroll: window.scrollY, restore: false };
-                  setError("");
-                  setDetail(trail);
-                  window.scrollTo(0, 0);
+                onClick={(event) => {
+                  const cover = event.currentTarget.closest(".catalog-trail")?.querySelector<HTMLElement>(".catalog-cover-image");
+                  const scroll = window.scrollY;
+                  transitionTrailCover(cover, () => {
+                    listReturn.current = { id: trail.id, scroll, restore: false };
+                    setError("");
+                    setDetail(trail);
+                    window.scrollTo(0, 0);
+                  }, () => detailPage.current?.querySelector<HTMLElement>(".catalog-cover-image"));
                 }}>
                 {trail.name}<ChevronRight aria-hidden="true" />
               </button>
             </h3>
             <p className="muted">{trail.park}</p>
-            <p className="muted catalog-detail">{trail.details}</p>
+            <p className="muted catalog-detail">{trail.format === "usgs-topo" ? trail.details :
+              trail.id === "scout-junction" ? trail.details : `${trail.distance} · ${trail.difficulty}`}</p>
           </div>
           <div className="catalog-card-action">
             {saved[trail.id] ? (
