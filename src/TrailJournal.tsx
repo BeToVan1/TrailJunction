@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, type TouchEvent } from "react";
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Images, MapPin, Plus } from "lucide-react";
 import { aiConfigured } from "./firebase-ai.ts";
-import { deviceJournal, type Hike, type HikeDetails, type JournalStore } from "./journal.ts";
+import { bookCover, deviceJournal, type Hike, type HikeDetails, type JournalStore } from "./journal.ts";
 import { JournalPhotoCard } from "./JournalPhotoCard.tsx";
 import { capturePageTurn, playPageTurn, startPageDrag, type PageCorner } from "./journal-page-turn.ts";
 import { prepareOfflineApp } from "./offline.ts";
@@ -62,6 +62,7 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
   const suppressPhotoClick = useRef(false);
   const hike = view.page === "list" ? undefined : hikes.find(({ id }) => id === view.id);
   const photoCount = hike?.photos.length ?? 0;
+  const coverId = hike && bookCover(hike)?.id;
   const currentPhoto = Math.max(0, Math.min(photoIndex, photoCount - 1));
   const pageSize = singlePage ? 1 : 2;
   const firstPhoto = Math.floor(currentPhoto / pageSize) * pageSize;
@@ -360,6 +361,11 @@ export function TrailJournal({ online, trail, store = deviceJournal, accountPane
                 )}
                 {hike.photos.map((photo, index) => (
                   <JournalPhotoCard key={photo.id} photo={photo} number={index + 1} online={online}
+                    isCover={photo.id === coverId}
+                    chooseCover={async () => remember(await changeHike(hike.id, current => {
+                      if (!current.photos.some(item => item.id === photo.id)) throw new Error("Photo removed");
+                      return { ...current, photos: current.photos.map(item => ({ ...item, isCover: item.id === photo.id })) };
+                    }))}
                     visible={index >= firstPhoto && index < endPhoto}
                     preparePreview={index >= firstPhoto - pageSize && index < endPhoto + pageSize}
                     save={async (patch) => remember(await changeHike(hike.id, (current) => ({
@@ -461,7 +467,7 @@ function JournalHikeCard({ entry, featured = false, onOpen }: {
   featured?: boolean;
   onOpen: (photo?: string) => void;
 }) {
-  const cover = entry.photos[0];
+  const cover = bookCover(entry);
   return (
     <button type="button" className={featured ? "journal-hike-card journal-hike-featured" : "journal-hike-card"}
       onClick={(event) => onOpen(event.currentTarget.querySelector("img")?.currentSrc)}>

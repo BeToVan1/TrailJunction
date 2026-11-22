@@ -333,10 +333,12 @@
 .journal-viewer-toolbar {
   display: flex;
   flex-direction: row-reverse;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
   width: 100%;
 }
+.journal-viewer-toolbar .journal-viewer-close { margin-inline-start: auto; }
 .journal-viewer-crop {
   display: inline-flex;
   align-items: center;

@@ -8,6 +8,7 @@ export interface NatureNote {
 
 export interface JournalPhoto {
   id: string;
+  isCover?: boolean;
   image: Blob;
   caption: string;
   nature?: NatureNote;
@@ -24,6 +25,10 @@ export interface HikeDetails {
 export interface Hike extends HikeDetails {
   id: string;
   photos: JournalPhoto[];
+}
+
+export function bookCover(hike: Hike) {
+  return hike.photos.find(photo => photo.isCover) ?? hike.photos[0];
 }
 
 const journal = createStore("trail-junction-journal", "hikes");

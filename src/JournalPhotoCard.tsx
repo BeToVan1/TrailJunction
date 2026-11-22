@@ -1,22 +1,25 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Crop, Maximize2, Pencil, Sparkles, X } from "lucide-react";
+import { BookOpen, Check, Crop, Maximize2, Pencil, Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
 import { photoAIError } from "./photo-ai-error.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { JournalPhotoCrop } from "./JournalPhotoCrop.tsx";
 import { PhotoPreview } from "./PhotoPicker.tsx";
 
-export function JournalPhotoCard({ photo, number, online, visible, preparePreview, save, remove }: {
+export function JournalPhotoCard({ photo, number, online, visible, preparePreview, isCover, chooseCover, save, remove }: {
   photo: JournalPhoto;
   number: number;
   online: boolean;
   visible: boolean;
   preparePreview: boolean;
+  isCover: boolean;
+  chooseCover: () => Promise<void>;
   save: (patch: Partial<Pick<JournalPhoto, "caption" | "nature" | "crop">>) => Promise<void>;
   remove: () => Promise<void>;
 }) {
   const [caption, setCaption] = useState("");
-  const [busy, setBusy] = useState<"gemini" | "save" | "remove">();
+  const [busy, setBusy] = useState<"gemini" | "save" | "remove" | "cover">();
+  const [coverError, setCoverError] = useState("");
   const [error, setError] = useState("");
   const [captionError, setCaptionError] = useState("");
   const request = useRef<AbortController>(null);
@@ -151,6 +154,18 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
     }
   }
 
+  async function setCover() {
+    setCoverError("");
+    setBusy("cover");
+    try {
+      await chooseCover();
+    } catch {
+      setCoverError("The cover could not be saved. Try again.");
+    } finally {
+      setBusy(undefined);
+    }
+  }
+
   return (
     <article className="journal-photo-card" hidden={!visible} aria-label={`Photo ${number}`}>
       {preparePreview && (
@@ -161,6 +176,7 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
               if (!dialog || dialog.open) return;
               photoOrigin.current = event.currentTarget.querySelector("img")?.getBoundingClientRect();
               dialog.showModal();
+              setCoverError("");
               setViewerOpen(true);
             }}>
             <PhotoPreview photo={displayedPhoto} alt={photoLabel} />
@@ -206,7 +222,13 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
             <button type="button" className="journal-viewer-crop" onClick={() => cropDialog.current?.showModal()}>
               <Crop aria-hidden="true" /> Crop photo
             </button>
+            <button type="button" className="journal-viewer-crop" disabled={Boolean(busy) || isCover}
+              onClick={() => void setCover()}>
+              {isCover ? <Check aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
+              <span aria-live="polite">{isCover ? "Current cover" : busy === "cover" ? "Saving…" : "Use as cover"}</span>
+            </button>
           </div>
+          {coverError && <p role="alert">{coverError}</p>}
           {viewerOpen && <PhotoPreview photo={displayedPhoto} alt={photoLabel} onImageLoad={animateEnlargedPhoto} />}
           {photo.caption && <figcaption>{photo.caption}</figcaption>}
         </figure>
