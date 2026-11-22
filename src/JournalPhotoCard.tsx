@@ -237,8 +237,11 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
                   onClick={() => noteDialog.current?.close()}><X aria-hidden="true" /></button>
               </div>
               <h3 id={noteTitle}>{photo.nature.label}</h3>
-              <p>{photo.nature.note}</p>
+              {photo.nature.note.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
               <p className="muted">AI identification can be mistaken.</p>
+              <button type="button" className="secondary-action" disabled={Boolean(busy) || !online || !aiConfigured}
+                onClick={() => void askGemini()}>{busy === "gemini" ? "Updating note…" : "Update nature note"}</button>
+              {error && <p className="error" role="alert">{error}</p>}
             </dialog>
         )}
         <span className="screen-reader-only" role="status">{busy === "gemini" ? "Gemini is reading this photo." : ""}</span>
