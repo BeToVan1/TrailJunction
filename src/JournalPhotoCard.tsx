@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Crop, Maximize2, Pencil, Sparkles, X } from "lucide-react";
 import { aiConfigured, describeNaturePhoto } from "./firebase-ai.ts";
+import { photoAIError } from "./photo-ai-error.ts";
 import type { JournalPhoto } from "./journal.ts";
 import { JournalPhotoCrop } from "./JournalPhotoCrop.tsx";
 import { PhotoPreview } from "./PhotoPicker.tsx";
@@ -116,20 +117,25 @@ export function JournalPhotoCard({ photo, number, online, visible, preparePrevie
     setBusy("gemini");
     setError("");
     let received = false;
+    const timer = window.setTimeout(() => controller.abort(new DOMException("Photo request timed out.", "TimeoutError")), 60000);
+    const cancelled = new Promise<never>((_, reject) => {
+      controller.signal.addEventListener("abort", () => reject(controller.signal.reason), { once: true });
+    });
     try {
-      const nature = await describeNaturePhoto(displayedPhoto, controller.signal);
+      const nature = await Promise.race([describeNaturePhoto(displayedPhoto, controller.signal), cancelled]);
       controller.signal.throwIfAborted();
+      window.clearTimeout(timer);
       received = true;
       await save({ nature });
-    } catch {
-      if (!controller.signal.aborted) {
+    } catch (reason) {
+      if (request.current === controller && (!controller.signal.aborted || controller.signal.reason?.name === "TimeoutError")) {
         setError(received ? "The nature note could not be saved. Try again."
-          : !navigator.onLine ? "Reconnect to ask Gemini about this photo."
-          : "Gemini couldn’t describe this photo. Try again in a moment.");
+          : photoAIError(reason, "journal", navigator.onLine));
       }
     } finally {
+      window.clearTimeout(timer);
       request.current = null;
-      if (!controller.signal.aborted) setBusy(undefined);
+      if (!controller.signal.aborted || controller.signal.reason?.name === "TimeoutError") setBusy(undefined);
     }
   }
 

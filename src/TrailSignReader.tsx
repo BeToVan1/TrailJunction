@@ -4,7 +4,7 @@ import { aiConfigured, readSign } from "./firebase-ai.ts";
 import { isMobileDevice } from "./mobile-device.ts";
 import { MobileSignReadingNotice } from "./MobileSignReadingNotice.tsx";
 import { PhotoPicker, PhotoPreview } from "./PhotoPicker.tsx";
-import { PhotoError } from "./photo.ts";
+import { photoAIError } from "./photo-ai-error.ts";
 import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import { describeSign, readingFromEntries, type SignEntry, type SignReading } from "./sign-reading.ts";
 import { SignReviewEditor } from "./SignReviewEditor.tsx";
@@ -14,17 +14,6 @@ const arrows = {
   right: { Icon: ArrowRight, title: "Right" },
   straight: { Icon: ArrowUp, title: "Straight ahead" },
 };
-
-function readError(reason: unknown) {
-  if (reason instanceof PhotoError) return reason.message;
-  if (!navigator.onLine) {
-    return "Offline sign reading is unavailable on this device. Keep the photo open and try again when you reconnect.";
-  }
-  if (reason instanceof Error && (reason.name === "TimeoutError" || reason.name === "AbortError")) {
-    return "Sign reading took too long. Try again.";
-  }
-  return "Sign reading is unavailable right now. Try again in a moment.";
-}
 
 type TrailSignReaderProps = {
   photo: File;
@@ -82,7 +71,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
       if (!controller.signal.aborted) setResult(reading);
     } catch (reason) {
       if (!controller.signal.aborted || (reason instanceof Error && reason.name === "TimeoutError")) {
-        setError(readError(reason));
+        setError(photoAIError(reason, "sign", navigator.onLine));
       }
     } finally {
       window.clearTimeout(timer);

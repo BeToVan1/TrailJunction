@@ -1,10 +1,22 @@
-import { useState } from "react";
-import { aiConfigured, prepareLocalModel } from "./firebase-ai.ts";
+import { useEffect, useState } from "react";
+import { aiConfigured, localPhotoModelAvailability, prepareLocalModel } from "./firebase-ai.ts";
 import { isMobileDevice } from "./mobile-device.ts";
 
 export function OfflineAISetup({ online }: { online: boolean }) {
   const [model, setModel] = useState<"idle" | "preparing" | "ready" | "unavailable">("idle");
   const [progress, setProgress] = useState(0);
+  const [supported, setSupported] = useState(false);
+
+  useEffect(() => {
+    if (!aiConfigured || isMobileDevice()) return;
+    let current = true;
+    void localPhotoModelAvailability().then((availability) => {
+      if (!current) return;
+      if (availability === "available") setModel("ready");
+      setSupported(["available", "downloadable", "downloading"].includes(availability ?? ""));
+    }).catch(() => {});
+    return () => { current = false; };
+  }, []);
 
   function prepare() {
     setModel("preparing");
@@ -14,7 +26,7 @@ export function OfflineAISetup({ online }: { online: boolean }) {
       .catch(() => setModel("unavailable"));
   }
 
-  if (!aiConfigured || isMobileDevice()) return null;
+  if (!supported) return null;
   return (
     <div className="device-setup">
       {model === "ready" ? <p role="status">Offline AI ready on this device</p> :

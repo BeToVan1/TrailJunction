@@ -417,6 +417,9 @@ h2 { font-size: 1.28rem; letter-spacing: -.028em; line-height: 1.15; overflow-wr
   text-underline-offset: 3px;
 }
 .device-setup { padding-inline: 3px; color: var(--soft); font-size: .86rem; }
+@media (max-width: 759px), (pointer: coarse) {
+  .device-setup { display: none; }
+}
 .photo-frame { display: grid; place-items: center; min-height: 150px; }
 .photo-frame img { display: block; width: 100%; max-height: 420px; object-fit: contain; }
 .photo-placeholder { display: grid; justify-items: center; gap: 6px; padding: 20px; font-size: .86rem; }
