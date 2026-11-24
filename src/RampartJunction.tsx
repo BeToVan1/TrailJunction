@@ -25,7 +25,7 @@ function JunctionMap({ trip }: { trip?: RampartTrip }) {
   const marks: { location: Coordinate; label: string; dx: number; dy: number }[] = [
     { location: pyramid, label: "Pyramid Creek", dx: 20, dy: -22 },
     { location: rampartTrips[0].lines[0].at(-1)!, label: "Devil’s Dream Camp", dx: 19, dy: -24 },
-    { location: rampartTrips[1].lines[0].at(-1)!, label: "Longmire", dx: 20, dy: -19 },
+    { location: (trip?.name === "Longmire" ? trip : rampartTrips[1]).lines[0].at(-1)!, label: "Longmire", dx: 20, dy: -19 },
   ];
   const mapLabel = `You are at ${rampartName} in this demo. ${trip
     ? `The highlighted trail leads from the junction to ${trip.name}.`
@@ -59,7 +59,7 @@ function JunctionMap({ trip }: { trip?: RampartTrip }) {
         </g>
       </TopoOverlay>
       <figcaption className="map-key">
-        {trip && <span><i /> Route to {trip.name}</span>}
+        {trip && <span><i /> {trip.name} via {trip.via}</span>}
         <a href={usgsTrailsLayer} target="_blank" rel="noreferrer">USGS trail data</a>
         <a href={nationalMap} target="_blank" rel="noreferrer">USGS topographic map</a>
       </figcaption>
@@ -73,9 +73,9 @@ export function RampartJunction() {
   const [saving, setSaving] = useState(false);
   const [camera, setCamera] = useState(false);
   const [sampleLoading, setSampleLoading] = useState(false);
-  const [trip, setTrip] = useState<RampartTrip>(rampartTrips[0]);
+  const [destination, setDestination] = useState<RampartTrip["name"]>("Devil’s Dream Camp");
   const [photo, setPhoto] = useState<File>();
-  const [highlight, setHighlight] = useState<{ evidence: string; manual: boolean }>();
+  const [highlight, setHighlight] = useState<{ trip: RampartTrip; evidence: string; manual: boolean }>();
   const [manual, setManual] = useState(false);
   const [error, setError] = useState("");
   const cameraHeading = useRef<HTMLHeadingElement>(null);
@@ -127,18 +127,36 @@ export function RampartJunction() {
     }
   }
 
-  function confirm(entries: readonly SignEntry[]) {
+  function confirm(entries: readonly SignEntry[], trip: RampartTrip = rampartTrips[0]) {
     const evidence = matchRampartSign(entries, trip);
     if (evidence) {
-      setHighlight({ evidence: evidence.label, manual: false });
+      setHighlight({ trip, evidence: evidence.label, manual: false });
     } else {
-      if (trip.id === "longmire") {
-        return "To confirm Longmire, look for “LONGMIRE 2.0” with a right arrow on the Wonderland Trail panel. Edit the reading to match the photo or choose a marked branch.";
-      }
       return "To confirm Devil’s Dream Camp, look for “DEVIL’S DREAM CMP. 3.9” with a left arrow on the Wonderland Trail panel. Edit the reading to match the photo or choose a marked branch.";
     }
     setPhoto(undefined);
     toTop();
+  }
+
+  function chooseManual(trip: RampartTrip) {
+    setHighlight({ trip, evidence: "", manual: true });
+    setManual(false);
+    setPhoto(undefined);
+  }
+
+  function longmireChoices(entries?: readonly SignEntry[]) {
+    return <div className="journal-form" role="group" aria-label="Which route to Longmire?">
+      <h3>Which route to Longmire?</h3>
+      {[rampartTrips[2], rampartTrips[1]].map(route => (
+        <button key={route.id} type="button" className="secondary-action"
+          disabled={entries && !matchRampartSign(entries, route)}
+          onClick={() => entries ? confirm(entries, route) : chooseManual(route)}>
+          {route.direction === "left" ? "←" : "→"} {route.via}
+        </button>
+      ))}
+      {entries && [rampartTrips[1], rampartTrips[2]].some(route => !matchRampartSign(entries, route)) &&
+        <p className="muted">A route needs its distance and arrow in the reading. Edit the labels or choose a marked branch manually.</p>}
+    </div>;
   }
 
   return (
@@ -170,10 +188,11 @@ export function RampartJunction() {
             alt: sampleAlt,
             credit: rampartPhotoSource,
             retake: openCamera,
-            destination: trip.name,
+            destination,
             labelKey: rampartSignLabelKey,
             verifyArrows: verifyRampartSampleArrows,
             onConfirm: confirm,
+            routeChoices: destination === "Longmire" ? longmireChoices : undefined,
             chooseBranch: () => { setManual(true); toTop(); },
           }}
           back={() => { setPhoto(undefined); toTop(); }} /> : <>
@@ -184,29 +203,28 @@ export function RampartJunction() {
           </div>
           <div className="map-layout junction-map-layout" data-match={highlight ? "" : undefined}>
             {highlight && <div className="junction-result map-match" role="status">
-              <strong>{trip.name} · {trip.via}</strong>
+              <strong>{highlight.trip.name} · {highlight.trip.via}</strong>
               <p>{highlight.manual ? "Branch selected on the map." : `Matched “${highlight.evidence}” on the sign.`}</p>
             </div>}
-            <JunctionMap trip={highlight || manual ? trip : undefined} />
+            <JunctionMap trip={highlight?.trip ?? (manual && destination !== "Longmire" ? rampartTrips[0] : undefined)} />
             <div className="map-actions">
               <section className="trail-sheet trail-sign-tools" aria-labelledby="rampart-destination">
                 <h2 id="rampart-destination"><MapPin aria-hidden="true" /> Choose a destination</h2>
                 <label className="junction-destination">
                   <span className="screen-reader-only">Destination</span>
-                  <select value={trip.id} onChange={(event) => {
-                    setTrip(rampartTrips.find(({ id }) => id === event.target.value) ?? rampartTrips[0]);
+                  <select value={destination} onChange={(event) => {
+                    setDestination(event.target.value === "Longmire" ? "Longmire" : "Devil’s Dream Camp");
                     setHighlight(undefined);
                   }}>
-                    {rampartTrips.map(({ id, name }) => <option value={id} key={id}>{name}</option>)}
+                    <option>Devil’s Dream Camp</option><option>Longmire</option>
                   </select>
                 </label>
                 {manual ? <>
-                  <p className="muted">The map highlights {trip.via}. Check it against the sign before confirming.</p>
-                  <button type="button" className="secondary-action" onClick={() => {
-                    setHighlight({ evidence: "", manual: true });
-                    setManual(false);
-                    setPhoto(undefined);
-                }}>Confirm branch to {trip.name}</button>
+                  {destination === "Longmire" ? longmireChoices() : <>
+                    <p className="muted">The map highlights {rampartTrips[0].via}. Check it against the sign before confirming.</p>
+                    <button type="button" className="secondary-action" onClick={() => chooseManual(rampartTrips[0])}>
+                      Confirm branch to {destination}</button>
+                  </>}
                   <button type="button" className="text-action" onClick={() => setManual(false)}>{photo ? "Back to photo" : "Cancel"}</button>
                 </> : <>
                   <p className="muted">You’re at the signpost marked on the map. Use the sample camera to read both panels.</p>
@@ -214,7 +232,7 @@ export function RampartJunction() {
                   <button type="button" className="primary-action" onClick={openCamera}>
                     <Camera aria-hidden="true" /> Open sample camera
                   </button>
-                  <button type="button" className="text-action" onClick={() => setManual(true)}>Choose a marked branch</button>
+                  <button type="button" className="text-action" onClick={() => { setHighlight(undefined); setManual(true); }}>Choose a marked branch</button>
                 </>}
               </section>
               {saved ? <p className="muted" role="status">Map and sample photo saved offline</p> :

@@ -33,10 +33,19 @@ export const rampartTrips = [
   },
   {
     id: "longmire",
+    signKey: "longmire 2",
     name: "Longmire",
     via: "Wonderland Trail · 2.0 mi on the sign",
     lines: [east],
     direction: "right",
+  },
+  {
+    id: "longmire-ridge",
+    name: "Longmire",
+    signKey: "longmire 3",
+    via: "Rampart Ridge Trail · 3.0 mi on the sign",
+    lines: [ridge],
+    direction: "left",
   },
 ] as const;
 
@@ -76,9 +85,7 @@ export function verifyRampartSampleArrows(entries: readonly SignEntry[]) {
 export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTrip) {
   const matching = entries.filter(({ label, direction }) => {
     if (!direction) return false;
-    // The same place is listed twice on the two panels. Require the mileage
-    // from the Wonderland panel when using Longmire as evidence.
-    if (trip.id === "longmire") return signLabelKey(label) === "longmire 2";
+    if ("signKey" in trip) return signLabelKey(label) === trip.signKey;
     return westSignRows.some(({ key }) => key === rampartSignLabelKey(label));
   });
   if (matching.length && matching.every(({ direction }) => direction === trip.direction)) {

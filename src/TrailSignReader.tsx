@@ -35,6 +35,7 @@ type TrailSignReaderProps = {
     labelKey: (label: string) => string;
     verifyArrows: (entries: readonly SignEntry[]) => SignEntry[];
     onConfirm: (entries: readonly SignEntry[]) => string | undefined;
+    routeChoices?: (entries: readonly SignEntry[]) => ReactNode;
     chooseBranch: () => void;
   };
 });
@@ -151,7 +152,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
           </button>
         )}
         {mapReview && entries.length > 0 && mapReview(entries)}
-        {sample && sign && entries.length > 0 && (
+        {sample && sign && entries.length > 0 && (sample.routeChoices ? sample.routeChoices(entries) :
           <button type="button" className="primary-action" onClick={() => setError(sample.onConfirm(entries) ?? "")}>Use this reading</button>
         )}
         {!busy && <div className="sheet-links">

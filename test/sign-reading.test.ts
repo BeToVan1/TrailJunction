@@ -3,6 +3,14 @@ import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
 import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips, verifyRampartSampleArrows } from "../src/rampart-junction.ts";
 
+test("Longmire via Rampart Ridge requires the three-mile left row and highlights its own path", () => {
+  const ridge = rampartTrips[2];
+  assert.equal(matchRampartSign([{ label: "Longmire 3.0 mi", direction: "left" }], ridge)?.direction, "left");
+  assert.equal(matchRampartSign([{ label: "Longmire 3.0", direction: "right" }], ridge), undefined);
+  assert.equal(matchRampartSign([{ label: "Longmire 2.0", direction: "left" }], ridge), undefined);
+  assert.notDeepEqual(ridge.lines, rampartTrips[1].lines);
+});
+
 test("trims visible labels and ignores blank model output", () => {
   assert.deepEqual(parseSignReading('{"readable":true,"lines":[" Cedar Spur "," "]}'), {
     readable: true, lines: ["Cedar Spur"],
