@@ -68,18 +68,20 @@ export function rampartSignLabelKey(label: string) {
   return row?.key ?? key;
 }
 
-const sampleLongmireArrows = new Map<string, NonNullable<SignEntry["direction"]>>([
-  ["longmire 2", "right"],
-  ["longmire 3", "left"],
-]);
+// Verified transcription for the two panels in the fixed NPS demo image.
+const sampleLongmireRows: readonly SignEntry[] = [
+  { label: "LONGMIRE 2.0", direction: "right" },
+  { label: "LONGMIRE 3.0", direction: "left" },
+];
 
-// These arrows were checked against the bundled NPS photo. Apply them only
-// to rows the model identified in that photo, using the mileage to tell them apart.
-export function verifyRampartSampleArrows(entries: readonly SignEntry[]) {
-  return entries.map((entry) => {
-    const direction = sampleLongmireArrows.get(signLabelKey(entry.label));
-    return direction && direction !== entry.direction ? { ...entry, direction } : entry;
-  });
+export function verifyRampartSampleRows(entries: readonly SignEntry[]) {
+  const verified = [...entries];
+  for (const row of sampleLongmireRows) {
+    const index = verified.findIndex(entry => signLabelKey(entry.label) === signLabelKey(row.label));
+    if (index < 0) verified.push(row);
+    else verified[index] = { ...verified[index], direction: row.direction };
+  }
+  return verified;
 }
 
 export function matchRampartSign(entries: readonly SignEntry[], trip: RampartTrip) {

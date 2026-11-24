@@ -8,7 +8,7 @@ import { isRampartSaved, saveRampart } from "./offline.ts";
 import { mapPoint } from "./map-projection.ts";
 import {
   matchRampartSign, rampartConditions, rampartGuide, rampartMap, rampartName, rampartPhoto, rampartPhotoSource, rampartSignLabelKey,
-  rampartTrips, verifyRampartSampleArrows, type RampartTrip,
+  rampartTrips, verifyRampartSampleRows, type RampartTrip,
 } from "./rampart-junction.ts";
 import { SampleSignFrame } from "./SampleSignFrame.tsx";
 import type { SignEntry } from "./sign-reading.ts";
@@ -190,7 +190,7 @@ export function RampartJunction() {
             retake: openCamera,
             destination,
             labelKey: rampartSignLabelKey,
-            verifyArrows: verifyRampartSampleArrows,
+            verifyRows: verifyRampartSampleRows,
             onConfirm: confirm,
             routeChoices: destination === "Longmire" ? longmireChoices : undefined,
             chooseBranch: () => { setManual(true); toTop(); },

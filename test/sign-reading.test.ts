@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { describeSign, parseSignReading } from "../src/sign-reading.ts";
-import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips, verifyRampartSampleArrows } from "../src/rampart-junction.ts";
+import { matchRampartSign, rampartName, rampartSignLabelKey, rampartTrips, verifyRampartSampleRows } from "../src/rampart-junction.ts";
 
 test("Longmire via Rampart Ridge requires the three-mile left row and highlights its own path", () => {
   const ridge = rampartTrips[2];
@@ -107,9 +107,20 @@ test("checks each recognized Longmire arrow against the sample photo", () => {
     ],
   }));
   const observed = describeSign(reading, rampartName, rampartSignLabelKey).entries;
-  const verified = verifyRampartSampleArrows(observed);
+  const verified = verifyRampartSampleRows(observed);
   assert.equal(observed[1].direction, "right");
   assert.deepEqual(verified.map(({ direction }) => direction), ["right", "left", undefined, "left"]);
   assert.equal(matchRampartSign(verified, rampartTrips[1])?.label, "LONGMIRE 2.0");
   assert.equal(matchRampartSign(verified.slice(1), rampartTrips[1]), undefined);
+});
+
+test("restores missing Longmire sample rows without duplicating observed mileage variants", () => {
+  const observed = [{ label: "Longmire (3.00 mi)", direction: "left" as const }];
+  const rows = verifyRampartSampleRows(observed);
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[1], { label: "LONGMIRE 2.0", direction: "right" });
+  assert.equal(matchRampartSign(rows, rampartTrips[1])?.label, "LONGMIRE 2.0");
+  assert.equal(matchRampartSign(rows, rampartTrips[2])?.label, observed[0].label);
+  assert.deepEqual(verifyRampartSampleRows(rows), rows);
+  assert.equal(verifyRampartSampleRows([]).length, 2);
 });

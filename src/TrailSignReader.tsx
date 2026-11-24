@@ -33,7 +33,7 @@ type TrailSignReaderProps = {
     retake: () => void;
     destination: string;
     labelKey: (label: string) => string;
-    verifyArrows: (entries: readonly SignEntry[]) => SignEntry[];
+    verifyRows: (entries: readonly SignEntry[]) => SignEntry[];
     onConfirm: (entries: readonly SignEntry[]) => string | undefined;
     routeChoices?: (entries: readonly SignEntry[]) => ReactNode;
     chooseBranch: () => void;
@@ -84,9 +84,8 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
   const reading = corrected ? readingFromEntries(corrected) : result?.reading;
   const sign = reading && describeSign(reading, trailName, sample?.labelKey);
   const observed = sign?.entries ?? [];
-  const verified = !corrected && sample ? sample.verifyArrows(observed) : observed;
-  const entries = corrected ?? verified;
-  const arrowsCorrected = verified.some((entry, index) => entry.direction !== observed[index].direction);
+  const entries = sample && result && !corrected ? sample.verifyRows(observed) : (corrected ?? observed);
+  const arrowsCorrected = observed.some((entry, index) => entries[index].direction !== entry.direction);
   const source = corrected ? "Reviewed by you" : result?.source;
 
   return (
@@ -119,16 +118,16 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
         {sign && (
           <div className="sign-reading-result" aria-live="polite">
             <div className="reading-heading">
-              <h2>{sign.entries.length ? "What the sign says" : "No clear sign text"}</h2>
+              <h2>{entries.length ? "What the sign says" : "No clear sign text"}</h2>
               {source && <span className="source">{source}</span>}
             </div>
-            {sign.entries.length ? (
+            {entries.length ? (
               <>
                 <ul className="sign-lines">
                   {entries.map(({ label, direction }, index) => {
                     const arrow = direction ? arrows[direction] : undefined;
                     return <li key={index}>
-                      <span>{label}</span>
+                      <span>{label}{index >= observed.length && <small> · From NPS sample photo</small>}</span>
                       {arrow && <span className="sign-direction"><arrow.Icon aria-hidden="true" /> {arrow.title}</span>}
                     </li>;
                   })}
@@ -146,7 +145,7 @@ export function TrailSignReader({ photo, trailName, onPhoto, back, sample, mapRe
         {!sign && !error && (isMobileDevice() ? <MobileSignReadingNotice /> :
           <p className="muted">When you tap Read sign, Gemini may process the photo online if on-device AI is unavailable.</p>)}
         {!aiConfigured && <p className="muted">Sign reading requires a configured Firebase project.</p>}
-        {(!sign || !sign.entries.length) && (
+        {(!sign || !entries.length) && (
           <button type="button" className="primary-action" disabled={busy || !aiConfigured} onClick={() => void analyze()}>
             <ScanLine aria-hidden="true" /> {busy ? "Reading sign…" : error ? "Retry reading" : "Read sign"}
           </button>

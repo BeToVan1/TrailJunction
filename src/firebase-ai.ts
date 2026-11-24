@@ -23,6 +23,7 @@ const prompt = [
   "Include an arrow only when a complete label clearly belongs to a visible left, right, or straight-ahead arrow. Set direction to left, right, or straight. Use an empty arrows array otherwise.",
   "Read each row on each panel separately. Determine direction from the arrowhead on the same row, looking for arrows on either side of the text. If the same destination appears twice, read both arrows independently.",
   "Copy the full matching entry from lines into each arrow's label, including its distance.",
+  "Before finishing, check the bottom row of every panel. Keep separate entries for a repeated destination with different mileages.",
   "If no complete sign label is clear, return {\"readable\":false,\"lines\":[]}.",
 ].join(" ");
 
